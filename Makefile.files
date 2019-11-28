@@ -7,6 +7,7 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/drivers/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/lsm6ds3_STdC/driver/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/vl53l1x/core/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/vl53l1x/platform/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
   $(wildcard $(PROJ_DIR)/rf/*.c) \

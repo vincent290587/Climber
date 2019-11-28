@@ -85,9 +85,9 @@ bool test_kalman_ext(void) {
 
 		kalman_ext_feed(&descr, &feed);
 
-		UDMatrix res;
-		res = descr.ker.matX;
-		res.print();
+//		UDMatrix res;
+//		res = descr.ker.matX;
+//		res.print();
 	}
 
 	LOG_INFO("Simulated pos: %f", val);
@@ -142,9 +142,9 @@ bool test_kalman_lin(void) {
 
 		kalman_lin_feed(&descr, &feed);
 
-		UDMatrix res;
-		res = descr.ker.matX;
-		res.print();
+//		UDMatrix res;
+//		res = descr.ker.matX;
+//		res.print();
 	}
 
 	return true;

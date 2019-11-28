@@ -19,6 +19,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+#define SIMU_DT_SECONDS              0.5f
 
 static sKalmanDescr m_k_lin;
 /*******************************************************************************
@@ -47,7 +48,7 @@ void simulator_init(void) {
 	m_k_lin.ker.matA.print();
 
 	m_k_lin.ker.matB.zeros();
-	m_k_lin.ker.matC.set(1, 1, 1);
+	m_k_lin.ker.matB.set(1, 1, 1);
 	m_k_lin.ker.matB.print();
 
 	m_k_lin.ker.matC.set(0, 0, 1);
@@ -66,23 +67,41 @@ void simulator_init(void) {
 
 void simulator_tasks(void) {
 
-	if (millis() < 5000) {
-		return;
+	static float model_alt = 50;
+	static uint32_t model_ind = 0;
+	static float model_spd = 0.05;
+
+	if (model_ind++ > 50) {
+		model_spd = -model_spd;
+		model_ind = 0;
 	}
 
-	sKalmanExtFeed feed;
-	feed.dt = 0.5; // in seconds
-	feed.matZ.resize(1, 1);
-	feed.matU.resize(2, 1);
+	model_alt += model_spd * SIMU_DT_SECONDS;
 
+	sKalmanExtFeed feed;
+
+	feed.dt = SIMU_DT_SECONDS; // in seconds
+
+	feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
+	feed.matZ.set(0, 0, model_alt);
+
+	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
+	feed.matU.set(0, 0, model_spd);
 
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
 
-	// TODO
 	kalman_lin_feed(&m_k_lin, &feed);
 
-	LOG_INFO("Kalman lin. run !");
+//	UDMatrix res;
+//	res = m_k_lin.ker.matX;
+//	res.print();
+
+	printf("%f %f %f %f \r\n",
+			model_alt,
+			model_spd,
+			m_k_lin.ker.matX.get(0,0),
+			m_k_lin.ker.matX.get(1,0));
 
 	// make sure we don't run for eternity...
 	if (millis() > 1 * 60000) {

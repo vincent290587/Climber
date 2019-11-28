@@ -32,6 +32,8 @@ public:
 	void mul(udm_type_t val);
 	void resize(unsigned _rowSize, unsigned _colSize);
 
+	bool isEmpty(void) {if (!m_rowSize || !m_colSize) return true; return false;}
+
 	UDMatrix operator+(UDMatrix &s_mat);
 	UDMatrix operator-(UDMatrix &s_mat);
 	UDMatrix operator*(UDMatrix &s_mat);

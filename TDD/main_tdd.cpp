@@ -166,9 +166,9 @@ int main(void)
 	m_tasks_id.peripherals_id = TASK_ID_INVALID;
 	m_tasks_id.ls027_id = TASK_ID_INVALID;
 
-	simulator_init();
-
 	millis_init();
+
+	simulator_init();
 
 	// check for errors
 	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {

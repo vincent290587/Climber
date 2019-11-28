@@ -134,16 +134,18 @@ void UDMatrix::mul(udm_type_t val) {
 
 void UDMatrix::print(void) {
 
-//	LOG_RAW_INFO("----------  Matrix ---------------");
-//	LOG_RAW_INFO("\r\n");
-//	for (unsigned i=0; i< this->m_rowSize; i++) {
-//		for (unsigned j=0; j< this->m_colSize; j++) {
-//
-//			LOG_RAW_INFO("%3.3f ", this->m_data[i][j] );
-//
-//		}
-//		LOG_RAW_INFO("\r\n");
-//	}
+#ifdef TDD
+	LOG_RAW_INFO("----------  Matrix ---------------");
+	LOG_RAW_INFO("\r\n");
+	for (unsigned i=0; i< this->m_rowSize; i++) {
+		for (unsigned j=0; j< this->m_colSize; j++) {
+
+			LOG_RAW_INFO("%3.3f ", this->m_data[i][j] );
+
+		}
+		LOG_RAW_INFO("\r\n");
+	}
+#endif
 
 }
 

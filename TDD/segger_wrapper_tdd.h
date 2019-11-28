@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #define LOG_INFO(...)                  printf(__VA_ARGS__);printf("\n")
-#define LOG_RAW_INFO(...)              EMPTY_MACRO
+#define LOG_RAW_INFO(...)              LOG_INFO(__VA_ARGS__)
 #define LOG_WARNING(...)               printf(__VA_ARGS__);printf("\n")
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 printf("\n");printf(__VA_ARGS__);printf("\n");printf("\n")

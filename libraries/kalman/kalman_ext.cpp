@@ -19,12 +19,14 @@
 static void _time_update(sKalmanDescr *descr, sKalmanExtFeed *feed) {
 
 	UDMatrix matXx;
-	matXx = descr->ker.matA * descr->ker.matX;
+	descr->ker.matXmi = descr->ker.matA * descr->ker.matX;
 
-	UDMatrix matXu;
-	matXu = descr->ker.matB * feed->matU;
+	if (!feed->matU.isEmpty()) {
+		UDMatrix matXu;
+		matXu = descr->ker.matB * feed->matU;
 
-	descr->ker.matXmi = matXx + matXu;
+		descr->ker.matXmi = descr->ker.matXmi + matXu;
+	}
 }
 
 /**
