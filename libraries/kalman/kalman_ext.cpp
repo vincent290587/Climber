@@ -18,7 +18,13 @@
 
 static void _time_update(sKalmanDescr *descr, sKalmanExtFeed *feed) {
 
-	descr->ker.matXmi = descr->ker.matA * descr->ker.matX;
+	UDMatrix matXx;
+	matXx = descr->ker.matA * descr->ker.matX;
+
+	UDMatrix matXu;
+	matXu = descr->ker.matB * feed->matU;
+
+	descr->ker.matXmi = matXx + matXu;
 }
 
 /**
@@ -40,6 +46,8 @@ void kalman_lin_init(sKalmanDescr *descr) {
 	descr->ker.matPmi.resize(descr->ker.ker_dim, descr->ker.ker_dim);
 	descr->ker.matQ.resize(descr->ker.ker_dim, descr->ker.ker_dim);
 	descr->ker.matR.resize(descr->ker.obs_dim, descr->ker.obs_dim);
+
+	descr->ker.matB.resize(descr->ker.ker_dim, descr->ker.ker_dim);
 
 	// set X
 	descr->ker.matX.resize(descr->ker.ker_dim, 1);

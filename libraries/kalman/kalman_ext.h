@@ -17,11 +17,13 @@
 typedef struct {
 	float dt;
 	UDMatrix matZ;
+	UDMatrix matU;
 } sKalmanExtFeed;
 
 typedef struct {
 	UDMatrix matA;
 	UDMatrix matC;
+	UDMatrix matB;
 	UDMatrix matE;
 	UDMatrix matK;
 	UDMatrix matX;
