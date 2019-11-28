@@ -23,17 +23,7 @@
 JScope jscope;
 #endif
 
-typedef struct {
-	float m_angle[50];
-	uint16_t nb_val;
-} sCadenceBuffer;
-
-static float m_angle = 0;
 static uint32_t m_cadence = 0;
-
-static uint32_t m_static_nb = 0;
-
-static sCadenceBuffer m_cad_buffer;
 
 extern void app_shutdown(void);
 
