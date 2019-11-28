@@ -16,12 +16,17 @@
 #include "math_wrapper.h"
 #include "assert_wrapper.h"
 
+#include <random>
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
 #define SIMU_DT_SECONDS              0.5f
 
 static sKalmanDescr m_k_lin;
+
+static std::default_random_engine generator;
+static std::normal_distribution<float> distr_alt(0.0, 0.1);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -83,7 +88,7 @@ void simulator_tasks(void) {
 	feed.dt = SIMU_DT_SECONDS; // in seconds
 
 	feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
-	feed.matZ.set(0, 0, model_alt);
+	feed.matZ.set(0, 0, model_alt + distr_alt(generator));
 
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
@@ -105,6 +110,6 @@ void simulator_tasks(void) {
 
 	// make sure we don't run for eternity...
 	if (millis() > 1 * 60000) {
-		exit(-1);
+		exit(0);
 	}
 }
