@@ -27,6 +27,7 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/log/src/nrf_log_str_formatter.c \
   $(SDK_ROOT)/components/boards/boards.c \
   $(SDK_ROOT)/components/libraries/button/app_button.c \
+  $(SDK_ROOT)/components/libraries/pwm/app_pwm.c \
   $(SDK_ROOT)/components/libraries/util/app_error.c \
   $(SDK_ROOT)/components/libraries/util/app_error_handler_gcc.c \
   $(SDK_ROOT)/components/libraries/util/app_error_weak.c \
@@ -112,6 +113,7 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/log \
   $(SDK_ROOT)/components/libraries/queue \
   $(SDK_ROOT)/components/libraries/ringbuf \
+  $(SDK_ROOT)/components/libraries/pwm \
   $(SDK_ROOT)/components/libraries/pwr_mgmt \
   $(SDK_ROOT)/components/libraries/strerror \
   $(SDK_ROOT)/components/libraries/hardfault \

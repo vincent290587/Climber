@@ -57,6 +57,12 @@ extern "C" {
 
 #define HV_EN            NRF_GPIO_PIN_MAP(0, 20)
 
+#define VNH_INA1         NRF_GPIO_PIN_MAP(0, 22)
+#define VNH_INB1         NRF_GPIO_PIN_MAP(0, 23)
+#define VNH_PWM1         NRF_GPIO_PIN_MAP(0, 24)
+#define VNH_CS1          NRF_GPIO_PIN_MAP(0, 25)
+#define VNH_DIAG1        NRF_GPIO_PIN_MAP(0, 25)
+
 #define N_VCCINT_EN      NRF_GPIO_PIN_MAP(0, 19)
 
 #ifdef __cplusplus
