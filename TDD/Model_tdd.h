@@ -26,12 +26,9 @@ extern sTasksIDs m_tasks_id;
 
 #if defined(__cplusplus)
 
-#include "PowerZone.h"
 #include "UserSettings.h"
 
 extern sAppErrorDescr m_app_error;
-
-extern PowerZone     zPower;
 
 extern UserSettings   u_settings;
 

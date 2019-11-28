@@ -471,9 +471,6 @@ int main(void)
 
 		bsp_tasks();
 
-    	//No more logs to process, go to sleep
-		sysview_task_idle();
-
 		nrf_pwr_mgmt_run();
 	}
 

@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #define LOG_INFO(...)                  printf(__VA_ARGS__);printf("\n")
-#define LOG_RAW_INFO(...)              printf(__VA_ARGS__);
+#define LOG_RAW_INFO(...)              EMPTY_MACRO
 #define LOG_WARNING(...)               printf(__VA_ARGS__);printf("\n")
 #define LOG_DEBUG(...)                 EMPTY_MACRO
 #define LOG_ERROR(...)                 printf("\n");printf(__VA_ARGS__);printf("\n");printf("\n")
@@ -38,9 +38,6 @@
 #define W_SYSVIEW_OnTaskStopReady(X, M)  EMPTY_MACRO
 
 #include "task_manager_wrapper_tdd.h"
-
-
-void app_shutdown(void);
 
 
 #endif /* SEGGER_WRAPPER_TDD_H_ */

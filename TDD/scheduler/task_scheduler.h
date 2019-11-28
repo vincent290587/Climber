@@ -60,11 +60,24 @@ void task_wait_event(uint32_t event);
  */
 void task_feed_event(task_id_t task_id, uint32_t event);
 
+/**@brief Delays the current task
+ *
+ * @param del_ The amount to delay the task by
+ * @return 0 if the timeout was cancelled elsewhere
+ */
+uint32_t task_delay(uint32_t del_);
+
 /**
  *
- * @return The size of the running task stack
+ * @param task_id ID of the task for which to cancel delay
  */
-size_t task_stack();
+void task_delay_cancel(task_id_t task_id);
+
+/**
+ *
+ * @param tick_dur_ The period at which the function runs
+ */
+void task_tick_manage(uint32_t tick_dur_);
 
 
 #ifdef __cplusplus

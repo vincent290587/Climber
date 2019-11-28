@@ -15,8 +15,6 @@ sTasksIDs     m_tasks_id;
 
 sAppErrorDescr m_app_error;
 
-PowerZone     zPower;
-
 UserSettings   u_settings;
 
 /**
@@ -53,7 +51,7 @@ void idle_task(void * p_context)
 
 		simulator_tasks();
 
-    	task_yield();
+		w_task_yield();
     }
 }
 
@@ -66,7 +64,7 @@ void system_task(void * p_context)
 {
     for(;;)
     {
-		task_yield();
+		w_task_yield();
     }
 }
 
@@ -79,7 +77,7 @@ void peripherals_task(void * p_context)
 {
 	for(;;)
 	{
-    	task_yield();
+		w_task_yield();
 	}
 }
 

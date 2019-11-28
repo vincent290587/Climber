@@ -19,17 +19,13 @@ typedef struct {
 	uint8_t peripherals_id;
 	uint8_t boucle_id;
 	uint8_t system_id;
-	uint8_t ls027_id;
 } sTasksIDs;
 
 extern sTasksIDs m_tasks_id;
 
 #if defined(__cplusplus)
 
-#include "PowerZone.h"
 #include "UserSettings.h"
-
-extern PowerZone     zPower;
 
 extern UserSettings   u_settings;
 

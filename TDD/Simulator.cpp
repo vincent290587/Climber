@@ -45,22 +45,8 @@ void simulator_tasks(void) {
 		return;
 	}
 
-	if (millis() > 90000) {
-		data_dispatcher_feed_gyro(500.0F);
-		return;
-	}
-
-	float sampling_hz = 25;
-	float omega = 2 * M_PI; // rad/s
-
-	float val;
-	static int i = 0;
-
-	val = omega * 1000 * 180 / M_PI;
-	val += 3000 * sinf(omega * i / sampling_hz);
-	i++;
-
-	data_dispatcher_feed_gyro(val);
+	// TODO
+	exit(-1);
 
 	// make sure we don't run for eternity...
 	if (millis() > 5 * 60000) {

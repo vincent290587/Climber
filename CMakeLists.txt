@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.5.1)
 
-project (SpinMeter)
+project (Climber)
 
 # On inclut notre bibliotheque dans le processus de CMake
 # add_subdirectory(source/routes)
@@ -54,7 +54,6 @@ set(SRCS
     libraries/utils/WString.cpp
 	libraries/utils/utils.c
     source/sensors/fram.c
-	source/model/PowerZone.cpp
 	source/model/UserSettings.cpp
 	source/model/data_dispatcher.cpp
     )
@@ -65,4 +64,4 @@ set(HEADERS
     )
  
 # add the executable
-add_executable(SpinMeter ${SRCS} ${HEADERS})
+add_executable(Climber ${SRCS} ${HEADERS})
