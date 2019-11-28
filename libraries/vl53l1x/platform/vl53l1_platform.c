@@ -69,94 +69,147 @@
 #include <string.h>
 // #include <time.h>
 // #include <math.h>
+#include "i2c.h"
 #include "millis.h"
 #include "segger_wrapper.h"
 
+#undef I2C_READ_REG
+#define I2C_READ_REG(addr, p_reg_addr, p_buffer, byte_cnt) \
+		NRF_TWI_MNGR_WRITE(addr >> 1, p_reg_addr, 2, NRF_TWI_MNGR_NO_STOP), \
+		NRF_TWI_MNGR_READ (addr >> 1, p_buffer, byte_cnt, 0)
 
-// #define I2C_TIME_OUT_BASE   10
-// #define I2C_TIME_OUT_BYTE   1
+#undef I2C_READ_REG_REP_STOP
+#define I2C_READ_REG_REP_STOP(addr, p_reg_addr, p_buffer, byte_cnt) \
+		NRF_TWI_MNGR_WRITE(addr >> 1, p_reg_addr, 2, 0), \
+		NRF_TWI_MNGR_READ (addr >> 1, p_buffer, byte_cnt, 0)
 
-// #ifdef VL53L1_LOG_ENABLE
-// #define trace_print(level, ...) VL53L1_trace_print_module_function(VL53L1_TRACE_MODULE_PLATFORM, level, VL53L1_TRACE_FUNCTION_NONE, ##__VA_ARGS__)
-// #define trace_i2c(...) VL53L1_trace_print_module_function(VL53L1_TRACE_MODULE_NONE, VL53L1_TRACE_LEVEL_NONE, VL53L1_TRACE_FUNCTION_I2C, ##__VA_ARGS__)
-// #endif
+#undef I2C_WRITE_REG
+#define I2C_WRITE_REG(addr, p_reg_addr, p_data, byte_cnt) \
+		NRF_TWI_MNGR_WRITE(addr >> 1, p_reg_addr, 2, NRF_TWI_MNGR_NO_STOP), \
+		NRF_TWI_MNGR_WRITE(addr >> 1, p_data, byte_cnt, 0)
 
-// #ifndef HAL_I2C_MODULE_ENABLED
-// #warning "HAL I2C module must be enable "
-// #endif
 
-//extern I2C_HandleTypeDef hi2c1;
-//#define VL53L0X_pI2cHandle    (&hi2c1)
 
-/* when not customized by application define dummy one */
-// #ifndef VL53L1_GetI2cBus
-/** This macro can be overloaded by user to enforce i2c sharing in RTOS context
- */
-// #   define VL53L1_GetI2cBus(...) (void)0
-// #endif
+static int32_t _vl53l1_i2c_read_reg(uint8_t addr, uint16_t reg, uint8_t *p_data, uint16_t length) {
 
-// #ifndef VL53L1_PutI2cBus
-/** This macro can be overloaded by user to enforce i2c sharing in RTOS context
- */
-// #   define VL53L1_PutI2cBus(...) (void)0
-// #endif
+	uint8_t buffer[2];
+	buffer[0]=(uint8_t) (reg >> 8);
+	buffer[1]=(uint8_t) (reg & 0xFF);
 
-// uint8_t _I2CBuffer[256];
+	nrf_twi_mngr_transfer_t const xfer[] =
+	{
+			I2C_READ_REG(addr, buffer, p_data, length)
+	};
 
-// int _I2CWrite(VL53L1_DEV Dev, uint8_t *pdata, uint32_t count) {
-//     int status = 0;
-//     return status;
-// }
+	return i2c_perform(NULL, xfer, sizeof(xfer) / sizeof(xfer[0]), NULL);
+}
 
-// int _I2CRead(VL53L1_DEV Dev, uint8_t *pdata, uint32_t count) {
-//    int status = 0;
-//    return Status;
-// }
+static int32_t _vl53l1_i2c_write_reg(uint8_t addr, uint16_t reg, uint8_t *data, uint16_t length) {
+
+	uint8_t buffer[2];
+	buffer[0]=(uint8_t) (reg >> 8);
+	buffer[1]=(uint8_t) (reg & 0xFF);
+
+	nrf_twi_mngr_transfer_t const xfer[] =
+	{
+			I2C_WRITE_REG(addr, buffer, data, length)
+	};
+
+	return i2c_perform(NULL, xfer, sizeof(xfer) / sizeof(xfer[0]), NULL);
+}
 
 VL53L1_Error VL53L1_WriteMulti(VL53L1_DEV Dev, uint16_t index, uint8_t *pdata, uint32_t count) {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
+
+	_vl53l1_i2c_write_reg(Dev->I2cDevAddr, index, pdata, count);
+
 	return Status;
 }
 
-// the ranging_sensor_comms.dll will take care of the page selection
 VL53L1_Error VL53L1_ReadMulti(VL53L1_DEV Dev, uint16_t index, uint8_t *pdata, uint32_t count) {
 	VL53L1_Error Status = VL53L1_ERROR_NONE;
+
+	_vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, pdata, count);
+
 	return Status;
 }
 
 VL53L1_Error VL53L1_WrByte(VL53L1_DEV Dev, uint16_t index, uint8_t data) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int  status;
+
+	status = _vl53l1_i2c_write_reg(Dev->I2cDevAddr, index, &data, 1);
+	return status;
 }
 
 VL53L1_Error VL53L1_WrWord(VL53L1_DEV Dev, uint16_t index, uint16_t data) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int  status;
+	uint8_t buffer[2];
+
+	buffer[0] = data >> 8;
+	buffer[1] = data & 0x00FF;
+	status = _vl53l1_i2c_write_reg(Dev->I2cDevAddr, index, (uint8_t *)buffer, 2);
+	return status;
 }
 
 VL53L1_Error VL53L1_WrDWord(VL53L1_DEV Dev, uint16_t index, uint32_t data) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int  status;
+	uint8_t buffer[4];
+
+	buffer[0] = (data >> 24) & 0xFF;
+	buffer[1] = (data >> 16) & 0xFF;
+	buffer[2] = (data >>  8) & 0xFF;
+	buffer[3] = (data >>  0) & 0xFF;
+	status = _vl53l1_i2c_write_reg(Dev->I2cDevAddr, index, (uint8_t *)buffer, 4);
+	return status;
 }
 
 VL53L1_Error VL53L1_UpdateByte(VL53L1_DEV Dev, uint16_t index, uint8_t AndData, uint8_t OrData) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int  status;
+	uint8_t buffer = 0;
+
+	/* read data direct onto buffer */
+	status = _vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, &buffer,1);
+	if (!status)
+	{
+		buffer = (buffer & AndData) | OrData;
+		status = _vl53l1_i2c_write_reg(Dev->I2cDevAddr, index, &buffer, (uint16_t)1);
+	}
+	return status;
 }
 
 VL53L1_Error VL53L1_RdByte(VL53L1_DEV Dev, uint16_t index, uint8_t *data) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int  status;
+
+	status = _vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, data, 1);
+
+	if(status)
+		return -1;
+
+	return 0;
 }
 
 VL53L1_Error VL53L1_RdWord(VL53L1_DEV Dev, uint16_t index, uint16_t *data) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int  status;
+	uint8_t buffer[2] = {0,0};
+
+	status = _vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, buffer, 2);
+	if (!status)
+	{
+		*data = (buffer[0] << 8) + buffer[1];
+	}
+	return status;
 }
 
 VL53L1_Error VL53L1_RdDWord(VL53L1_DEV Dev, uint16_t index, uint32_t *data) {
-	VL53L1_Error Status = VL53L1_ERROR_NONE;
-	return Status;
+	int status;
+	uint8_t buffer[4] = {0,0,0,0};
+
+	status = _vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, buffer, 4);
+	if(!status)
+	{
+		*data = ((uint32_t)buffer[0] << 24) + ((uint32_t)buffer[1] << 16) + ((uint32_t)buffer[2] << 8) + (uint32_t)buffer[3];
+	}
+	return status;
 }
 
 VL53L1_Error VL53L1_GetTickCount(
@@ -181,7 +234,7 @@ VL53L1_Error VL53L1_WaitMs(VL53L1_Dev_t *pdev, int32_t wait_ms){
 
 VL53L1_Error VL53L1_WaitUs(VL53L1_Dev_t *pdev, int32_t wait_us){
 	VL53L1_Error status  = VL53L1_ERROR_NONE;
-	delay_us(wait_us);
+	w_task_delay(1);
 	return status;
 }
 
