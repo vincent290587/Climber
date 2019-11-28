@@ -1,0 +1,7 @@
+build/
+_build*/
+CMakeFiles/
+*.local
+*.o
+*.d
+*.xml
