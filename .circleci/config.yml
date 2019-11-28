@@ -14,4 +14,4 @@ jobs:
           command: 'cd TDD && make'
       - run:
           name: TDD APP test
-          command: 'cd TDD && ./SpinMeter'
+          command: 'cd TDD && ./Climber'
