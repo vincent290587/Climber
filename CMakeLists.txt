@@ -37,17 +37,17 @@ include_directories(
 
 # Cree des variables avec les fichiers a compiler
 set(SRCS
-    main_tdd.cpp
+    TDD/main_tdd.cpp
     segger_wrapper.c
-    scheduler/task_scheduler.c
-    unit_testing.cpp
-	Model_tdd.cpp
-    Simulator.cpp
-	millis_tdd.c
-	order1_filter_tdd.c
-	timer/timer.c
-	drivers/ant_tdd.c
-	drivers/gpio_tdd.cpp
+    TDD/scheduler/task_scheduler.c
+    TDD/unit_testing.cpp
+	TDD/Model_tdd.cpp
+    TDD/Simulator.cpp
+	TDD/millis_tdd.c
+	TDD/order1_filter_tdd.c
+	TDD/timer/timer.c
+	TDD/drivers/ant_tdd.c
+	TDD/drivers/gpio_tdd.cpp
 	libraries/kalman/kalman_ext.cpp
 	libraries/kalman/UDMatrix.cpp
     libraries/kalman/sine_fitter.cpp
@@ -59,8 +59,8 @@ set(SRCS
     )
     
 set(HEADERS
-    main_tdd.h
-    Simulator.h
+    TDD/main_tdd.h
+    TDD/Simulator.h
     )
  
 # add the executable

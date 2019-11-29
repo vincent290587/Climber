@@ -64,7 +64,7 @@ void system_task(void * p_context)
 {
     for(;;)
     {
-		w_task_yield();
+		w_task_delay(500);
     }
 }
 
@@ -77,7 +77,7 @@ void peripherals_task(void * p_context)
 {
 	for(;;)
 	{
-		w_task_yield();
+		w_task_delay(500);
 	}
 }
 
