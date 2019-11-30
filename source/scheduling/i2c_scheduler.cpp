@@ -17,36 +17,12 @@
 #include "Model.h"
 
 
-static void _int1_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
-{
-
-	W_SYSVIEW_RecordEnterISR();
-
-	// clear trigger
-	//gpio_toggle(LED_1);
-
-    // TODO schedule sensor reading
-
-	W_SYSVIEW_RecordExitISR();
-}
-
 /**
  *
  */
 static void _i2c_scheduling_sensors_post_init(void) {
 
-	// configure GPIOTE
-	nrfx_gpiote_in_config_t in_config;
-	in_config.is_watcher = true;
-	in_config.hi_accuracy = true;
-	in_config.skip_gpio_setup = false;
-	in_config.pull = NRF_GPIO_PIN_PULLDOWN;
-	in_config.sense = NRF_GPIOTE_POLARITY_LOTOHI;
 
-	ret_code_t err_code = nrfx_gpiote_in_init(GYR_INT1, &in_config, _int1_handler);
-	APP_ERROR_CHECK(err_code);
-
-	nrfx_gpiote_in_event_enable(GYR_INT1, true);
 }
 
 
@@ -69,7 +45,7 @@ void i2c_scheduling_init(void) {
 	LOG_WARNING("Sensors initialized");
 
 	// post-init steps
-	//_i2c_scheduling_sensors_post_init();
+	_i2c_scheduling_sensors_post_init();
 
 }
 
@@ -79,8 +55,6 @@ void i2c_scheduling_init(void) {
 void i2c_scheduling_uninit(void) {
 
 	i2c_uninit();
-
-	nrfx_gpiote_in_uninit(GYR_INT1);
 
 }
 

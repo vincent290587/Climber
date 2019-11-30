@@ -127,7 +127,7 @@ static void _int1_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action
 	W_SYSVIEW_RecordEnterISR();
 
 	// clear trigger
-	gpio_clear(LIS_INT2);
+	gpio_clear(LSM6_INT1);
 
 	// schedule sensor reading
 	_lsm6_read_sensor();
@@ -179,7 +179,7 @@ void lsm6ds33_wrapper__init(void) {
 	 * Set full scale
 	 */
 	lsm6ds3_xl_full_scale_set(&dev_ctx, LSM6DS3_2g);
-	lsm6ds3_gy_full_scale_set(&dev_ctx, LSM6DS3_2000dps);
+	lsm6ds3_gy_full_scale_set(&dev_ctx, LSM6DS3_125dps);
 
 	/*
 	 * Set Output Data Rate
@@ -202,10 +202,10 @@ void lsm6ds33_wrapper__init(void) {
 	in_config.pull = NRF_GPIO_PIN_PULLDOWN;
 	in_config.sense = NRF_GPIOTE_POLARITY_LOTOHI;
 
-	ret_code_t err_code = nrfx_gpiote_in_init(LIS_INT1, &in_config, _int1_handler);
+	ret_code_t err_code = nrfx_gpiote_in_init(LSM6_INT1, &in_config, _int1_handler);
 	APP_ERROR_CHECK(err_code);
 
-	nrfx_gpiote_in_event_enable(LIS_INT1, true);
+	nrfx_gpiote_in_event_enable(LSM6_INT1, true);
 
 	LOG_ERROR("LSM6 Init success");
 

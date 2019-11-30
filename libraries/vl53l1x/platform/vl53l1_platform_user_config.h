@@ -78,7 +78,7 @@
 #define VL53L1_RANGE_COMPLETION_POLLING_TIMEOUT_MS   2000
 #define VL53L1_TEST_COMPLETION_POLLING_TIMEOUT_MS   60000
 
-#define VL53L1_POLLING_DELAY_MS                         1
+#define VL53L1_POLLING_DELAY_MS                         5
 
 /* Define LLD TuningParms Page Base Address
  * - Part of Patch_AddedTuningParms_11761

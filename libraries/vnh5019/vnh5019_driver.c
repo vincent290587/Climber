@@ -66,9 +66,7 @@ void vnh5019_driver__init(void) {
 	nrf_gpio_cfg_output(VNH_INB1);
 	nrf_gpio_pin_clear(VNH_INB1);
 
-	//nrf_gpio_cfg_input(LIS_INT1, VNH_CS1);
-
-	nrf_gpio_cfg_input(LIS_INT1, VNH_DIAG1);
+	nrf_gpio_cfg_input(VNH_DIAG1, NRF_GPIO_PIN_PULLUP);
 
 	nrf_gpio_cfg_output(VNH_PWM1);
 	nrf_gpio_pin_clear(VNH_PWM1);

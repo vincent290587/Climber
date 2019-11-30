@@ -257,8 +257,8 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 
 		i2c_scheduling_uninit();
 
-		nrf_gpio_pin_clear(HV_EN);
-		nrf_gpio_pin_set(N_VCCINT_EN);
+//		nrf_gpio_pin_clear(HV_EN);
+//		nrf_gpio_pin_set(N_VCCINT_EN);
 
 #if defined (ANT_STACK_SUPPORT_REQD)
 	    ant_setup_stop();
@@ -279,8 +279,8 @@ static bool app_shutdown_handler(nrf_pwr_mgmt_evt_t event)
 	} break;
 	case NRF_PWR_MGMT_EVT_PREPARE_DFU:
 	{
-		nrf_gpio_pin_clear(HV_EN);
-		nrf_gpio_pin_set(N_VCCINT_EN);
+//		nrf_gpio_pin_clear(HV_EN);
+//		nrf_gpio_pin_set(N_VCCINT_EN);
 
 #if defined (ANT_STACK_SUPPORT_REQD)
 	    ant_setup_stop();
@@ -329,19 +329,6 @@ static void pins_init(void)
 	APP_ERROR_CHECK(err_code);
 
 	// TODO configure pins
-
-	nrf_gpio_cfg_input(GYR_INT1, NRF_GPIO_PIN_NOPULL);
-
-	nrf_gpio_cfg_input(LIS_INT1, NRF_GPIO_PIN_NOPULL);
-
-	nrf_gpio_pin_clear(LIS_INT2);
-	nrf_gpio_cfg_output(LIS_INT2);
-
-	nrf_gpio_cfg_input(HV_EN, NRF_GPIO_PIN_PULLUP);
-//	nrf_gpio_pin_set(HV_EN);
-
-	nrf_gpio_cfg_output(N_VCCINT_EN);
-	nrf_gpio_pin_clear(N_VCCINT_EN);
 
 }
 

@@ -46,24 +46,19 @@ extern "C" {
 
 #define BSP_BUTTON_0   BUTTON_1
 
-#define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 13)
-#define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 11)
+#define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 11)
+#define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 12)
 
-#define GYR_INT1         NRF_GPIO_PIN_MAP(0, 30)
-#define GYR_INT2         NRF_GPIO_PIN_MAP(0, 31)
+#define LSM6_INT1        NRF_GPIO_PIN_MAP(0, 13)
+#define LSM6_INT2        NRF_GPIO_PIN_MAP(0, 14)
 
-#define LIS_INT1         NRF_GPIO_PIN_MAP(0, 15)
-#define LIS_INT2         NRF_GPIO_PIN_MAP(0, 17)
-
-#define HV_EN            NRF_GPIO_PIN_MAP(0, 20)
+#define VL53_INT         NRF_GPIO_PIN_MAP(0, 15)
 
 #define VNH_INA1         NRF_GPIO_PIN_MAP(0, 22)
 #define VNH_INB1         NRF_GPIO_PIN_MAP(0, 23)
 #define VNH_PWM1         NRF_GPIO_PIN_MAP(0, 24)
 #define VNH_CS1          NRF_GPIO_PIN_MAP(0, 25)
 #define VNH_DIAG1        NRF_GPIO_PIN_MAP(0, 25)
-
-#define N_VCCINT_EN      NRF_GPIO_PIN_MAP(0, 19)
 
 #ifdef __cplusplus
 }
