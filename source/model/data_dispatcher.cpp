@@ -55,6 +55,15 @@ void data_dispatcher__run(void) {
 	// TODO run kalman
 
 	LOG_INFO("Kalman run");
+
+#ifdef BLE_STACK_SUPPORT_REQD
+	static char s_buffer[60];
+
+	snprintf(s_buffer, sizeof(s_buffer), "hi :-) %lu", millis());
+
+	// log through BLE every second
+	ble_nus_log_text(s_buffer);
+#endif
 }
 
 void data_dispatcher__feed_distance(float distance) {
@@ -69,14 +78,6 @@ void data_dispatcher__feed_distance(float distance) {
 
 	w_task_delay_cancel(m_task_id);
 
-//#ifdef BLE_STACK_SUPPORT_REQD
-//	// log cadence through BLE every second
-//	static int nb_ind = 25;
-//	if (nb_ind-- == 0) {
-//		ble_nus_log_cadence(m_cadence, nb_turns);
-//		nb_ind = 25;
-//	}
-//#endif
 }
 
 void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps[3]) {
