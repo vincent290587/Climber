@@ -12,6 +12,7 @@
 #include "helper.h"
 #include "lsm6ds3_reg.h"
 #include "lsm6ds33_wrapper.h"
+#include "data_dispatcher.h"
 #include "nrf_twi_mngr.h"
 #include "segger_wrapper.h"
 
@@ -39,7 +40,6 @@ typedef union {
 //static axis3bit16_t data_raw_angular_rate;
 static float acceleration_mg[3];
 static float angular_rate_mdps[3];
-static bool m_is_updated = false;
 
 static int32_t _lsm6_i2c_read(void *handle, uint8_t reg_addr, uint8_t *p_data, uint16_t length) {
 
@@ -92,9 +92,9 @@ static void _lsm6_readout_cb(ret_code_t result, void * p_user_data) {
 	angular_rate_mdps[1] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[1]);
 	angular_rate_mdps[2] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[2]);
 
-	m_is_updated = true;
+	data_dispatcher__feed_acc(acceleration_mg, angular_rate_mdps);
 
-	LOG_INFO("LSM6 read %u", millis());
+	LOG_DEBUG("LSM6 read %u", millis());
 
 	W_SYSVIEW_RecordExitISR();
 

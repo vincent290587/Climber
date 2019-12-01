@@ -10,20 +10,19 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "segger_wrapper.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+void data_dispatcher__init(task_id_t _task_id);
 
-void data_dispatcher_feed_gyro(float mdeg_s);
+void data_dispatcher__run(void);
 
-void data_dispatcher_feed_d_ff(float d_ff);
+void data_dispatcher__feed_distance(float distance);
 
-bool data_dispatcher_get_batt_volt(uint32_t *batt_mv);
-
-bool data_dispatcher_get_cadence(uint32_t *cad);
-
+void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps[3]);
 
 #ifdef __cplusplus
 }

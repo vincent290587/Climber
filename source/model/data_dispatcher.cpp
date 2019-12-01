@@ -12,7 +12,6 @@
 #include "Model.h"
 #include "data_dispatcher.h"
 #include "math_wrapper.h"
-#include "segger_wrapper.h"
 
 #ifdef BLE_STACK_SUPPORT_REQD
 #include "ble_api_base.h"
@@ -23,17 +22,52 @@
 JScope jscope;
 #endif
 
-static uint32_t m_cadence = 0;
+typedef struct {
+	uint8_t acc;
+	uint8_t dist;
+} sUpdateType;
 
-extern void app_shutdown(void);
+static sUpdateType m_updated;
+static task_id_t m_task_id = 0;
 
-void data_dispatcher_feed_gyro(float mdeg_s) {
+static float m_distance = 0;
+static float m_acceleration_mg[3];
+static float m_angular_rate_mdps[3];
 
-	if (isnan(mdeg_s)) {
+
+void data_dispatcher__init(task_id_t _task_id) {
+
+	m_task_id = _task_id;
+
+	// TODO init kalman
+
+}
+
+void data_dispatcher__run(void) {
+
+	while (!m_updated.acc || !m_updated.dist) {
+		w_task_delay(20);
+		return;
+	}
+	m_updated.acc = 0;
+	m_updated.dist = 0;
+
+	// TODO run kalman
+
+	LOG_INFO("Kalman run");
+}
+
+void data_dispatcher__feed_distance(float distance) {
+
+	if (isnan(distance)) {
 		LOG_ERROR("Illegal float");
 		return;
 	}
 
+	m_updated.acc = 1;
+	m_distance = distance;
+
+	w_task_delay_cancel(m_task_id);
 
 //#ifdef BLE_STACK_SUPPORT_REQD
 //	// log cadence through BLE every second
@@ -45,35 +79,13 @@ void data_dispatcher_feed_gyro(float mdeg_s) {
 //#endif
 }
 
-void data_dispatcher_feed_d_ff(float d_ff) {
+void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps[3]) {
 
-#ifdef USE_JSCOPE
+	m_updated.dist = 1;
 
-	// output some results to Segger JSCOPE
-	jscope.inputData(d_ff, 0);
+	memcpy(m_acceleration_mg, acceleration_mg, 12);
+	memcpy(m_angular_rate_mdps, angular_rate_mdps, 12);
 
-	jscope.flush();
-#endif
+	w_task_delay_cancel(m_task_id);
+
 }
-
-//
-//bool data_dispatcher_get_batt_volt(uint32_t *batt_mv) {
-//	if (batt_mv) *batt_mv = 2200;
-//	return true;
-//}
-//
-//bool data_dispatcher_get_cadence(uint32_t *cad) {
-//	if (cad) *cad = m_cadence;
-//	return true;
-//}
-
-bool data_dispatcher_get_batt_volt(uint32_t *batt_mv) {
-	if (batt_mv) *batt_mv = 2200;
-	return true;
-}
-
-bool data_dispatcher_get_cadence(uint32_t *cad) {
-	if (cad) *cad = m_cadence;
-	return true;
-}
-

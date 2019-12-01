@@ -12,6 +12,7 @@
 #include "helper.h"
 #include "vl53l1_api.h"
 #include "vl53l1_wrapper.h"
+#include "data_dispatcher.h"
 #include "segger_wrapper.h"
 
 #define F(X)                     (const char*)(X)
@@ -204,6 +205,8 @@ static void _printRangingData(VL53L1_Error status)
 	if(!status)
 	{
 		nb_error = 0;
+
+		data_dispatcher__feed_distance((float)RangingData.RangeMilliMeter);
 
 		LOG_INFO("RangeStatus           : %u ", RangingData.RangeStatus);
 		LOG_INFO("RangeMilliMeter       : %u ", RangingData.RangeMilliMeter);

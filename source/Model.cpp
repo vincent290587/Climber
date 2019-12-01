@@ -13,7 +13,9 @@
 #include "app_scheduler.h"
 #include "vl53l1_wrapper.h"
 #include "lsm6ds33_wrapper.h"
+#include "data_dispatcher.h"
 #include "segger_wrapper.h"
+#include "data_dispatcher.h"
 
 #include "i2c_scheduler.h"
 
@@ -79,19 +81,21 @@ void sensing_task(void * p_context)
 
 		vl53l1_wrapper__measure();
 
+		nrf_gpio_pin_toggle(LED_1);
+
 	}
 }
 
 void actuating_task(void * p_context)
 {
 
+	data_dispatcher__init(w_task_id_get());
+
 	for(;;)
 	{
-		w_task_delay(50);
-
-		nrf_gpio_pin_toggle(LED_1);
-
 		LOG_DEBUG("Actuating");
+
+		data_dispatcher__run();
 
 		wdt_reload();
 
