@@ -226,15 +226,19 @@ VL53L1_Error VL53L1_GetTimerFrequency(int32_t *ptimer_freq_hz)
 	return status;
 }
 
+extern void delay_ms(uint32_t);
+
 VL53L1_Error VL53L1_WaitMs(VL53L1_Dev_t *pdev, int32_t wait_ms){
 	VL53L1_Error status  = VL53L1_ERROR_NONE;
-	w_task_delay(wait_ms);
+	//w_task_delay(wait_ms);
+	delay_ms(wait_ms);
 	return status;
 }
 
 VL53L1_Error VL53L1_WaitUs(VL53L1_Dev_t *pdev, int32_t wait_us){
 	VL53L1_Error status  = VL53L1_ERROR_NONE;
-	w_task_delay(1);
+	//w_task_delay(1);
+	delay_ms(1);
 	return status;
 }
 

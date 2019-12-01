@@ -33,18 +33,17 @@ static uint8_t m_is_data_ready = 0;
 static VL53L1_RangingMeasurementData_t RangingData;
 static task_id_t m_vl_task_id = 0;
 
-static void _printRangingData()
+static void _printRangingData(VL53L1_Error status)
 {
 
-	VL53L1_Error status = VL53L1_GetRangingMeasurementData(Dev, &RangingData);
 	if(!status)
 	{
 		LOG_INFO("RangeStatus           : %u ", RangingData.RangeStatus);
 		LOG_INFO("RangeMilliMeter       : %u ", RangingData.RangeMilliMeter);
-		LOG_INFO("SignalRateRtnMegaCps  : %f ", RangingData.SignalRateRtnMegaCps/65536.0);
-		LOG_INFO("RAmbientRateRtnMegaCps: %f ", RangingData.AmbientRateRtnMegaCps/65336.0);
+		LOG_INFO("SignalRateRtnMegaCps  : %d ", (int)(RangingData.SignalRateRtnMegaCps/65536.0));
+		LOG_INFO("RAmbientRateRtnMegaCps: %d ", (int)(RangingData.AmbientRateRtnMegaCps/65336.0));
 	} else {
-		LOG_INFO("Measurement error");
+		LOG_INFO("Measurement error %d", status);
 	}
 }
 
@@ -106,19 +105,31 @@ int vl53l1_wrapper__init(void) {
 
 	nrfx_gpiote_in_event_enable(VL53_INT, true);
 
+	VL53L1_ClearInterruptAndStartMeasurement(Dev);
+
 	return status;
 }
 
 
 int vl53l1_wrapper__measure(void) {
 
-	while (!m_is_data_ready) {
-		w_task_delay(25);
-	}
-	m_is_data_ready = 0;
-
+//	while (!m_is_data_ready && digitalRead(VL53_INT)) {
+//		w_task_delay(25);
+//	}
+//	m_is_data_ready = 0;
+//
 	VL53L1_Error status = VL53L1_GetRangingMeasurementData(Dev, &RangingData);
-	_printRangingData();
+	_printRangingData(status);
+
+	VL53L1_ClearInterruptAndStartMeasurement(Dev);
+
+//	// blocking wait for data ready
+//	VL53L1_Error status = VL53L1_WaitMeasurementDataReady(Dev);
+//	_printRangingData(status);
+//	if(!status)
+//	{
+//		VL53L1_ClearInterruptAndStartMeasurement(Dev);
+//	}
 
 	return status;
 }
