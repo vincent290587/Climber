@@ -103,13 +103,18 @@ static void _lsm6_readout_cb(ret_code_t result, void * p_user_data) {
 void _lsm6_read_sensor(void) {
 
 	// read all
-	static uint8_t data_raw[12];
+	static uint8_t data_raw[15];
 
-	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND readout_reg[] = { LSM6DS3_OUTX_L_XL };
+	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND readout_reg[] = {
+			LSM6DS3_OUTX_L_XL ,
+			LSM6DS3_OUTX_L_G,
+			LSM6DS3_STATUS_REG };
 
 	static nrf_twi_mngr_transfer_t const lsm6_readout_transfer[] =
 	{
-			I2C_READ_REG(LSM6DS3_I2C_ADD_H, readout_reg, data_raw , 12)
+			I2C_READ_REG(LSM6DS3_I2C_ADD_H, readout_reg  , data_raw	  , 6),
+			I2C_READ_REG(LSM6DS3_I2C_ADD_H, readout_reg+1, data_raw+6 , 6),
+			I2C_READ_REG(LSM6DS3_I2C_ADD_H, readout_reg+2, data_raw+12, 1),
 	};
 
 	static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
@@ -193,7 +198,16 @@ void lsm6ds33_wrapper__init(void) {
 	lsm6ds3_pin_int1_route_get(&dev_ctx, &int_1_reg);
 	int_1_reg.int1_drdy_g = PROPERTY_ENABLE;
 	int_1_reg.int1_drdy_xl = PROPERTY_ENABLE;
+	int_1_reg.drdy_on_int1 = PROPERTY_ENABLE;
 	lsm6ds3_pin_int1_route_set(&dev_ctx, &int_1_reg);
+
+	LOG_INFO("LSM6 int %u", int_1_reg);
+
+	lsm6ds3_lir_t int_type = LSM6DS3_INT_PULSED;
+	lsm6ds3_int_notification_set(&dev_ctx, int_type);
+
+	lsm6ds3_pin_pol_t pin_pol = LSM6DS3_ACTIVE_HIGH;
+	lsm6ds3_pin_polarity_set(&dev_ctx, pin_pol);
 
 	nrfx_gpiote_in_config_t in_config;
 	in_config.is_watcher = true;
@@ -205,11 +219,9 @@ void lsm6ds33_wrapper__init(void) {
 	ret_code_t err_code = nrfx_gpiote_in_init(LSM6_INT1, &in_config, _int1_handler);
 	APP_ERROR_CHECK(err_code);
 
-//	while (digitalRead(LSM6_INT1)) {
-//		_lsm6_read_sensor();
-//		nrf_delay_ms(2);
-//	}
-
 	nrfx_gpiote_in_event_enable(LSM6_INT1, true);
 
+	nrf_gpio_cfg_sense_input(LSM6_INT1, NRF_GPIO_PIN_PULLDOWN, NRF_GPIO_PIN_SENSE_HIGH);
+
+	 _lsm6_read_sensor();
 }
