@@ -6517,7 +6517,7 @@
 // <e> TASK_MANAGER_ENABLED - task_manager - Task manager.
 //==========================================================
 #ifndef TASK_MANAGER_ENABLED
-#define TASK_MANAGER_ENABLED 1
+#define TASK_MANAGER_ENABLED 0
 #endif
 // <q> TASK_MANAGER_CLI_CMDS  - Enable CLI commands specific to the module
 
@@ -6528,7 +6528,7 @@
 
 // <o> TASK_MANAGER_CONFIG_MAX_TASKS - Maximum number of tasks which can be created
 #ifndef TASK_MANAGER_CONFIG_MAX_TASKS
-#define TASK_MANAGER_CONFIG_MAX_TASKS 3
+#define TASK_MANAGER_CONFIG_MAX_TASKS 4
 #endif
 
 // <o> TASK_MANAGER_CONFIG_STACK_SIZE - Stack size for every task (power of 2)

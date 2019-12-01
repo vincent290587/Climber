@@ -58,7 +58,6 @@ SRC_FILES += \
   $(SDK_ROOT)/components/libraries/queue/nrf_queue.c \
   $(SDK_ROOT)/components/libraries/ringbuf/nrf_ringbuf.c \
   $(SDK_ROOT)/components/libraries/experimental_section_vars/nrf_section_iter.c \
-  $(SDK_ROOT)/components/libraries/experimental_task_manager/task_manager.c \
   $(SDK_ROOT)/components/libraries/experimental_task_manager/task_manager_core_armgcc.S \
   $(SDK_ROOT)/components/libraries/spi_mngr/nrf_spi_mngr.c \
   $(SDK_ROOT)/components/libraries/twi_mngr/nrf_twi_mngr.c \
@@ -94,6 +93,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/filters \
   $(PROJ_DIR)/libraries/hardfault \
   $(PROJ_DIR)/libraries/lsm6ds3_STdC/driver \
+  $(PROJ_DIR)/libraries/vl53l1x/core \
   $(PROJ_DIR)/libraries/vl53l1x/platform \
   $(PROJ_DIR)/libraries/kalman \
   $(PROJ_DIR)/libraries/sysview \
@@ -132,7 +132,6 @@ INC_FOLDERS += \
   $(SDK_ROOT)/components/libraries/button \
   $(SDK_ROOT)/modules/nrfx \
   $(SDK_ROOT)/components/libraries/experimental_section_vars \
-  $(SDK_ROOT)/components/libraries/experimental_task_manager \
   $(SDK_ROOT)/integration/nrfx/legacy \
   $(SDK_ROOT)/components/libraries/mutex \
   $(SDK_ROOT)/components/libraries/gfx \

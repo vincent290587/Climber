@@ -5,10 +5,14 @@
  *      Author: Vincent
  */
 
+#include "i2c.h"
 #include "Model.h"
-#include "sdk_config.h"
 #include "helper.h"
+#include "boards.h"
+#include "sdk_config.h"
 #include "app_scheduler.h"
+#include "vl53l1_wrapper.h"
+#include "lsm6ds33_wrapper.h"
 #include "segger_wrapper.h"
 
 #include "i2c_scheduler.h"
@@ -62,21 +66,87 @@ void perform_system_tasks_light(void) {
 	}
 }
 
+void sensing_task(void * p_context)
+{
+
+	int res;
+	do {
+		res = vl53l1_wrapper__init();
+
+		w_task_delay(200);
+	} while (res);
+
+	for(;;)
+	{
+
+		res = vl53l1_wrapper__measure();
+
+		w_task_delay(10);
+
+		nrf_gpio_pin_toggle(LED_1);
+
+	}
+}
+
+void actuating_task(void * p_context)
+{
+
+//	lsm6ds33_wrapper__init();
+
+	for(;;)
+	{
+
+		w_task_delay(100);
+
+//		if (digitalRead(LSM6_INT1)) {
+//			_lsm6_read_sensor();
+//		}
+
+		LOG_DEBUG("Actuating");
+
+		wdt_reload();
+
+	}
+}
+
+/**
+ * Task triggered every APP_TIMEOUT_DELAY_MS.
+ *
+ * @param p_context
+ */
+void peripherals_task(void * p_context)
+{
+	for(;;)
+	{
+
+#if APP_SCHEDULER_ENABLED
+		app_sched_execute();
+#endif
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+		ble_nus_tasks();
+#endif
+
+		// BSP tasks
+//		bsp_tasks();
+
+		w_task_delay(100);
+
+	}
+}
+
 /**
  *
  * @param p_context
  */
 void idle_task(void * p_context)
 {
-    for(;;)
-    {
+	for(;;)
+	{
+		NRF_LOG_PROCESS();
 
-		// BSP tasks
-		bsp_tasks();
+		pwr_mgmt_run();
 
-    	//No more logs to process, go to sleep
-    	pwr_mgmt_run();
-
-    	w_task_yield();
-    }
+		w_task_yield();
+	}
 }

@@ -16,6 +16,7 @@
 #include "bsp.h"
 #include "i2c.h"
 #include "fram.h"
+#include "millis.h"
 #include "ble_api_base.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -59,14 +60,21 @@ nrfx_wdt_channel_id m_channel_id;
 
 static bsp_event_t m_bsp_evt = BSP_EVENT_NOTHING;
 
+APP_TIMER_DEF(m_job_timer);
 
 /**
  * @brief Handler for timer events.
  */
 void timer_event_handler(void* p_context)
 {
-	ASSERT(p_context);
+	W_SYSVIEW_RecordEnterISR();
 
+	ASSERT(p_context);
+	if (task_manager_is_started()) {
+		task_tick_manage(APP_TIMEOUT_DELAY_MS);
+	}
+
+	W_SYSVIEW_RecordExitISR();
 }
 
 
@@ -166,7 +174,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 		break;
 	}
 
-	LOG_FLUSH();
+	NRF_LOG_FLUSH();
 
 #ifdef DEBUG_NRF
 	NRF_BREAKPOINT_COND;
@@ -387,10 +395,15 @@ int main(void)
 
 	pins_init();
 
-	err_code = app_timer_init();
-	APP_ERROR_CHECK(err_code);
+	millis_init();
 
 	LOG_INFO("Init start");
+
+	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
+	APP_ERROR_CHECK(err_code);
+
+	err_code = app_timer_start(m_job_timer, APP_DELAY, &m_tasks_id);
+	APP_ERROR_CHECK(err_code);
 
 	// check for errors
 	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {
@@ -433,33 +446,40 @@ int main(void)
 	u_settings.checkConfigVersion();
 #endif
 
-	// init all I2C devices
-	i2c_scheduling_init();
-
 	LOG_INFO("App init done");
 
 	nrf_gpio_pin_clear(LED_1);
 
-	for (;;) {
+	(void)task_create(peripherals_task	, "peripherals_task"	, NULL);
+	(void)task_create(sensing_task		, "sensing_task"		, NULL);
+	(void)task_create(actuating_task	, "actuating_task"		, NULL);
 
-#if APP_SCHEDULER_ENABLED
-		app_sched_execute();
-#endif
+	// does not return
+	task_manager_start(idle_task, &m_tasks_id);
 
-#if defined (BLE_STACK_SUPPORT_REQD)
-		ble_nus_tasks();
-#endif
-
-		i2c_scheduling_tasks();
-
-		LOG_DEBUG("App run");
-
-		wdt_reload();
-
-		bsp_tasks();
-
-		nrf_pwr_mgmt_run();
-	}
-
+//	lsm6ds33_wrapper__init();
+//	(void)vl53l1_wrapper__init();
+//
+//	for (;;) {
+//
+//#if APP_SCHEDULER_ENABLED
+//		app_sched_execute();
+//#endif
+//
+//		nrf_gpio_pin_toggle(LED_1);
+//
+//		nrf_delay_ms(100);
+//
+//		if (digitalRead(LSM6_INT1)) {
+//			LOG_ERROR("LSM6 force");
+//			_lsm6_read_sensor();
+//		}
+//
+//		//vl53l1_wrapper__measure();
+//
+//		//nrf_pwr_mgmt_run();
+//
+//		//wdt_reload();
+//	}
 }
 

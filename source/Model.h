@@ -36,8 +36,6 @@ extern "C" {
 
 void model_input_virtual_uart(char c);
 
-void model_go_to_msc_mode(void);
-
 void model_dispatch_sensors_update(void);
 
 void perform_system_tasks(void);
@@ -52,15 +50,15 @@ void app_shutdown(void);
 
 void bsp_tasks(void);
 
-void backlighting_tasks(void);
-
 void idle_task(void * p_context);
-
-void boucle_task(void * p_context);
 
 void peripherals_task(void * p_context);
 
 void system_task(void * p_context);
+
+void sensing_task(void * p_context);
+
+void actuating_task(void * p_context);
 
 #if defined(__cplusplus)
 }
