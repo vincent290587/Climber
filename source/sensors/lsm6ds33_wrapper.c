@@ -11,6 +11,7 @@
 #include "boards.h"
 #include "helper.h"
 #include "lsm6ds3_reg.h"
+#include "lsm6ds33_wrapper.h"
 #include "nrf_twi_mngr.h"
 #include "segger_wrapper.h"
 
@@ -44,7 +45,7 @@ static int32_t _lsm6_i2c_read(void *handle, uint8_t reg_addr, uint8_t *p_data, u
 
 	nrf_twi_mngr_transfer_t const xfer[] =
 	{
-			I2C_READ_REG(LSM6DS3_I2C_ADD_L, &reg_addr, p_data, length)
+			I2C_READ_REG(LSM6DS3_I2C_ADD_H, &reg_addr, p_data, length)
 	};
 
 	return i2c_perform(NULL, xfer, sizeof(xfer) / sizeof(xfer[0]), NULL);
@@ -63,7 +64,7 @@ static int32_t _lsm6_i2c_write(void *handle, uint8_t reg_addr, uint8_t *data, ui
 
 	nrf_twi_mngr_transfer_t const xfer[] =
 	{
-			I2C_WRITE(LSM6DS3_I2C_ADD_L, p_data, length+1)
+			I2C_WRITE(LSM6DS3_I2C_ADD_H, p_data, length+1)
 	};
 
 	return i2c_perform(NULL, xfer, sizeof(xfer) / sizeof(xfer[0]), NULL);
@@ -73,7 +74,8 @@ static void _lsm6_readout_cb(ret_code_t result, void * p_user_data) {
 
 	W_SYSVIEW_RecordEnterISR();
 
-	axis3bit16_t *data_raw = (axis3bit16_t*)p_user_data;
+	axis3bit16_t data_raw[2];
+	memcpy(&data_raw[0], p_user_data, 12);
 
 	ASSERT(p_user_data);
 
@@ -86,28 +88,28 @@ static void _lsm6_readout_cb(ret_code_t result, void * p_user_data) {
 	acceleration_mg[1] = lsm6ds3_from_fs2g_to_mg(data_raw[0].i16bit[1]);
 	acceleration_mg[2] = lsm6ds3_from_fs2g_to_mg(data_raw[0].i16bit[2]);
 
-	angular_rate_mdps[0] = lsm6ds3_from_fs2000dps_to_mdps(data_raw[1].i16bit[0]);
-	angular_rate_mdps[1] = lsm6ds3_from_fs2000dps_to_mdps(data_raw[1].i16bit[1]);
-	angular_rate_mdps[2] = lsm6ds3_from_fs2000dps_to_mdps(data_raw[1].i16bit[2]);
+	angular_rate_mdps[0] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[0]);
+	angular_rate_mdps[1] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[1]);
+	angular_rate_mdps[2] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[2]);
 
 	m_is_updated = true;
 
-	LOG_DEBUG("LSM6 read");
+	LOG_INFO("LSM6 read %u", millis());
 
 	W_SYSVIEW_RecordExitISR();
 
 }
 
-static void _lsm6_read_sensor(void) {
+void _lsm6_read_sensor(void) {
 
 	// read all
-	static axis3bit16_t data_raw[2];
+	static uint8_t data_raw[12];
 
 	static uint8_t NRF_TWI_MNGR_BUFFER_LOC_IND readout_reg[] = { LSM6DS3_OUTX_L_XL };
 
 	static nrf_twi_mngr_transfer_t const lsm6_readout_transfer[] =
 	{
-			I2C_READ_REG(LSM6DS3_I2C_ADD_L, readout_reg, data_raw , 12)
+			I2C_READ_REG(LSM6DS3_I2C_ADD_H, readout_reg, data_raw , 12)
 	};
 
 	static nrf_twi_mngr_transaction_t NRF_TWI_MNGR_BUFFER_LOC_IND transaction =
@@ -125,9 +127,6 @@ static void _lsm6_read_sensor(void) {
 static void _int1_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
 	W_SYSVIEW_RecordEnterISR();
-
-	// clear trigger
-	gpio_clear(LSM6_INT1);
 
 	// schedule sensor reading
 	_lsm6_read_sensor();
@@ -160,6 +159,7 @@ void lsm6ds33_wrapper__init(void) {
 		while(1)
 		{
 			/* manage here device not found */
+			LOG_ERROR("whoamI wrong (0x%02X)", whoamI);
 		}
 
 	/*
@@ -205,8 +205,11 @@ void lsm6ds33_wrapper__init(void) {
 	ret_code_t err_code = nrfx_gpiote_in_init(LSM6_INT1, &in_config, _int1_handler);
 	APP_ERROR_CHECK(err_code);
 
-	nrfx_gpiote_in_event_enable(LSM6_INT1, true);
+//	while (digitalRead(LSM6_INT1)) {
+//		_lsm6_read_sensor();
+//		nrf_delay_ms(2);
+//	}
 
-	LOG_ERROR("LSM6 Init success");
+	nrfx_gpiote_in_event_enable(LSM6_INT1, true);
 
 }
