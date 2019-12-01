@@ -68,22 +68,16 @@ void perform_system_tasks_light(void) {
 
 void sensing_task(void * p_context)
 {
+	w_task_delay(50);
 
-	int res;
-	do {
-		res = vl53l1_wrapper__init();
+	vl53l1_wrapper__init();
 
-		w_task_delay(200);
-	} while (res);
+	lsm6ds33_wrapper__init();
 
 	for(;;)
 	{
 
-		res = vl53l1_wrapper__measure();
-
-		w_task_delay(10);
-
-		nrf_gpio_pin_toggle(LED_1);
+		vl53l1_wrapper__measure();
 
 	}
 }
@@ -91,16 +85,11 @@ void sensing_task(void * p_context)
 void actuating_task(void * p_context)
 {
 
-//	lsm6ds33_wrapper__init();
-
 	for(;;)
 	{
+		w_task_delay(50);
 
-		w_task_delay(100);
-
-//		if (digitalRead(LSM6_INT1)) {
-//			_lsm6_read_sensor();
-//		}
+		nrf_gpio_pin_toggle(LED_1);
 
 		LOG_DEBUG("Actuating");
 
@@ -128,9 +117,9 @@ void peripherals_task(void * p_context)
 #endif
 
 		// BSP tasks
-//		bsp_tasks();
+		bsp_tasks();
 
-		w_task_delay(100);
+		w_task_delay(20);
 
 	}
 }

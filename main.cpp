@@ -333,10 +333,14 @@ static void pins_init(void)
 {
 	ret_code_t err_code;
 
-	err_code = nrf_drv_gpiote_init();
+	err_code = nrfx_gpiote_init();
 	APP_ERROR_CHECK(err_code);
 
 	// TODO configure pins
+
+	nrf_gpio_cfg_input(LSM6_INT1, NRF_GPIO_PIN_NOPULL);
+
+	nrf_gpio_cfg_input(VL53_INT , NRF_GPIO_PIN_NOPULL);
 
 }
 
@@ -448,7 +452,7 @@ int main(void)
 
 	LOG_INFO("App init done");
 
-	nrf_gpio_pin_clear(LED_1);
+	NRF_LOG_FLUSH();
 
 	(void)task_create(peripherals_task	, "peripherals_task"	, NULL);
 	(void)task_create(sensing_task		, "sensing_task"		, NULL);

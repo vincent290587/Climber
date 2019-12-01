@@ -83,14 +83,14 @@
 		NRF_TWI_MNGR_WRITE(addr >> 1, p_reg_addr, 2, 0), \
 		NRF_TWI_MNGR_READ (addr >> 1, p_buffer, byte_cnt, 0)
 
-#undef I2C_WRITE_REG
-#define I2C_WRITE_REG(addr, p_reg_addr, p_data, byte_cnt) \
-		NRF_TWI_MNGR_WRITE(addr >> 1, p_reg_addr, 2, NRF_TWI_MNGR_NO_STOP), \
+#undef I2C_WRITE
+#define I2C_WRITE(addr, p_data, byte_cnt) \
 		NRF_TWI_MNGR_WRITE(addr >> 1, p_data, byte_cnt, 0)
 
+//NRF_TWI_SENSOR_SEND_BUF_SIZE
+static uint8_t buffer[256];
 
-
-static int32_t _vl53l1_i2c_read_reg(uint8_t addr, uint16_t reg, uint8_t *p_data, uint16_t length) {
+static int32_t _vl53l1_i2c_read_reg(uint8_t addr, uint16_t reg, uint8_t *p_data, uint32_t length) {
 
 	uint8_t buffer[2];
 	buffer[0]=(uint8_t) (reg >> 8);
@@ -98,21 +98,22 @@ static int32_t _vl53l1_i2c_read_reg(uint8_t addr, uint16_t reg, uint8_t *p_data,
 
 	nrf_twi_mngr_transfer_t const xfer[] =
 	{
-			I2C_READ_REG(addr, buffer, p_data, length)
+			I2C_READ_REG_REP_STOP(addr, buffer, p_data, length)
 	};
 
 	return i2c_perform(NULL, xfer, sizeof(xfer) / sizeof(xfer[0]), NULL);
 }
 
-static int32_t _vl53l1_i2c_write_reg(uint8_t addr, uint16_t reg, uint8_t *data, uint16_t length) {
+static int32_t _vl53l1_i2c_write_reg(uint8_t addr, uint16_t reg, uint8_t *data, uint32_t length) {
 
-	uint8_t buffer[2];
-	buffer[0]=(uint8_t) (reg >> 8);
+	buffer[0]=(uint8_t) ((reg >> 8) & 0xFF);
 	buffer[1]=(uint8_t) (reg & 0xFF);
+
+	memcpy(&buffer[2], data, length);
 
 	nrf_twi_mngr_transfer_t const xfer[] =
 	{
-			I2C_WRITE_REG(addr, buffer, data, length)
+			I2C_WRITE(addr, buffer, length + 2),
 	};
 
 	return i2c_perform(NULL, xfer, sizeof(xfer) / sizeof(xfer[0]), NULL);
@@ -168,7 +169,7 @@ VL53L1_Error VL53L1_UpdateByte(VL53L1_DEV Dev, uint16_t index, uint8_t AndData, 
 	uint8_t buffer = 0;
 
 	/* read data direct onto buffer */
-	status = _vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, &buffer,1);
+	status = _vl53l1_i2c_read_reg(Dev->I2cDevAddr, index, &buffer, 1);
 	if (!status)
 	{
 		buffer = (buffer & AndData) | OrData;

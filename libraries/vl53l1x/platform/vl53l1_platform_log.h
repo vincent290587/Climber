@@ -70,6 +70,7 @@
 #ifndef _VL53L1_PLATFORM_LOG_H_
 #define _VL53L1_PLATFORM_LOG_H_
 
+//#define VL53L1_LOG_ENABLE
 
 #ifdef VL53L1_LOG_ENABLE
 	#include "vl53l1_platform_user_config.h"
