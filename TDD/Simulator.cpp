@@ -87,8 +87,10 @@ void simulator_tasks(void) {
 
 	feed.dt = SIMU_DT_SECONDS; // in seconds
 
+	model_alt += distr_alt(generator);
+
 	feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
-	feed.matZ.set(0, 0, model_alt + distr_alt(generator));
+	feed.matZ.set(0, 0, model_alt);
 
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
