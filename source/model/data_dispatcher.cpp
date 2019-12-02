@@ -5,7 +5,7 @@
  *      Author: v.golle
  */
 
-
+#include <string.h>
 #include "gpio.h"
 #include "millis.h"
 #include "sine_fitter.h"

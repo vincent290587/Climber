@@ -22,11 +22,12 @@
  * Definitions
  ******************************************************************************/
 #define SIMU_DT_SECONDS              0.5f
+#define DIST_STD_DEV_M                0.05
 
 static sKalmanDescr m_k_lin;
 
 static std::default_random_engine generator;
-static std::normal_distribution<float> distr_alt(0.0, 0.1);
+static std::normal_distribution<float> distr_alt(0.0, DIST_STD_DEV_M);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -53,7 +54,7 @@ void simulator_init(void) {
 	m_k_lin.ker.matA.print();
 
 	m_k_lin.ker.matB.zeros();
-	m_k_lin.ker.matB.set(1, 1, 1);
+	m_k_lin.ker.matB.set(0, 1, SIMU_DT_SECONDS);
 	m_k_lin.ker.matB.print();
 
 	m_k_lin.ker.matC.set(0, 0, 1);
@@ -65,7 +66,7 @@ void simulator_init(void) {
 	m_k_lin.ker.matP.ones(900);
 
 	// set R
-	m_k_lin.ker.matR.unity(0.1);
+	m_k_lin.ker.matR.unity(DIST_STD_DEV_M * DIST_STD_DEV_M);
 
 	LOG_INFO("Kalman lin. init !");
 }
@@ -94,7 +95,7 @@ void simulator_tasks(void) {
 
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
-	feed.matU.set(0, 0, model_spd);
+	feed.matU.set(1, 0, model_spd);
 
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
 
