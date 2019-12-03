@@ -5460,7 +5460,7 @@
 
 
 #ifndef APP_USBD_CDC_ACM_ENABLED
-#define APP_USBD_CDC_ACM_ENABLED 1
+#define APP_USBD_CDC_ACM_ENABLED 0
 #endif
 
 // <q> APP_USBD_CDC_ACM_ZLP_ON_EPSIZE_WRITE  - Send ZLP on write with same size as endpoint
@@ -5476,7 +5476,7 @@
 // <e> APP_USBD_ENABLED - app_usbd - USB Device library
 //==========================================================
 #ifndef APP_USBD_ENABLED
-#define APP_USBD_ENABLED 1
+#define APP_USBD_ENABLED 0
 #endif
 // <o> APP_USBD_VID - Vendor ID  <0x0000-0xFFFF>
 
@@ -5687,14 +5687,14 @@
 
 
 #ifndef APP_USBD_MSC_ENABLED
-#define APP_USBD_MSC_ENABLED 1
+#define APP_USBD_MSC_ENABLED 0
 #endif
 
 // <q> APP_USBD_DUMMY_ENABLED  - app_usbd_msc - USB MSC class
 
 
 #ifndef APP_USBD_DUMMY_ENABLED
-#define APP_USBD_DUMMY_ENABLED 1
+#define APP_USBD_DUMMY_ENABLED 0
 #endif
 
 // <q> CRC16_ENABLED  - crc16 - CRC16 calculation routines

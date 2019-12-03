@@ -95,6 +95,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/lsm6ds3_STdC/driver \
   $(PROJ_DIR)/libraries/vl53l1x/core \
   $(PROJ_DIR)/libraries/vl53l1x/platform \
+  $(PROJ_DIR)/libraries/vnh5019 \
   $(PROJ_DIR)/libraries/kalman \
   $(PROJ_DIR)/libraries/sysview \
   $(PROJ_DIR)/libraries/task_manager \

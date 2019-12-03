@@ -40,7 +40,7 @@ static void _pwm_signal_set(uint16_t freq_hz) {
 	}
 
     /* 1-channel PWM, 0Hz, output on DK LED pins. */
-	uint8_t period_50us = 1000000 / (50 * freq_hz);
+	uint32_t period_50us = 1000000 / (50 * freq_hz);
     app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(period_50us * 50u, VNH_PWM1);
 
     /* Switch the polarity of the channel. */
