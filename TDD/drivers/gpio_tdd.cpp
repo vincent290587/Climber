@@ -8,8 +8,14 @@
 
 #include <stdlib.h>
 #include "gpio.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "segger_wrapper.h"
+
+
+
+void bsp_tasks(void) {
+
+}
 
 void gpio_set(uint32_t gpio_nb_) {
 

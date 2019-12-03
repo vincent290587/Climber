@@ -13,11 +13,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifndef TDD
 #include "nrf_drv_spi.h"
 #include "nrf_drv_gpiote.h"
 #include "nrf.h"
 #include "nrf_delay.h"
-
+#endif
 
 #define boolean uint8_t
 #define byte    uint8_t
@@ -74,6 +75,8 @@ uint32_t digitalRead(uint8_t p_pin);
  */
 void digitalWrite(uint8_t p_pin, uint8_t p_mode);
 
+
+#ifndef TDD
 /**
  * @brief Attaches an interrupt to a pin.
  *
@@ -89,6 +92,7 @@ void attachInterrupt(nrf_drv_gpiote_pin_t pin_, nrf_drv_gpiote_evt_handler_t evt
  * @param pin_
  */
 void detachInterrupt(nrf_drv_gpiote_pin_t pin_);
+#endif
 
 /**
  * @brief Computes the 2 complement of a uint16_t value split in two uint8_t values

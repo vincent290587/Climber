@@ -1,20 +1,27 @@
 cmake_minimum_required (VERSION 3.5.1)
 
-project (Climber)
+project (Climber LANGUAGES C CXX)
 
 # On inclut notre bibliotheque dans le processus de CMake
 # add_subdirectory(source/routes)
-
-# The version number.
-set (Tutorial_VERSION_MAJOR 1)
-set (Tutorial_VERSION_MINOR 0)
 
 add_definitions(-DTDD)
 add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 
-set(CMAKE_C_FLAGS  "-fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS  "-g -Og -std=gnu++0x -rdynamic -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
+if(CMAKE_HOST_UNIX)
+#add_compile_options(-std=gnu++0x -fmessage-length=0 -fstrict-overflow -Werror -Wsign-compare -Wcast-align -Wenum-compare -Wno-error=format -Wmissing-field-initializers)
+else()
+#add_compile_options(-msse2 -mno-ms-bitfields -std=gnu++0x -fmessage-length=0 -fstrict-overflow -Werror -Wsign-compare -Wcast-align -Wenum-compare -Wno-error=format -Wmissing-field-initializers)
+add_definitions(-DWIN32)
+add_definitions(-D_WIN32_WINNT=0x0600)
+add_definitions(-DWINVER=0x600)
+include_directories(./TDDW)
+endif()
+
+
+set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
 
 
 # add the binary tree to the search path for include files
@@ -23,9 +30,11 @@ include_directories(
     ./
 	TDD
 	TDD/drivers
+    TDD/nordic
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
+	drivers
 	libraries/utils
     libraries/kalman
     libraries/filters
@@ -33,6 +42,7 @@ include_directories(
     source
 	source/model
 	source/sensors
+	pca10040/s332/config
     )
 
 # Cree des variables avec les fichiers a compiler
@@ -41,11 +51,14 @@ set(SRCS
     segger_wrapper.c
     TDD/scheduler/task_scheduler.c
     TDD/unit_testing.cpp
-	TDD/Model_tdd.cpp
     TDD/Simulator.cpp
 	TDD/millis_tdd.c
 	TDD/order1_filter_tdd.c
 	TDD/timer/timer.c
+	TDD/nordic/platform.c
+	TDD/nordic/app_scheduler.c
+	TDD/sensors/lsm6ds33_wrapper.c
+	TDD/sensors/vl53l1_wrapper.c
 	TDD/drivers/ant_tdd.c
 	TDD/drivers/gpio_tdd.cpp
 	libraries/kalman/kalman_ext.cpp
@@ -53,6 +66,7 @@ set(SRCS
     libraries/kalman/sine_fitter.cpp
     libraries/utils/WString.cpp
 	libraries/utils/utils.c
+	source/Model.cpp
     source/sensors/fram.c
 	source/model/UserSettings.cpp
 	source/model/data_dispatcher.cpp
@@ -65,3 +79,33 @@ set(HEADERS
  
 # add the executable
 add_executable(Climber ${SRCS} ${HEADERS})
+
+
+if(CMAKE_HOST_UNIX)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND size --format=berkeley "${PROJECT_NAME}"
+    COMMENT "Invoking: Print Size")
+
+else()
+
+target_link_libraries(Climber imagehlp)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND size --format=berkeley "${PROJECT_NAME}.exe"
+    COMMENT "Invoking: Print Size")
+endif()
+
+add_custom_target(debug
+	COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}
+	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
+	COMMENT "Switch CMAKE_BUILD_TYPE to Debug"
+	)
+add_dependencies(debug Climber)
+
+add_custom_target(release
+	COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release ${CMAKE_SOURCE_DIR}
+	COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target all
+	COMMENT "Switch CMAKE_BUILD_TYPE to Release"
+	)
+add_dependencies(release Climber)

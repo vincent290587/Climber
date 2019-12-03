@@ -11,8 +11,6 @@
 #include "segger_wrapper.h"
 
 
-sTasksIDs     m_tasks_id;
-
 sAppErrorDescr m_app_error;
 
 UserSettings   u_settings;
@@ -48,7 +46,7 @@ void idle_task(void * p_context)
     for(;;)
     {
     	sleep(5);
-
+		
 		simulator_tasks();
 
 		w_task_yield();

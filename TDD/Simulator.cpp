@@ -10,7 +10,7 @@
 #include <string.h>
 #include "millis.h"
 #include "kalman_ext.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "Simulator.h"
 #include "segger_wrapper.h"
 #include "math_wrapper.h"
@@ -33,7 +33,7 @@ static std::normal_distribution<float> distr_alt(0.0, DIST_STD_DEV_M);
  ******************************************************************************/
 
 
-void simulator_init(void) {
+void _init(void) {
 
 	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
 	m_app_error.hf_desc.stck.pc = 0x567896;
@@ -71,48 +71,54 @@ void simulator_init(void) {
 	LOG_INFO("Kalman lin. init !");
 }
 
+void simulator_test(void) {
+
+	_init();
+
+	for (int i=0; i < 250; i++) {
+
+		static float model_alt = 50;
+		static uint32_t model_ind = 0;
+		static float model_spd = 0.05;
+
+		if (model_ind++ > 50) {
+			model_spd = -model_spd;
+			model_ind = 0;
+		}
+
+		model_alt += model_spd * SIMU_DT_SECONDS;
+
+		sKalmanExtFeed feed;
+
+		feed.dt = SIMU_DT_SECONDS; // in seconds
+
+		feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
+		feed.matZ.set(0, 0, model_alt);
+
+		feed.matU.resize(m_k_lin.ker.ker_dim, 1);
+		feed.matU.zeros();
+		feed.matU.set(1, 0, model_spd);
+
+		m_k_lin.ker.matA.set(0, 1, feed.dt);
+
+		kalman_lin_feed(&m_k_lin, &feed);
+
+		printf("%f %f %f %f \r\n",
+				model_alt,
+				model_spd,
+				m_k_lin.ker.matX.get(0,0),
+				m_k_lin.ker.matX.get(1,0));
+
+	}
+}
+
+
+void simulator_init(void) {
+
+
+}
+
 void simulator_tasks(void) {
 
-	static float model_alt = 50;
-	static uint32_t model_ind = 0;
-	static float model_spd = 0.05;
 
-	if (model_ind++ > 50) {
-		model_spd = -model_spd;
-		model_ind = 0;
-	}
-
-	model_alt += model_spd * SIMU_DT_SECONDS;
-
-	sKalmanExtFeed feed;
-
-	feed.dt = SIMU_DT_SECONDS; // in seconds
-
-	model_alt += distr_alt(generator);
-
-	feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
-	feed.matZ.set(0, 0, model_alt);
-
-	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
-	feed.matU.zeros();
-	feed.matU.set(1, 0, model_spd);
-
-	m_k_lin.ker.matA.set(0, 1, feed.dt);
-
-	kalman_lin_feed(&m_k_lin, &feed);
-
-//	UDMatrix res;
-//	res = m_k_lin.ker.matX;
-//	res.print();
-
-	printf("%f %f %f %f \r\n",
-			model_alt,
-			model_spd,
-			m_k_lin.ker.matX.get(0,0),
-			m_k_lin.ker.matX.get(1,0));
-
-	// make sure we don't run for eternity...
-	if (millis() > 1 * 60000) {
-		exit(0);
-	}
 }

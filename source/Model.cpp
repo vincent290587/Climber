@@ -8,6 +8,7 @@
 #include "i2c.h"
 #include "Model.h"
 #include "helper.h"
+#include "gpio.h"
 #include "boards.h"
 #include "sdk_config.h"
 #include "app_scheduler.h"
@@ -17,7 +18,6 @@
 #include "segger_wrapper.h"
 #include "data_dispatcher.h"
 
-#include "i2c_scheduler.h"
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 #include "ble_api_base.h"
@@ -29,8 +29,6 @@
 
 
 UserSettings   u_settings;
-
-sTasksIDs     m_tasks_id;
 
 sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
 
@@ -81,7 +79,7 @@ void sensing_task(void * p_context)
 
 		vl53l1_wrapper__measure();
 
-		nrf_gpio_pin_toggle(LED_1);
+		gpio_toggle(LED_1);
 
 	}
 }
@@ -136,7 +134,7 @@ void idle_task(void * p_context)
 {
 	for(;;)
 	{
-		NRF_LOG_PROCESS();
+		LOG_PROCESS();
 
 		pwr_mgmt_run();
 

@@ -8,20 +8,11 @@
 #ifndef SOURCE_MODEL_H_
 #define SOURCE_MODEL_H_
 
-#ifndef TDD
-
 #include <stdbool.h>
 #include "parameters.h"
 #include "g_structs.h"
 #include "segger_wrapper.h"
 
-typedef struct {
-	uint8_t peripherals_id;
-	uint8_t boucle_id;
-	uint8_t system_id;
-} sTasksIDs;
-
-extern sTasksIDs m_tasks_id;
 
 #if defined(__cplusplus)
 
@@ -64,10 +55,5 @@ void actuating_task(void * p_context);
 }
 #endif // defined C++
 
-#else /* TDD */
-
-#include "Model_tdd.h"
-
-#endif /* TDD */
 
 #endif /* SOURCE_MODEL_H_ */

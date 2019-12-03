@@ -32,14 +32,14 @@
 #include <math.h>
 
 #define DTOA_UPPER 0x04
-#ifndef TDD
-#define isnanf(X)      __isnanf(X)
-#define isinff(X)      __isinff(X)
-char * fcvtf(float, int, int *, int *);
-#else
-#define isnanf(X)      false
-#define isinff(X)      false
-#endif
+//#ifndef TDD
+//#define isnanf(X)      __isnanf(X)
+//#define isinff(X)      __isinff(X)
+//char * fcvtf(float, int, int *, int *);
+//#else
+//#define isnanf(X)      false
+//#define isinff(X)      false
+//#endif
 
 
 void reverse(char* begin, char* end) {

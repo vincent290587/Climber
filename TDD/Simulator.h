@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+void simulator_test(void);
+
 void simulator_init(void);
 
 void simulator_tasks(void);

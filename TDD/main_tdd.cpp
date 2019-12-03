@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include "Simulator.h"
 #include "millis_tdd.h"
-#include "Model_tdd.h"
+#include "Model.h"
 #include "segger_wrapper.h"
 #include "unit_testing.hpp"
 #include "task_scheduler.h"
@@ -161,14 +161,9 @@ int main(void)
 
 	LOG_INFO("Program init");
 
-	m_tasks_id.boucle_id = TASK_ID_INVALID;
-	m_tasks_id.system_id = TASK_ID_INVALID;
-	m_tasks_id.peripherals_id = TASK_ID_INVALID;
-	m_tasks_id.ls027_id = TASK_ID_INVALID;
-
 	millis_init();
 
-	simulator_init();
+	simulator_test();
 
 	// check for errors
 	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {
@@ -186,13 +181,15 @@ int main(void)
 
 	delay_ms(1);
 
-	task_begin(65536 * 5);
+//	task_begin(65536 * 5);
+//
+//	task_create(peripherals_task,		"peripherals_task",		65536, NULL);
+//	task_create(sensing_task,			"sensing_task",			65536, NULL);
+//	task_create(peripherals_task,		"actuating_task", 		65536, NULL);
+//
+//	task_start(idle_task, NULL);
 
-	m_tasks_id.system_id		= task_create(system_task,		"system_task",		65536, NULL);
-	m_tasks_id.peripherals_id	= task_create(peripherals_task,	"peripherals_task", 65536, NULL);
-
-	task_start(idle_task, NULL);
-
+	return 0;
 }
 
 

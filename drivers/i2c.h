@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "parameters.h"
+
+#ifndef TDD
 #include "nrf_twi_mngr.h"
 
 
@@ -27,7 +29,7 @@
 
 #define I2C_WRITE_CONT(addr, p_data, byte_cnt) \
     NRF_TWI_MNGR_WRITE(addr, p_data, byte_cnt, NRF_TWI_MNGR_NO_STOP)
-
+#endif
 
 
 #ifdef __cplusplus
@@ -41,13 +43,15 @@ void i2c_uninit(void);
 
 void i2c_scan(void);
 
+
+#ifndef TDD
 void i2c_schedule(nrf_twi_mngr_transaction_t const * p_transaction);
 
 uint32_t i2c_perform(nrf_drv_twi_config_t const *    p_config,
         nrf_twi_mngr_transfer_t const * p_transfers,
         uint8_t                         number_of_transfers,
         void                            (* user_function)(void));
-
+#endif
 
 #ifdef __cplusplus
 }
