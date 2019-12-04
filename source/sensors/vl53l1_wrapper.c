@@ -210,8 +210,8 @@ static void _printRangingData(VL53L1_Error status)
 
 		LOG_INFO("RangeStatus           : %u ", RangingData.RangeStatus);
 		LOG_INFO("RangeMilliMeter       : %u ", RangingData.RangeMilliMeter);
-		LOG_INFO("SignalRateRtnMegaCps  : %d ", (int)(RangingData.SignalRateRtnMegaCps/65536.0));
-		LOG_INFO("RAmbientRateRtnMegaCps: %d ", (int)(RangingData.AmbientRateRtnMegaCps/65336.0));
+		LOG_DEBUG("SignalRateRtnMegaCps  : %d ", (int)(RangingData.SignalRateRtnMegaCps/65536.0));
+		LOG_DEBUG("RAmbientRateRtnMegaCps: %d ", (int)(RangingData.AmbientRateRtnMegaCps/65336.0));
 	} else {
 		LOG_INFO("Measurement error %d", status);
 		nb_error++;
@@ -277,6 +277,8 @@ int vl53l1_wrapper__measure(void) {
 
 		w_task_delay(20);
 	}
+
+	startMs = millis();
 
 	// non-blocking check for data ready
 //	uint8_t isReady = 0;

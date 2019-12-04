@@ -3739,7 +3739,7 @@
 
 
 #ifndef NRFX_TIMER2_ENABLED
-#define NRFX_TIMER2_ENABLED 0
+#define NRFX_TIMER2_ENABLED 2
 #endif
 
 // <q> NRFX_TIMER3_ENABLED  - Enable TIMER3 instance
@@ -3770,7 +3770,7 @@
 // <9=> 31.25 kHz
 
 #ifndef NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY
-#define NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY 0
+#define NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY 7
 #endif
 
 // <o> NRFX_TIMER_DEFAULT_CONFIG_MODE  - Timer mode or operation
@@ -5460,7 +5460,7 @@
 
 
 #ifndef APP_USBD_CDC_ACM_ENABLED
-#define APP_USBD_CDC_ACM_ENABLED 1
+#define APP_USBD_CDC_ACM_ENABLED 0
 #endif
 
 // <q> APP_USBD_CDC_ACM_ZLP_ON_EPSIZE_WRITE  - Send ZLP on write with same size as endpoint
@@ -5476,7 +5476,7 @@
 // <e> APP_USBD_ENABLED - app_usbd - USB Device library
 //==========================================================
 #ifndef APP_USBD_ENABLED
-#define APP_USBD_ENABLED 1
+#define APP_USBD_ENABLED 0
 #endif
 // <o> APP_USBD_VID - Vendor ID  <0x0000-0xFFFF>
 
@@ -5687,14 +5687,14 @@
 
 
 #ifndef APP_USBD_MSC_ENABLED
-#define APP_USBD_MSC_ENABLED 1
+#define APP_USBD_MSC_ENABLED 0
 #endif
 
 // <q> APP_USBD_DUMMY_ENABLED  - app_usbd_msc - USB MSC class
 
 
 #ifndef APP_USBD_DUMMY_ENABLED
-#define APP_USBD_DUMMY_ENABLED 1
+#define APP_USBD_DUMMY_ENABLED 0
 #endif
 
 // <q> CRC16_ENABLED  - crc16 - CRC16 calculation routines

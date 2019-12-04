@@ -69,7 +69,6 @@ void timer_event_handler(void* p_context)
 {
 	W_SYSVIEW_RecordEnterISR();
 
-	ASSERT(p_context);
 	if (task_manager_is_started()) {
 		task_tick_manage(APP_TIMEOUT_DELAY_MS);
 	}
@@ -406,7 +405,7 @@ int main(void)
 	err_code = app_timer_create(&m_job_timer, APP_TIMER_MODE_REPEATED, timer_event_handler);
 	APP_ERROR_CHECK(err_code);
 
-	err_code = app_timer_start(m_job_timer, APP_DELAY, &m_tasks_id);
+	err_code = app_timer_start(m_job_timer, APP_DELAY, NULL);
 	APP_ERROR_CHECK(err_code);
 
 	// check for errors
@@ -459,7 +458,7 @@ int main(void)
 	(void)task_create(actuating_task	, "actuating_task"		, NULL);
 
 	// does not return
-	task_manager_start(idle_task, &m_tasks_id);
+	task_manager_start(idle_task, NULL);
 
 //	lsm6ds33_wrapper__init();
 //	(void)vl53l1_wrapper__init();

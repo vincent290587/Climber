@@ -84,13 +84,21 @@ static void _lsm6_readout_cb(ret_code_t result, void * p_user_data) {
 		return;
 	}
 
-	acceleration_mg[0] = lsm6ds3_from_fs2g_to_mg(data_raw[0].i16bit[0]);
-	acceleration_mg[1] = lsm6ds3_from_fs2g_to_mg(data_raw[0].i16bit[1]);
-	acceleration_mg[2] = lsm6ds3_from_fs2g_to_mg(data_raw[0].i16bit[2]);
+	acceleration_mg[0] = (float)(((int32_t)data_raw[0].i16bit[0] * 61) / 1000);
+	acceleration_mg[1] = (float)(((int32_t)data_raw[0].i16bit[1] * 61) / 1000);
+	acceleration_mg[2] = (float)(((int32_t)data_raw[0].i16bit[2] * 61) / 1000);
 
-	angular_rate_mdps[0] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[0]);
-	angular_rate_mdps[1] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[1]);
-	angular_rate_mdps[2] = lsm6ds3_from_fs125dps_to_mdps(data_raw[1].i16bit[2]);
+	angular_rate_mdps[0] = (float)(((int32_t)data_raw[1].i16bit[0] * 4375) / 1000);
+	angular_rate_mdps[1] = (float)(((int32_t)data_raw[1].i16bit[1] * 4375) / 1000);
+	angular_rate_mdps[2] = (float)(((int32_t)data_raw[1].i16bit[2] * 4375) / 1000);
+
+	LOG_DEBUG("LSM6 read     : %d %d %d \r\n\t\t  %d %d %d ",
+			data_raw[0].i16bit[0],
+			data_raw[0].i16bit[1],
+			data_raw[0].i16bit[2],
+			data_raw[1].i16bit[0],
+			data_raw[1].i16bit[1],
+			data_raw[1].i16bit[2]);
 
 	data_dispatcher__feed_acc(acceleration_mg, angular_rate_mdps);
 

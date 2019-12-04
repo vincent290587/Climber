@@ -76,7 +76,7 @@
 #define LOG_ERROR(...)                 SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
-#define LOG_SET_TERM(X)                EMPTY_MACRO
+#define LOG_PROCESS(...)               NRF_LOG_PROCESS()
 
 #else // NRF_LOG_ENABLED
 
@@ -87,7 +87,7 @@
 #define LOG_ERROR(...)                 LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
-#define LOG_SET_TERM(X)                EMPTY_MACRO
+#define LOG_PROCESS(...)               EMPTY_MACRO
 
 #endif
 

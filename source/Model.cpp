@@ -91,8 +91,6 @@ void actuating_task(void * p_context)
 
 	for(;;)
 	{
-		LOG_DEBUG("Actuating");
-
 		data_dispatcher__run();
 
 		wdt_reload();
