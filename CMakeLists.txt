@@ -10,7 +10,7 @@ add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 
 if(CMAKE_HOST_UNIX)
-#add_compile_options(-std=gnu++0x -fmessage-length=0 -fstrict-overflow -Werror -Wsign-compare -Wcast-align -Wenum-compare -Wno-error=format -Wmissing-field-initializers)
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -rdynamic")
 else()
 #add_compile_options(-msse2 -mno-ms-bitfields -std=gnu++0x -fmessage-length=0 -fstrict-overflow -Werror -Wsign-compare -Wcast-align -Wenum-compare -Wno-error=format -Wmissing-field-initializers)
 add_definitions(-DWIN32)

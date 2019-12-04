@@ -10,6 +10,7 @@
 
 #include "WString.h"
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,7 +19,7 @@ void simulator_test(void);
 
 void simulator_init(void);
 
-void simulator_tasks(void);
+void simulator_task(void * p_context);
 
 #ifdef __cplusplus
 }

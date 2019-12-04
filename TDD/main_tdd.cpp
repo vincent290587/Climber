@@ -181,13 +181,14 @@ int main(void)
 
 	delay_ms(1);
 
-//	task_begin(65536 * 5);
-//
-//	task_create(peripherals_task,		"peripherals_task",		65536, NULL);
-//	task_create(sensing_task,			"sensing_task",			65536, NULL);
-//	task_create(peripherals_task,		"actuating_task", 		65536, NULL);
-//
-//	task_start(idle_task, NULL);
+	//task_begin(65536 * 5);
+
+	//task_create(peripherals_task,		"peripherals_task",		65536, NULL);
+	//task_create(sensing_task,			"sensing_task",			65536, NULL);
+	//task_create(peripherals_task,		"actuating_task", 		65536, NULL);
+	//task_create(simulator_task,			"simulator_task", 		65536, NULL);
+
+	//task_start(idle_task, NULL);
 
 	return 0;
 }

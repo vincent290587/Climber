@@ -118,7 +118,19 @@ void simulator_init(void) {
 
 }
 
-void simulator_tasks(void) {
+void simulator_task(void * p_context) {
 
+	simulator_init();
+
+	LOG_INFO("Simu %u ", millis());
+
+	for (;;) {
+
+		w_task_delay(50);
+
+		if (millis() > 10000) {
+			exit(0);
+		}
+	}
 
 }
