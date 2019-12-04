@@ -34,10 +34,10 @@ include_directories(
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
-	drivers
 	libraries/utils
     libraries/kalman
     libraries/filters
+    libraries/vnh5019
 	rf
     source
 	source/model
@@ -57,10 +57,11 @@ set(SRCS
 	TDD/timer/timer.c
 	TDD/nordic/platform.c
 	TDD/nordic/app_scheduler.c
-	TDD/sensors/lsm6ds33_wrapper.c
+	TDD/sensors/vnh5019_driver.c
 	TDD/sensors/vl53l1_wrapper.c
+	TDD/sensors/lsm6ds33_wrapper.c
 	TDD/drivers/ant_tdd.c
-	TDD/drivers/gpio_tdd.cpp
+	TDD/drivers/gpio_tdd.c
 	libraries/kalman/kalman_ext.cpp
 	libraries/kalman/UDMatrix.cpp
     libraries/kalman/sine_fitter.cpp
