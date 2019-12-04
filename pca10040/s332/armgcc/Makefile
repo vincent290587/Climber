@@ -74,7 +74,8 @@ CFLAGS += -DS332
 CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4
 CFLAGS += -Wall $(OPT)
 CFLAGS += -DFPU_INTERRUPT_MODE
-CFLAGS += -DFLOAT_ABI_HARD
+CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
+CFLAGS += -DFLOAT_ABI_HARD -fsingle-precision-constant
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in separate section, this allows linker to discard unused ones

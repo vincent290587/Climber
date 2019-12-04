@@ -46,8 +46,6 @@ static void _timer_configure(uint16_t freq_hz) {
 
     nrf_drv_gpiote_out_task_enable(VNH_PWM1);
 
-    // Enable timer
-    nrf_drv_timer_enable(&timer);
 }
 
 static void _pwm_signal_set(uint16_t freq_hz) {
@@ -57,7 +55,8 @@ static void _pwm_signal_set(uint16_t freq_hz) {
 	uint32_t div = 125000UL / freq_hz / 2;
 
     // Enable timer
-    nrf_drv_timer_disable(&timer);
+	if (nrf_drv_timer_is_enabled(&timer))
+		nrf_drv_timer_disable(&timer);
 
     LOG_INFO("PWM signal frequency: %u (div = %lu)", freq_hz, div);
 
