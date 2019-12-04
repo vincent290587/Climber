@@ -52,21 +52,26 @@ static void _pwm_signal_set(uint16_t freq_hz) {
 
 	if (freq_hz > 19500) freq_hz = 19500;
 
-	uint32_t div = 125000UL / freq_hz / 2;
-
     // Enable timer
 	if (nrf_drv_timer_is_enabled(&timer))
 		nrf_drv_timer_disable(&timer);
 
-    LOG_INFO("PWM signal frequency: %u (div = %lu)", freq_hz, div);
+    LOG_INFO("PWM signal frequency: %u", freq_hz);
 
-    if (freq_hz > 5600) {
+    if (freq_hz > 3000) {
+
+    	uint32_t div = 125000UL / freq_hz / 2;
+
+        LOG_INFO("PWM signal frequency: %u (div = %lu)", freq_hz, div);
+
     	nrf_drv_timer_extended_compare(&timer, (nrf_timer_cc_channel_t)0, div, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
 
     	// Enable timer
     	nrf_drv_timer_enable(&timer);
     } else {
     	nrf_gpio_pin_set(VNH_PWM1);
+
+        LOG_INFO("PWM signal frequency: %u OFF", freq_hz);
     }
 }
 
