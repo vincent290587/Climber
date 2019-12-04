@@ -8,54 +8,67 @@
 #include <stdint.h>
 #include "gpio.h"
 #include "boards.h"
-#include "app_pwm.h"
 #include "helper.h"
+#include "nrf_drv_timer.h"
+#include "nrf_drv_ppi.h"
 #include "segger_wrapper.h"
 #include "vnh5019_driver.h"
 
 
-APP_PWM_INSTANCE(PWM1,1);                   // Create the instance "PWM1" using TIMER1.
+static nrf_drv_timer_t timer = NRF_DRV_TIMER_INSTANCE(2);
 
-static volatile bool ready_flag = false;            // A flag indicating PWM status.
+void timer_dummy_handler(nrf_timer_event_t event_type, void * p_context) { }
 
+static void _timer_configure(uint16_t freq_hz) {
 
-static void _pwm_ready_callback(uint32_t pwm_id)    // PWM callback function
-{
-    ready_flag = true;
+    uint32_t compare_evt_addr;
+    uint32_t gpiote_task_addr;
+    nrf_ppi_channel_t ppi_channel;
+    ret_code_t err_code;
+    nrf_drv_gpiote_out_config_t config = GPIOTE_CONFIG_OUT_TASK_TOGGLE(false);
+
+    err_code = nrf_drv_gpiote_out_init(VNH_PWM1, &config);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_timer_extended_compare(&timer, (nrf_timer_cc_channel_t)0, 200 * 1000UL, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
+
+    err_code = nrf_drv_ppi_channel_alloc(&ppi_channel);
+    APP_ERROR_CHECK(err_code);
+
+    compare_evt_addr = nrf_drv_timer_event_address_get(&timer, NRF_TIMER_EVENT_COMPARE0);
+    gpiote_task_addr = nrf_drv_gpiote_out_task_addr_get(VNH_PWM1);
+
+    err_code = nrf_drv_ppi_channel_assign(ppi_channel, compare_evt_addr, gpiote_task_addr);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_drv_ppi_channel_enable(ppi_channel);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_gpiote_out_task_enable(VNH_PWM1);
+
+    // Enable timer
+    nrf_drv_timer_enable(&timer);
 }
 
 static void _pwm_signal_set(uint16_t freq_hz) {
 
-	if (freq_hz > 20000) freq_hz = 20000;
+	if (freq_hz > 19500) freq_hz = 19500;
 
-    app_pwm_disable(&PWM1);
+	uint32_t div = 125000UL / freq_hz / 2;
 
-	// uninit PWM
-	app_pwm_uninit(&PWM1);
+    // Enable timer
+    nrf_drv_timer_disable(&timer);
 
-	// no frequency to generate
-	if (!freq_hz) {
-		nrf_gpio_pin_clear(VNH_PWM1);
-		return;
-	}
+    LOG_INFO("PWM signal frequency: %u (div = %lu)", freq_hz, div);
 
-    /* 1-channel PWM, 0Hz, output on DK LED pins. */
-	uint32_t period_50us = 1000000 / (50 * freq_hz);
-    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(period_50us * 50u, VNH_PWM1);
+    if (freq_hz > 5600) {
+    	nrf_drv_timer_extended_compare(&timer, (nrf_timer_cc_channel_t)0, div, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
 
-    /* Switch the polarity of the channel. */
-    //pwm1_cfg.pin_polarity[0] = APP_PWM_POLARITY_ACTIVE_HIGH;
-
-    ready_flag = false;
-
-    /* Initialize and enable PWM. */
-    ret_code_t err_code;
-    do {
-    	err_code = app_pwm_init(&PWM1, &pwm1_cfg, _pwm_ready_callback);
-    	APP_ERROR_CHECK(err_code);
-    } while (err_code);
-
-    app_pwm_enable(&PWM1);
+    	// Enable timer
+    	nrf_drv_timer_enable(&timer);
+    } else {
+    	nrf_gpio_pin_set(VNH_PWM1);
+    }
 }
 
 void vnh5019_driver__init(void) {
@@ -69,7 +82,16 @@ void vnh5019_driver__init(void) {
 	nrf_gpio_cfg_input(VNH_DIAG1, NRF_GPIO_PIN_PULLUP);
 
 	nrf_gpio_cfg_output(VNH_PWM1);
-	nrf_gpio_pin_clear(VNH_PWM1);
+	nrf_gpio_pin_set(VNH_PWM1);
+
+    int err_code = nrf_drv_ppi_init();
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
+    err_code = nrf_drv_timer_init(&timer, &timer_cfg, timer_dummy_handler);
+    APP_ERROR_CHECK(err_code);
+
+	_timer_configure(0);
 }
 
 void vnh5019_driver__setM1Speed(int16_t speed_mm_s)

@@ -24,7 +24,7 @@
 JScope jscope;
 #endif
 
-#define DIST_STD_DEV_M                0.008
+#define DIST_STD_DEV_M                0.8f
 
 typedef struct {
 	uint8_t acc;
@@ -61,7 +61,7 @@ void _kalman_init(void) {
 	m_k_lin.ker.matC.set(0, 0, 1);
 
 	// set Q
-	m_k_lin.ker.matQ.unity(1 / 200.);
+	m_k_lin.ker.matQ.unity(1 / 20.);
 
 	// set P
 	m_k_lin.ker.matP.ones(900);
@@ -176,9 +176,9 @@ void data_dispatcher__run(void) {
 	}
 
 #ifdef USE_JSCOPE
-	int pos = 0;
-	jscope.inputData(f_dist_mm, pos++);
-	jscope.inputData((float)m_distance, pos++);
+	jscope.inputData(f_dist_mm , 0);
+	jscope.inputData(m_distance, 4);
+	jscope.flush();
 #endif
 
 #ifdef BLE_STACK_SUPPORT_REQD
