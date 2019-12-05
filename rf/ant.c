@@ -18,16 +18,12 @@
 #include "ant_key_manager.h"
 #include "ant_search_config.h"
 #include "ant_fec.h"
-#include "ant_glasses.h"
 #include "ant_interface.h"
 
 #include "Model.h"
 #include "segger_wrapper.h"
 
 #include "fec.h"
-#include "hrm.h"
-#include "bsc.h"
-#include "glasses.h"
 
 
 /**< Application's ANT observer priority. You shouldn't need to modify this value. */
@@ -57,7 +53,6 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 
     		LOG_WARNING("Dev. ID 0x%04X %d", m_last_device_id, (int8_t)m_last_rssi);
 
-        	ant_device_manager_search_add(m_last_device_id, m_last_rssi);
         }
 
 	} break;
@@ -109,8 +104,6 @@ NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
  */
 void ant_timers_init(void)
 {
-	bsc_init();
-
 	fec_init();
 }
 
@@ -137,17 +130,8 @@ void ant_stack_init(void)
 static void ant_profile_setup(void)
 {
 
-	// CAD
-	bsc_profile_setup();
-
-    // HRM
-    hrm_profile_setup();
-
 	// FEC
 	fec_profile_setup();
-
-	// GLASSES
-//	glasses_profile_setup();
 
     // BS
 	const ant_search_config_t bs_search_config =
@@ -227,24 +211,7 @@ void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
 	switch (search_type) {
 	case eAntPairingSensorTypeNone:
 	    break;
-	case eAntPairingSensorTypeHRM:
-	{
-		// Set the new device ID.
-		ret_code_t err_code = sd_ant_channel_id_set(HRM_CHANNEL_NUMBER,
-				dev_id,
-				HRM_DEVICE_TYPE,
-				WILDCARD_TRANSMISSION_TYPE);
-		APP_ERROR_CHECK(err_code);
-	} break;
-	case eAntPairingSensorTypeBSC:
-	{
-		// Set the new device ID.
-		ret_code_t err_code = sd_ant_channel_id_set(BSC_CHANNEL_NUMBER,
-				dev_id,
-				BSC_DEVICE_TYPE,
-				WILDCARD_TRANSMISSION_TYPE);
-		APP_ERROR_CHECK(err_code);
-	} break;
+
 	case eAntPairingSensorTypeFEC:
 	{
 		// Set the new device ID.
@@ -271,23 +238,11 @@ void ant_setup_init(void) {
 /**
  *
  */
-void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id)
+void ant_setup_start(void)
 {
 	ret_code_t err_code;
 
-	// Set the new device ID.
-	err_code = sd_ant_channel_id_set(HRM_CHANNEL_NUMBER,
-			hrm_id,
-			HRM_DEVICE_TYPE,
-			WILDCARD_TRANSMISSION_TYPE);
-	APP_ERROR_CHECK(err_code);
-
-	// Set the new device ID.
-	err_code = sd_ant_channel_id_set(BSC_CHANNEL_NUMBER,
-			bsc_id,
-			BSC_DEVICE_TYPE,
-			WILDCARD_TRANSMISSION_TYPE);
-	APP_ERROR_CHECK(err_code);
+	uint16_t fec_id = TACX_DEVICE_NUMBER;
 
 	// Set the new device ID.
 	err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
@@ -297,13 +252,15 @@ void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id)
 	APP_ERROR_CHECK(err_code);
 
 	// Open the ANT channels
-	hrm_profile_start();
-	bsc_profile_start();
 	fec_profile_start();
 
 //	glasses_profile_start();
 
 	LOG_INFO("ANT started");
+}
+
+void ant_setup_stop(void) {
+
 }
 
 /**

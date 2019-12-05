@@ -8,7 +8,10 @@
 #define WILDCARD_TRANSMISSION_TYPE      0x00
 #define ANTPLUS_NETWORK_NUMBER          0x00      /**< Network number. */
 
-#define BS_CHANNEL_NUMBER               0x04
+#define FEC_CHANNEL_NUMBER              0x00
+#define BS_CHANNEL_NUMBER               0x01
+
+#define TACX_DEVICE_NUMBER              2846U
 
 
 typedef enum {
@@ -37,7 +40,9 @@ void ant_stack_init(void);
 
 void ant_setup_init(void);
 
-void ant_setup_start(uint16_t hrm_id, uint16_t bsc_id, uint16_t fec_id);
+void ant_setup_stop(void);
+
+void ant_setup_start(void);
 
 void ant_search_start(eAntPairingSensorType search_type);
 

@@ -14,6 +14,11 @@ typedef enum {
 	eBleEventTypeStartXfer,
 } eBleEventType;
 
+typedef struct {
+	char*    str;
+	size_t length;
+} sCharArray;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

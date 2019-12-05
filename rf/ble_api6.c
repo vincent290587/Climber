@@ -95,6 +95,14 @@ static uint16_t m_mtu_length = 20;
 
 static eNusTransferState m_nus_xfer_state = eNusTransferStateIdle;
 
+static task_id_t m_periph_id = TASK_ID_INVALID;
+
+typedef struct {
+	uint8_t p_xfer_str[200];
+	int16_t length;
+} sNusXfer;
+
+static sNusXfer m_nus_xfer_array;
 
 static void scan_start(void);
 
@@ -228,8 +236,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		m_nus_cts = true;
 
 		// unblock NUS servicing task
-		if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-			w_task_delay_cancel(m_tasks_id.peripherals_id);
+		if (m_periph_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_periph_id);
 		}
 		break;
 
@@ -328,10 +336,11 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 
 			}
 
-			// unblock periph servicing task
-			if (m_tasks_id.peripherals_id != TASK_ID_INVALID) {
-				w_task_delay_cancel(m_tasks_id.peripherals_id);
+			// unblock NUS servicing task
+			if (m_periph_id != TASK_ID_INVALID) {
+				w_task_delay_cancel(m_periph_id);
 			}
+			break;
 		}
 		break;
 
@@ -562,10 +571,9 @@ void ble_nus_log_text(const char * text) {
 
 	// create log
 	if (!text) return;
-	m_nus_xfer.length = snprintf((char*)m_nus_xfer.p_xfer_str, sizeof(m_nus_xfer.p_xfer_str),
+	m_nus_xfer_array.length = snprintf((char*)m_nus_xfer_array.p_xfer_str, sizeof(m_nus_xfer_array.p_xfer_str),
 			text);
 
-	m_nus_rts = true;
 }
 
 
@@ -575,79 +583,11 @@ void ble_nus_log_text(const char * text) {
  */
 void ble_nus_tasks(void) {
 
-	static char _buffer[BLE_NUS_MAX_DATA_LEN];
-	static sCharArray m_nus_xfer_array = {
-			.str = _buffer,
-			.length = 0,
-	};
-
-	if (m_nus_xfer_state == eNusTransferStateIdle) {
-
-		while (RING_BUFF_IS_NOT_EMPTY(nus_rb1)) {
-
-			char c = RING_BUFF_GET_ELEM(nus_rb1);
-			RING_BUFFER_POP(nus_rb1);
-
-			model_input_virtual_uart(c);
-		}
-
-		return;
-	}
-
-	switch (m_nus_xfer_state) {
-	case eNusTransferStateInit:
-	{
-		if (!log_file_start()) {
-			LOG_WARNING("Log file error start");
-			m_nus_xfer_state = eNusTransferStateIdle;
-		} else {
-			m_nus_packet_nb = 0;
-			m_nus_cts = true;
-			m_nus_xfer_array.length = 0;
-			m_nus_xfer_state = eNusTransferStateRun;
-		}
-	}
-	break;
-
-	case eNusTransferStateRun:
-		if (!m_connected) {
-			// problem or end of transfer
-			m_nus_xfer_state = eNusTransferStateFinish;
-		}
-		break;
-
-	case eNusTransferStateFinish:
-	{
-		int ret = log_file_stop(false);
-		if (ret != 0) {
-			LOG_WARNING("Log file error stop %d", ret);
-		} else {
-			LOG_WARNING("NUS transfer completed :-)");
-		}
-		m_nus_xfer_state = eNusTransferStateIdle;
-	} break;
-
-	case eNusTransferStateIdle:
-	default:
-		break;
-	}
-
 	while (m_connected &&
-			(m_nus_xfer_state == eNusTransferStateRun || (m_nus_xfer_state == eNusTransferStateFinish && m_nus_xfer_array.length)) &&
+			m_nus_xfer_array.length &&
 			m_nus_cts) {
 
-		if (!m_nus_xfer_array.length) {
-			(void)log_file_read(&m_nus_xfer_array, m_mtu_length < sizeof(_buffer) ? m_mtu_length : sizeof(_buffer));
-		}
-
-		if (!m_nus_xfer_array.str || !m_nus_xfer_array.length) {
-			LOG_INFO("Log file end, %u packets sent", m_nus_packet_nb);
-			// problem or end of transfer
-			m_nus_xfer_state = eNusTransferStateFinish;
-			return;
-		}
-
-		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.str, m_nus_xfer_array.length);
+		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.p_xfer_str, m_nus_xfer_array.length);
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
