@@ -174,6 +174,50 @@ static void ant_profile_setup(void)
 }
 
 
+/**@brief initialize application
+ */
+static void continuous_scan_init()
+{
+    uint32_t err_code;
+
+    // Set library config to report RSSI and Device ID
+    err_code = sd_ant_lib_config_set(
+        ANT_LIB_CONFIG_MESG_OUT_INC_RSSI | ANT_LIB_CONFIG_MESG_OUT_INC_DEVICE_ID);
+    APP_ERROR_CHECK(err_code);
+
+    // Configure channel 0 for scanning mode, but do not open it.
+    // The scanning channel will be opened in scan mode for a short amount of time on a button press.
+    ant_channel_config_t channel_config =
+    {
+        .channel_number    = 0x00,
+        .channel_type      = CHANNEL_TYPE_SLAVE,
+        .ext_assign        = 0x00,
+        .rf_freq           = 0x39,
+        .transmission_type = WILDCARD_TRANSMISSION_TYPE,
+        .device_type       = FEC_DEVICE_TYPE,
+        .device_number     = 0x00,          // Wildcard
+        .channel_period    = 0x00,          // Not used, since this is going to be scanning
+        .network_number    = ANTPLUS_NETWORK_NUMBER,
+    };
+
+    err_code = ant_channel_init(&channel_config);
+    APP_ERROR_CHECK(err_code);
+
+    // Assign a second channel for sending messages on the reverse direction
+    // There is no need to configure any other parameters, this channel is never opened;
+    // its resources are used by ANT to send messages in the reverse direction while in
+    // continuous scanning mode.
+    err_code = sd_ant_channel_assign(0x01,
+                                     CHANNEL_TYPE_SLAVE,
+									 ANTPLUS_NETWORK_NUMBER,
+                                     0x00);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ant_channel_open(0x00);
+    APP_ERROR_CHECK(err_code);
+}
+
+
 void ant_search_start(eAntPairingSensorType search_type) {
 
 	ret_code_t err_code;
