@@ -10,6 +10,11 @@
 
 #include <stdint.h>
 
+typedef enum {
+	eVNH5019StateDriving,
+	eVNH5019StateCoasting,
+	eVNH5019StateBraking,
+} eVNH5019State;
 
 #ifdef	__cplusplus
 extern "C" {
@@ -17,11 +22,13 @@ extern "C" {
 
 void vnh5019_driver__init(void);
 
+int16_t vnh5019_driver__getM1Speed(void);
+
 void vnh5019_driver__setM1Speed(int16_t speed_mm_s);
 
 void vnh5019_driver__setM1Brake(uint16_t brake);
 
-uint32_t vnh5019_driver__getM1CurrentMilliamps(void);
+int32_t vnh5019_driver__getM1CurrentMilliamps(void);
 
 uint32_t vnh5019_driver__getM1Fault(void);
 
