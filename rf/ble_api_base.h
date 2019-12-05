@@ -10,6 +10,10 @@
 
 #include "g_structs.h"
 
+typedef enum {
+	eBleEventTypeStartXfer,
+} eBleEventType;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,7 +25,7 @@ void ble_uninit(void);
 
 void ble_nus_tasks(void);
 
-void ble_nus_log_cadence(uint32_t cadence, uint32_t d_cad);
+void ble_start_evt(eBleEventType evt);
 
 void ble_nus_log_text(const char * text);
 
