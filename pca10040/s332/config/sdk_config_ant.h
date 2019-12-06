@@ -1,85 +1,414 @@
-
-//==========================================================
-// <o> ANTPLUS_NETWORK_NUM - ANT PLUS network number.
-#ifndef ANTPLUS_NETWORK_NUM
-#define ANTPLUS_NETWORK_NUM 0
-#endif
-
-// <o> BSC_CHANNEL_NUM - Channel number assigned to BSC profile.
-#ifndef BSC_CHANNEL_NUM
-#define BSC_CHANNEL_NUM 0
-#endif
-
-// <o> CHAN_ID_DEV_NUM - Channel ID: Device Number.
-#ifndef CHAN_ID_DEV_NUM
-#define CHAN_ID_DEV_NUM 49
-#endif
-
-// <o> CHAN_ID_TRANS_TYPE - Channel ID: Transmission type.
-#ifndef CHAN_ID_TRANS_TYPE
-#define CHAN_ID_TRANS_TYPE 1
-#endif
-
-// <o> MODIFICATION_TYPE  - Type of speed and cadence values update
-
-
-// <i> They can be updated by buttons or periodically rise and fall in auto mode
-// <0=> MODIFICATION_TYPE_BUTTON
-// <1=> MODIFICATION_TYPE_AUTO
-
-#ifndef MODIFICATION_TYPE
-#define MODIFICATION_TYPE 0
-#endif
-
-// <h> PRODUCT_INFORMATION
-
-//==========================================================
-// <o> BSC_HW_VERSION - Hardware revision
-#ifndef BSC_HW_VERSION
-#define BSC_HW_VERSION 5
-#endif
-
-// <o> BSC_MF_ID - Manufacturer ID
-#ifndef BSC_MF_ID
-#define BSC_MF_ID 2
-#endif
-
-// <o> BSC_MODEL_NUMBER - Model number
-#ifndef BSC_MODEL_NUMBER
-#define BSC_MODEL_NUMBER 2
-#endif
-
-// <o> BSC_SW_VERSION - Software version number
-#ifndef BSC_SW_VERSION
-#define BSC_SW_VERSION 0
-#endif
-
-// <o> BSC_SERIAL_NUMBER - Serial number
-#ifndef BSC_SERIAL_NUMBER
-#define BSC_SERIAL_NUMBER 43981
-#endif
-
-// </h>
 //==========================================================
 
-// <o> SENSOR_TYPE  - Type of transmitted data
+// <h> nRF_ANT
 
-// <121=> Combined data
-// <122=> Cadence data
-// <123=> Speed data
 
-#ifndef SENSOR_TYPE
-#define SENSOR_TYPE 122
+#ifndef ANT_COMMON_PAGE_71_ENABLED
+#define ANT_COMMON_PAGE_71_ENABLED 1
+#endif
+#if  ANT_COMMON_PAGE_71_ENABLED
+#ifndef ANT_COMMON_PAGE_71_LOG_ENABLED
+#define ANT_COMMON_PAGE_71_LOG_ENABLED 1
+#endif
+#if  ANT_COMMON_PAGE_71_LOG_ENABLED
+// <o> ANT_COMMON_PAGE_71_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_COMMON_PAGE_71_LOG_LEVEL
+#define ANT_COMMON_PAGE_71_LOG_LEVEL 3
 #endif
 
-// </h>
+// <o> ANT_COMMON_PAGE_71_INFO_COLOR  - ANSI escape code prefix.
 
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_COMMON_PAGE_71_INFO_COLOR
+#define ANT_COMMON_PAGE_71_INFO_COLOR 0
+#endif
+
+#endif //ANT_COMMON_PAGE_71_LOG_ENABLED
+// </e>
+
+#endif //ANT_COMMON_PAGE_71_ENABLED
+// </e>
+
+
+// <e> ANT_COMMON_PAGE_80_ENABLED - ant_common_page_80 - ANT+ common page 80
+//==========================================================
+#ifndef ANT_COMMON_PAGE_80_ENABLED
+#define ANT_COMMON_PAGE_80_ENABLED 1
+#endif
+#if  ANT_COMMON_PAGE_80_ENABLED
+// <e> ANT_COMMON_PAGE_80_LOG_ENABLED - Enables logging of common page 80 in the module.
+//==========================================================
+#ifndef ANT_COMMON_PAGE_80_LOG_ENABLED
+#define ANT_COMMON_PAGE_80_LOG_ENABLED 1
+#endif
+#if  ANT_COMMON_PAGE_80_LOG_ENABLED
+// <o> ANT_COMMON_PAGE_80_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_COMMON_PAGE_80_LOG_LEVEL
+#define ANT_COMMON_PAGE_80_LOG_LEVEL 3
+#endif
+
+// <o> ANT_COMMON_PAGE_80_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_COMMON_PAGE_80_INFO_COLOR
+#define ANT_COMMON_PAGE_80_INFO_COLOR 0
+#endif
+
+#endif //ANT_COMMON_PAGE_80_LOG_ENABLED
+// </e>
+
+#endif //ANT_COMMON_PAGE_80_ENABLED
+// </e>
+
+// <e> ANT_COMMON_PAGE_81_ENABLED - ant_common_page_81 - ANT+ common page 81
+//==========================================================
+#ifndef ANT_COMMON_PAGE_81_ENABLED
+#define ANT_COMMON_PAGE_81_ENABLED 1
+#endif
+#if  ANT_COMMON_PAGE_81_ENABLED
+// <e> ANT_COMMON_PAGE_81_LOG_ENABLED - Enables logging of common page 81 in the module.
+//==========================================================
+#ifndef ANT_COMMON_PAGE_81_LOG_ENABLED
+#define ANT_COMMON_PAGE_81_LOG_ENABLED 1
+#endif
+#if  ANT_COMMON_PAGE_81_LOG_ENABLED
+// <o> ANT_COMMON_PAGE_81_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_COMMON_PAGE_81_LOG_LEVEL
+#define ANT_COMMON_PAGE_81_LOG_LEVEL 3
+#endif
+
+// <o> ANT_COMMON_PAGE_81_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_COMMON_PAGE_81_INFO_COLOR
+#define ANT_COMMON_PAGE_81_INFO_COLOR 0
+#endif
+
+#endif //ANT_COMMON_PAGE_81_LOG_ENABLED
+// </e>
+
+#endif //ANT_COMMON_PAGE_81_ENABLED
+// </e>
+
+
+
+//==========================================================
+// <e> ANT_FEC_ENABLED - ant_bpwr - Bicycle Power Profile
+//==========================================================
+#ifndef ANT_FEC_ENABLED
+#define ANT_FEC_ENABLED 1
+#endif
+#if  ANT_FEC_ENABLED
+// <e> ANT_FEC_LOG_ENABLED - Enables general logging in the module.
+//==========================================================
+#ifndef ANT_FEC_LOG_ENABLED
+#define ANT_FEC_LOG_ENABLED 1
+#endif
+#if  ANT_FEC_LOG_ENABLED
+// <o> ANT_FEC_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_FEC_LOG_LEVEL
+#define ANT_FEC_LOG_LEVEL 3
+#endif
+
+// <o> ANT_FEC_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_FEC_INFO_COLOR
+#define ANT_FEC_INFO_COLOR 0
+#endif
+
+#endif //ANT_FEC_LOG_ENABLED
+// </e>
+
+// <e> ANT_FEC_COMMON_LOG_ENABLED - Enables logging of FEC tracing common data.
+//==========================================================
+#ifndef ANT_FEC_COMMON_LOG_ENABLED
+#define ANT_FEC_COMMON_LOG_ENABLED 0
+#endif
+#if  ANT_FEC_COMMON_LOG_ENABLED
+// <o> ANT_FEC_COMMON_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_FEC_COMMON_LOG_LEVEL
+#define ANT_FEC_COMMON_LOG_LEVEL 3
+#endif
+
+// <o> ANT_FEC_COMMON_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_FEC_COMMON_INFO_COLOR
+#define ANT_FEC_COMMON_INFO_COLOR 0
+#endif
+
+#endif //ANT_FEC_COMMON_LOG_ENABLED
+// </e>
+
+#ifndef ANT_FEC_PAGE_2_LOG_ENABLED
+#define ANT_FEC_PAGE_2_LOG_ENABLED 0
+#endif
+
+#ifndef ANT_FEC_PAGE_21_LOG_ENABLED
+#define ANT_FEC_PAGE_21_LOG_ENABLED 0
+#endif
+
+#ifndef ANT_FEC_PAGE_25_LOG_ENABLED
+#define ANT_FEC_PAGE_25_LOG_ENABLED 0
+#endif
+
+#ifndef ANT_FEC_PAGE_48_LOG_ENABLED
+#define ANT_FEC_PAGE_48_LOG_ENABLED 1
+#endif
+
+#ifndef ANT_FEC_PAGE_49_LOG_ENABLED
+#define ANT_FEC_PAGE_49_LOG_ENABLED 1
+#endif
+
+#ifndef ANT_FEC_PAGE_51_LOG_ENABLED
+#define ANT_FEC_PAGE_51_LOG_ENABLED 1
+#endif
+
+#ifndef ANT_FEC_PAGE_55_LOG_ENABLED
+#define ANT_FEC_PAGE_55_LOG_ENABLED 0
+#endif
+
+#ifndef ANT_FEC_PAGE_71_LOG_ENABLED
+#define ANT_FEC_PAGE_71_LOG_ENABLED 1
+#endif
+
+// <e> ANT_FEC_PAGE_1_LOG_ENABLED - Enables logging of FEC page 1 in the module.
+//==========================================================
+#ifndef ANT_FEC_PAGE_1_LOG_ENABLED
+#define ANT_FEC_PAGE_1_LOG_ENABLED 1
+#endif
+#if  ANT_FEC_PAGE_1_LOG_ENABLED
+// <o> ANT_FEC_PAGE_1_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_FEC_PAGE_1_LOG_LEVEL
+#define ANT_FEC_PAGE_1_LOG_LEVEL 3
+#endif
+
+// <o> ANT_FEC_PAGE_1_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_FEC_PAGE_1_INFO_COLOR
+#define ANT_FEC_PAGE_1_INFO_COLOR 0
+#endif
+
+#endif //ANT_FEC_PAGE_1_LOG_ENABLED
+// </e>
+
+// <e> ANT_FEC_PAGE_16_LOG_ENABLED - Enables logging of FEC page 16 in the module.
+//==========================================================
+#ifndef ANT_FEC_PAGE_16_LOG_ENABLED
+#define ANT_FEC_PAGE_16_LOG_ENABLED 1
+#endif
+#if  ANT_FEC_PAGE_16_LOG_ENABLED
+// <o> ANT_FEC_PAGE_16_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_FEC_PAGE_16_LOG_LEVEL
+#define ANT_FEC_PAGE_16_LOG_LEVEL 3
+#endif
+
+// <o> ANT_FEC_PAGE_16_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_FEC_PAGE_16_INFO_COLOR
+#define ANT_FEC_PAGE_16_INFO_COLOR 0
+#endif
+
+#endif //ANT_FEC_PAGE_16_LOG_ENABLED
+// </e>
+
+// <e> ANT_FEC_PAGE_17_LOG_ENABLED - Enables logging of FEC page 17 in the module.
+//==========================================================
+#ifndef ANT_FEC_PAGE_17_LOG_ENABLED
+#define ANT_FEC_PAGE_17_LOG_ENABLED 1
+#endif
+#if  ANT_FEC_PAGE_17_LOG_ENABLED
+// <o> ANT_FEC_PAGE_17_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_FEC_PAGE_17_LOG_LEVEL
+#define ANT_FEC_PAGE_17_LOG_LEVEL 3
+#endif
+
+// <o> ANT_FEC_PAGE_17_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_FEC_PAGE_17_INFO_COLOR
+#define ANT_FEC_PAGE_17_INFO_COLOR 0
+#endif
+
+#endif //ANT_FEC_PAGE_17_LOG_ENABLED
+// </e>
+
+// <e> ANT_FEC_PAGE_21_LOG_ENABLED - Enables logging of FEC page 18 in the module.
+//==========================================================
+#ifndef ANT_FEC_PAGE_21_LOG_ENABLED
+#define ANT_FEC_PAGE_21_LOG_ENABLED 1
+#endif
+#if  ANT_FEC_PAGE_21_LOG_ENABLED
+// <o> ANT_FEC_PAGE_21_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_FEC_PAGE_21_LOG_LEVEL
+#define ANT_FEC_PAGE_21_LOG_LEVEL 3
+#endif
+
+// <o> ANT_FEC_PAGE_21_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_FEC_PAGE_21_INFO_COLOR
+#define ANT_FEC_PAGE_21_INFO_COLOR 0
+#endif
+
+#endif //ANT_FEC_PAGE_21_LOG_ENABLED
+// </e>
+
+#endif //ANT_FEC_ENABLED
+// </e>
 
 //==========================================================
 // <e> ANT_BSC_ENABLED - ant_bsc - Bicycle Speed and Cadence Profile
 //==========================================================
 #ifndef ANT_BSC_ENABLED
-#define ANT_BSC_ENABLED 1
+#define ANT_BSC_ENABLED 0
 #endif
 #if  ANT_BSC_ENABLED
 // <e> ANT_BSC_LOG_ENABLED - Enables general logging in the module.
@@ -389,6 +718,241 @@
 #define ANT_CHANNEL_CONFIG_ENABLED 1
 #endif
 
+#ifndef ANT_GLASSES_LOG_ENABLED
+#define ANT_GLASSES_LOG_ENABLED    0
+#endif
+
+// <e> ANT_HRM_ENABLED - ant_hrm - Heart Rate Monitor Profile
+//==========================================================
+#ifndef ANT_HRM_ENABLED
+#define ANT_HRM_ENABLED 0
+#endif
+#if  ANT_HRM_ENABLED
+// <e> ANT_HRM_LOG_ENABLED - Enables general logging in the module.
+//==========================================================
+#ifndef ANT_HRM_LOG_ENABLED
+#define ANT_HRM_LOG_ENABLED 0
+#endif
+#if  ANT_HRM_LOG_ENABLED
+// <o> ANT_HRM_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_HRM_LOG_LEVEL
+#define ANT_HRM_LOG_LEVEL 3
+#endif
+
+// <o> ANT_HRM_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_HRM_INFO_COLOR
+#define ANT_HRM_INFO_COLOR 7
+#endif
+
+#endif //ANT_HRM_LOG_ENABLED
+// </e>
+
+// <e> ANT_HRM_PAGE_0_LOG_ENABLED - Enables logging of HRM page 0 in the module.
+//==========================================================
+#ifndef ANT_HRM_PAGE_0_LOG_ENABLED
+#define ANT_HRM_PAGE_0_LOG_ENABLED 0
+#endif
+#if  ANT_HRM_PAGE_0_LOG_ENABLED
+// <o> ANT_HRM_PAGE_0_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_HRM_PAGE_0_LOG_LEVEL
+#define ANT_HRM_PAGE_0_LOG_LEVEL 3
+#endif
+
+// <o> ANT_HRM_PAGE_0_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_HRM_PAGE_0_INFO_COLOR
+#define ANT_HRM_PAGE_0_INFO_COLOR 0
+#endif
+
+#endif //ANT_HRM_PAGE_0_LOG_ENABLED
+// </e>
+
+// <e> ANT_HRM_PAGE_1_LOG_ENABLED - Enables logging of HRM page 1 in the module.
+//==========================================================
+#ifndef ANT_HRM_PAGE_1_LOG_ENABLED
+#define ANT_HRM_PAGE_1_LOG_ENABLED 1
+#endif
+#if  ANT_HRM_PAGE_1_LOG_ENABLED
+// <o> ANT_HRM_PAGE_1_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_HRM_PAGE_1_LOG_LEVEL
+#define ANT_HRM_PAGE_1_LOG_LEVEL 3
+#endif
+
+// <o> ANT_HRM_PAGE_1_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_HRM_PAGE_1_INFO_COLOR
+#define ANT_HRM_PAGE_1_INFO_COLOR 0
+#endif
+
+#endif //ANT_HRM_PAGE_1_LOG_ENABLED
+// </e>
+
+// <e> ANT_HRM_PAGE_2_LOG_ENABLED - Enables logging of HRM page 2 in the module.
+//==========================================================
+#ifndef ANT_HRM_PAGE_2_LOG_ENABLED
+#define ANT_HRM_PAGE_2_LOG_ENABLED 1
+#endif
+#if  ANT_HRM_PAGE_2_LOG_ENABLED
+// <o> ANT_HRM_PAGE_2_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_HRM_PAGE_2_LOG_LEVEL
+#define ANT_HRM_PAGE_2_LOG_LEVEL 3
+#endif
+
+// <o> ANT_HRM_PAGE_2_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_HRM_PAGE_2_INFO_COLOR
+#define ANT_HRM_PAGE_2_INFO_COLOR 0
+#endif
+
+#endif //ANT_HRM_PAGE_2_LOG_ENABLED
+// </e>
+
+// <e> ANT_HRM_PAGE_3_LOG_ENABLED - Enables logging of HRM page 3 in the module.
+//==========================================================
+#ifndef ANT_HRM_PAGE_3_LOG_ENABLED
+#define ANT_HRM_PAGE_3_LOG_ENABLED 1
+#endif
+#if  ANT_HRM_PAGE_3_LOG_ENABLED
+// <o> ANT_HRM_PAGE_3_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_HRM_PAGE_3_LOG_LEVEL
+#define ANT_HRM_PAGE_3_LOG_LEVEL 3
+#endif
+
+// <o> ANT_HRM_PAGE_3_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_HRM_PAGE_3_INFO_COLOR
+#define ANT_HRM_PAGE_3_INFO_COLOR 0
+#endif
+
+#endif //ANT_HRM_PAGE_3_LOG_ENABLED
+// </e>
+
+// <e> ANT_HRM_PAGE_4_LOG_ENABLED - Enables logging of HRM page 4 in the module.
+//==========================================================
+#ifndef ANT_HRM_PAGE_4_LOG_ENABLED
+#define ANT_HRM_PAGE_4_LOG_ENABLED 0
+#endif
+#if  ANT_HRM_PAGE_4_LOG_ENABLED
+// <o> ANT_HRM_PAGE_4_LOG_LEVEL  - Default Severity level
+
+// <0=> Off
+// <1=> Error
+// <2=> Warning
+// <3=> Info
+// <4=> Debug
+
+#ifndef ANT_HRM_PAGE_4_LOG_LEVEL
+#define ANT_HRM_PAGE_4_LOG_LEVEL 3
+#endif
+
+// <o> ANT_HRM_PAGE_4_INFO_COLOR  - ANSI escape code prefix.
+
+// <0=> Default
+// <1=> Black
+// <2=> Red
+// <3=> Green
+// <4=> Yellow
+// <5=> Blue
+// <6=> Magenta
+// <7=> Cyan
+// <8=> White
+
+#ifndef ANT_HRM_PAGE_4_INFO_COLOR
+#define ANT_HRM_PAGE_4_INFO_COLOR 0
+#endif
+
+#endif //ANT_HRM_PAGE_4_LOG_ENABLED
+// </e>
+
+#endif //ANT_HRM_ENABLED
+// </e>
+
 // <q> ANT_KEY_MANAGER_ENABLED  - ant_key_manager - Software Component
 
 
@@ -440,7 +1004,7 @@
 //==========================================================
 // <o> NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED - Allocated ANT channels.
 #ifndef NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED
-#define NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED 2
+#define NRF_SDH_ANT_TOTAL_CHANNELS_ALLOCATED 3
 #endif
 
 // <o> NRF_SDH_ANT_ENCRYPTED_CHANNELS - Encrypted ANT channels.
