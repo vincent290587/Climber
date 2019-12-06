@@ -46,7 +46,7 @@ void vnh5019_driver__setM1Brake(uint16_t brake)
 }
 
 // Return motor 1 current value in milliamps.
-uint32_t vnh5019_driver__getM1CurrentMilliamps(void)
+int32_t vnh5019_driver__getM1CurrentMilliamps(void)
 {
 	// 5V / 1024 ADC counts / 144 mV per A = 34 mA per count
 	return 0; // analogRead(VNH_CS1) * 34;
