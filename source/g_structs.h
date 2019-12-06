@@ -12,6 +12,37 @@
 #include <stdbool.h>
 
 
+typedef enum {
+	eFecControlTargetNone,
+	eFecControlTargetPower,
+	eFecControlSlope,
+} eFecControlType;
+
+typedef struct {
+	uint16_t target_power_w;
+} sControlTargetPower;
+
+typedef struct {
+	float slope_ppc;
+	float rolling_resistance;
+} sControlSlope;
+
+typedef union {
+	sControlTargetPower power_control;
+	sControlSlope       slope_control;
+} uControlPages;
+
+typedef struct {
+	eFecControlType type;
+	uControlPages   data;
+} sFecControl;
+
+typedef struct {
+	uint16_t power;
+	uint16_t speed;
+	uint8_t el_time;
+} sFecInfo;
+
 typedef union {
 	struct {
 		uint16_t version;

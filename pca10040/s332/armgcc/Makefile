@@ -13,32 +13,31 @@ $(OUTPUT_DIRECTORY)/nrf52832_xxaa.out: \
 # Source files common to all targets
 SRC_FILES += \
   $(PROJ_DIR)/rf/ant.c \
-  $(PROJ_DIR)/rf/bsc.c \
+  $(PROJ_DIR)/rf/ble_api6.c \
   $(SDK_ROOT)/modules/nrfx/mdk/gcc_startup_nrf52.S \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52.c \
   $(SDK_ROOT)/components/ant/ant_channel_config/ant_channel_config.c \
   $(SDK_ROOT)/components/ant/ant_key_manager/ant_key_manager.c \
   $(SDK_ROOT)/components/ant/ant_state_indicator/ant_state_indicator.c \
   $(SDK_ROOT)/components/ant/ant_search_config/ant_search_config.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/ant_bsc.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/simulator/ant_bsc_simulator.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_combined_page_0.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_0.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_1.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_2.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_3.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_4.c \
-  $(SDK_ROOT)/components/ant/ant_profiles/ant_bsc/pages/ant_bsc_page_5.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_80.c \
   $(SDK_ROOT)/components/ant/ant_profiles/ant_common/pages/ant_common_page_81.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh.c \
   $(SDK_ROOT)/components/softdevice/common/nrf_sdh_ant.c \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_common/pages/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/pages/*.c) \
+  $(wildcard $(PROJ_DIR)/libraries/ant_profiles/ant_fec/utils/*.c) \
 
 # Include folders common to all targets
 INC_FOLDERS += \
   ../config \
   $(SDK_ROOT)/components/softdevice/s332/headers \
   $(SDK_ROOT)/components/softdevice/s332/headers/nrf52 \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_common/pages \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec/pages \
+  $(PROJ_DIR)/libraries/ant_profiles/ant_fec/utils \
   
 include $(PROJ_DIR)/Makefile.files
 

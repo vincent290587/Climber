@@ -58,6 +58,10 @@ int vl53l1_wrapper__init(void) {
 
 int vl53l1_wrapper__measure(void) {
 
+	w_task_delay(80);
+
+	LOG_INFO("vl53l1_wrapper__measure %u", millis());
+
 	return 0;
 }
 
