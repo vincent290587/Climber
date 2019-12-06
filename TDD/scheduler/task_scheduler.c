@@ -15,7 +15,7 @@ typedef struct task_t {
 	jmp_buf context;		//!< Task context.
 	task_id_t task_id;
 	uint32_t events_mask;
-	uint32_t timeout;
+	volatile uint32_t timeout;
 	const char *name;
 	tasked_func_t exec_func;
 	void *p_context;
@@ -24,6 +24,7 @@ typedef struct task_t {
 
 /** Default stack size and stack max. */
 #define DEFAULT_STACK_SIZE       2048
+#define DEFAULT_STACK_SPACING    512
 
 #define STACKDIR         - // set to + for upwards and - for downwards
 
@@ -33,7 +34,7 @@ const uint8_t MAGIC = 0xa5;
 // Main task and run queue
 static task_t s_main;
 
-#define MAX_TASKS_NB       5
+#define MAX_TASKS_NB       10
 
 static task_t m_tasks[MAX_TASKS_NB];
 static uint32_t m_tasks_nb = 0;
@@ -46,6 +47,8 @@ static char *s_top; // top of stack
 
 bool task_begin(size_t stackSize)
 {
+	m_tasks_nb = 1;
+
 	// Set main task stack size
 	s_top = NULL;
 	s_main.prev = &s_main;
@@ -70,6 +73,7 @@ static int _task_init(tasked_func_t loop, const char *name, const uint8_t* stack
 	m_tasks[task_id].name = name;
 	m_tasks[task_id].p_context = _p_context;
 	m_tasks[task_id].exec_func = loop;
+	m_tasks[task_id].timeout = 0;
 
 	m_tasks[task_id].next = &s_main;
 	m_tasks[task_id].prev = s_main.prev;
@@ -100,52 +104,83 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
 	// Check called from main task and valid task loop function
 	if ((s_running != &s_main) || !taskLoop) return -2;
 
-	// Adjust stack size with size of task context
-	stackSize += 256;
-
 	// Allocate stack(s) and check if main stack top should be set
 	uint8_t frame=0;
-	if (s_top == NULL) s_top = (char*)&frame;
+	if (s_top == NULL) s_top = (char*)&frame + DEFAULT_STACK_SPACING;
 
 	// Adjust stack top for next task allocation
 	s_top += STACKDIR stackSize;
+
+	size_t abcd = STACKDIR(s_top - (char*)&frame);
+	LOG_INFO("Stack size: %lu", abcd);
 
 	uint8_t stack[STACKDIR (s_top - (char*)&frame)];
 	stack[0] = 1;
 
 	if (s_main.stack == NULL) {
 		s_main.stack = stack;
-//		memset(stack, MAGIC, (s_top - (char*)&frame));
 	}
 
 	// Fill stack with magic pattern to allow detect of stack usage
-//	memset(stack STACKDIR stackSize, MAGIC, stackSize - 256);
+//	memset(stack STACKDIR stackSize, MAGIC, stackSize);
 
 	// Initiate task with given functions and stack top
-	return _task_init(taskLoop, name, stack - stackSize, p_context);
+	return _task_init(taskLoop, name, 0, p_context);
 }
 
 void task_start(tasked_func_t idle_task, void *p_context)
 {
 	LOG_INFO("%u tasks recorded and starting", m_tasks_nb);
 
-	while (1) {
-		LOG_DEBUG("Main task...");
-		idle_task(p_context);
+	uint8_t frame=0;
+	if (s_top == NULL) s_top = (char*)&frame + DEFAULT_STACK_SPACING;
+
+//	// Adjust stack top for next task allocation
+	s_top += STACKDIR DEFAULT_STACK_SIZE;
+
+	size_t abcd = STACKDIR(s_top - (char*)&frame);
+	LOG_INFO("Stack size: %lu", abcd);
+
+	uint8_t idle_stack[STACKDIR (s_top - (char*)&frame)];
+
+	s_main.exec_func = idle_task;
+	s_main.stack = NULL;
+	s_main.name = "Idle task";
+
+	// Create context for new task, caller will return
+	if (setjmp(s_main.context)) {
+		idle_task(NULL);
 	}
+
+	s_running = &s_main;
+
+	for (int i = 0; i < m_tasks_nb; i++) {
+		LOG_INFO("Task %s %d", s_running->name, i);
+		s_running = s_running->next;
+	}
+	//return;
+
+	longjmp(s_running->context, true);
+
+	while (1) ;
+
 }
 
 void task_yield()
 {
 	// Caller will continue here on yield
-	if (setjmp(s_running->context)) return;
+	if (setjmp(s_running->context)) {
+		return;
+	}
 
 	LOG_DEBUG("Finishing task %u", s_running->task_id);
 
 	// Next task in run queue will continue
-	s_running = s_running->next;
+	do {
+		s_running = s_running->next;
+	} while (s_running->timeout > 1);
 
-	LOG_DEBUG("Starting task %u", s_running->task_id);
+	LOG_DEBUG("Starting task %s %u", s_running->name, millis());
 
 	longjmp(s_running->context, true);
 }
