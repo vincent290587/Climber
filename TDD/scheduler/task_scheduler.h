@@ -2,7 +2,6 @@
 #ifndef TDD_SCHEDULER_TASK_SCHEDULER_H_
 #define TDD_SCHEDULER_TASK_SCHEDULER_H_
 
-#include <setjmp.h>
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -42,6 +41,8 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
  * @param p_context Context
  */
 void task_start(tasked_func_t idle_task, void *p_context);
+
+task_id_t task_id_get(void);
 
 /**
  * Yields to the next task
