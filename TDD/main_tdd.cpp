@@ -181,12 +181,12 @@ int main(void)
 
 	delay_ms(1);
 
-	task_begin(20*4096);
+	task_begin(0);
 
-	task_create(peripherals_task,		"peripherals_task",		4*1024, NULL);
-	task_create(sensing_task,			"sensing_task",			4*1024, NULL);
-	task_create(actuating_task,			"actuating_task", 		4*1024, NULL);
-	task_create(simulator_task,			"simulator_task", 		4*1024, NULL);
+	task_create(peripherals_task,		"peripherals_task",		32*1024, NULL);
+	task_create(sensing_task,			"sensing_task",			32*1024, NULL);
+	task_create(actuating_task,			"actuating_task", 		32*1024, NULL);
+	task_create(simulator_task,			"simulator_task", 		32*1024, NULL);
 
 	task_start(idle_task, NULL);
 
