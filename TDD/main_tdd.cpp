@@ -147,9 +147,9 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
-//	if (!test_sine_fitting()) {
-//		exit(__LINE__);
-//	}
+	if (!test_sine_fitting()) {
+		exit(__LINE__);
+	}
 
 	if (!test_kalman_ext()) {
 		exit(__LINE__);
