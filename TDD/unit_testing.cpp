@@ -167,6 +167,8 @@ bool test_sine_fitting(void) {
 	sSineFitterOuput output;
 	sine_fitter_compute(dataz, omega, sampling, numOfData, &output);
 
+	delete[](dataz);
+
 	LOG_INFO("Res.: %f %f %f",
 			output.alpha,
 			output.beta,
