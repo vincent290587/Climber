@@ -23,6 +23,7 @@ typedef struct task_t {
 	jmp_buf context;		//!< Task context.
 	task_id_t task_id;
 	uint32_t events_mask;
+	size_t stacksize;
 	volatile uint32_t timeout;
 	const char *name;
 	tasked_func_t exec_func;
@@ -65,7 +66,7 @@ bool task_begin(size_t stackSize)
 
 	s_running = &s_main;
 
-	stack_used = 0;
+	stack_used = DEFAULT_STACK_SIZE + DEFAULT_STACK_SPACING;
 
 	memset(m_tasks, 0, sizeof(m_tasks));
 
@@ -77,13 +78,12 @@ static int _task_init(tasked_func_t loop, const char *name, size_t stackSize, ui
 	// Add task last in run queue (main task)
 	uint8_t task_id = m_tasks_nb++;
 
-	uint8_t frame = 0;
-
-	memset(stack_top - stackSize, MAGIC, stackSize);
+	uint8_t frame[1];
 
 	m_tasks[task_id].task_id = task_id;
 	m_tasks[task_id].events_mask = 0;
-	m_tasks[task_id].stack = stack_top;
+	m_tasks[task_id].stack = stack_top - stackSize;
+	m_tasks[task_id].stacksize = stackSize;
 	m_tasks[task_id].name = name;
 	m_tasks[task_id].p_context = _p_context;
 	m_tasks[task_id].exec_func = loop;
@@ -95,7 +95,9 @@ static int _task_init(tasked_func_t loop, const char *name, size_t stackSize, ui
 	s_main.prev->next = &m_tasks[task_id];
 	s_main.prev = &m_tasks[task_id];
 
-	LOG_INFO("Task %s[%u] start stack 0x%X -- 0x%X (%lu)", m_tasks[task_id].name, m_tasks[task_id].task_id, (size_t)&frame, stack_top, ((size_t)stack_top - (size_t)&frame));
+	memset((void*)m_tasks[task_id].stack, MAGIC, stackSize);
+
+	LOG_INFO("Task %s[%u] start stack 0x%X -- 0x%X (%lu)", m_tasks[task_id].name, m_tasks[task_id].task_id, (size_t)frame, stack_top, ((size_t)stack_top - (size_t)&frame));
 	LOG_INFO("Stack size: %lu", stackSize);
 
 	s_running = &m_tasks[task_id];
@@ -141,7 +143,7 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
 
 	// Create context for new task, caller will return
 	if (setjmp(s_main.context) == 0) {
-		_task_init(taskLoop, name, stackSize, &stack[stack_used-1], p_context);
+		_task_init(taskLoop, name, stackSize, &stack[stackSize-1], p_context);
 	}
 
 	return 0;
@@ -151,15 +153,21 @@ void task_start(tasked_func_t idle_task, void *p_context)
 {
 	LOG_INFO("%u tasks recorded and starting", m_tasks_nb);
 
-	stack_used += DEFAULT_STACK_SIZE + DEFAULT_STACK_SPACING;
-	uint8_t idle_stack[stack_used];
+	uint8_t idle_stack[DEFAULT_STACK_SIZE + DEFAULT_STACK_SPACING];
 
-	// Fill stack with magic pattern to allow detect of stack usage
-	memset(&idle_stack[stack_used-1] - DEFAULT_STACK_SIZE, MAGIC, DEFAULT_STACK_SIZE);
+	uint8_t frame = 0;
+	uint8_t *stack_top = &idle_stack[DEFAULT_STACK_SIZE-1];
 
 	s_main.exec_func = idle_task;
-	s_main.stack = &idle_stack[stack_used-1];
+	s_main.stack = idle_stack;
 	s_main.name = "Idle task";
+
+	LOG_INFO("Task %s[%u] start stack 0x%X -- 0x%X (%lu)", s_main.name, s_main.task_id, (size_t)&frame, stack_top, ((size_t)stack_top - (size_t)&frame));
+
+//	exit(0);
+
+	// Fill stack with magic pattern to allow detect of stack usage
+	memset((void*)s_main.stack, MAGIC, DEFAULT_STACK_SIZE);
 
 //	for (int i = 0; i <= m_tasks_nb; i++) {
 //		LOG_INFO("Task %s %d", s_running->name, i);
@@ -185,19 +193,32 @@ void task_yield()
 		return;
 	}
 
-	//LOG_INFO("Finishing task %s", s_running->name);
+	const uint8_t *p_stack_ = s_running->stack + 1;
+	assert(*p_stack_ == MAGIC);
+
+	if (s_running != &s_main) {
+		size_t ind = 0;
+		for (ind = 0; ind < s_running->stacksize - 1; ind++)  {
+			const uint8_t *p_stack = s_running->stack + ind;
+
+			if (*p_stack != MAGIC) {
+
+				break;
+			}
+		}
+
+		LOG_DEBUG("Finishing task %s -- %lu bytes free", s_running->name, ind);
+	}
+
 
 	// Next task in run queue will continue
 	do {
 		s_running = s_running->next;
 	} while (s_running->timeout > 1);
 
-	const uint8_t *p_stack = s_running->stack-2;
 //	if (s_running != &s_main) {
 //		LOG_INFO("Starting task %s 0x%02X", s_running->name, *p_stack);
 //	}
-
-	assert(*p_stack == MAGIC);
 
 	// jump to scheduler
 	longjmp(s_running->context, 1);
