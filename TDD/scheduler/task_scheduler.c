@@ -103,17 +103,18 @@ static int _task_init(tasked_func_t loop, const char *name, size_t stackSize, ui
 
 	do {
 		// Create context for new task, caller will return
-		int ret = setjmp(m_tasks[task_id].context);
-		if (ret == 0) {
+		if (setjmp(m_tasks[task_id].context) == 0) {
 
 			// init code
 			longjmp(s_main.context, 1);
 
-		} else {
-
-			// never returns
-			m_tasks[task_id].exec_func(_p_context);
 		}
+
+		// never returns
+		m_tasks[task_id].exec_func(_p_context);
+
+		assert(0);
+
 	} while (1);
 
 	return (int)m_tasks[task_id].task_id;
@@ -135,9 +136,9 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
 
 	// Create context for new task, caller will return
 	if (setjmp(s_main.context) == 0) {
-		_task_init(taskLoop, name, stackSize, &stack[stackSize-1], p_context);
+		_task_init(taskLoop, name, stackSize, &stack[stack_used-1], p_context);
 	}
-	// Initiate task with given functions and stack top
+
 	return 0;
 }
 
@@ -157,27 +158,15 @@ void task_start(tasked_func_t idle_task, void *p_context)
 	s_main.stack = &idle_stack[stack_used-1];
 	s_main.name = "Idle task";
 
-	s_running = &s_main;
-
 //	for (int i = 0; i <= m_tasks_nb; i++) {
 //		LOG_INFO("Task %s %d", s_running->name, i);
 //		s_running = s_running->next;
 //	}
 
-	// Create context for new task, caller will return
-	if (setjmp(s_main.context) == 1) {
-		//idle_task(NULL);
-	}
+	s_running = &s_main;
 
-	// Next task in run queue will continue
-	do {
-		s_running = s_running->next;
-	} while (s_running->timeout > 1);
-
-	const uint8_t *p_stack = s_running->stack-2;
-	LOG_INFO("Starting task %s 0x%02X", s_running->name, *p_stack);
-
-	longjmp(s_running->context, 1);
+	// does not return
+	idle_task(NULL);
 
 	assert(0);
 
@@ -187,16 +176,26 @@ void task_start(tasked_func_t idle_task, void *p_context)
 
 void task_yield()
 {
-	LOG_DEBUG("Finishing task %s", s_running->name);
-
 	// save stack
 	if (setjmp(s_running->context)) {
 		// task resumed, unblock by not jumping to scheduler
 		return;
 	}
 
+	//LOG_INFO("Finishing task %s", s_running->name);
+
+	// Next task in run queue will continue
+	do {
+		s_running = s_running->next;
+	} while (s_running->timeout > 1);
+
+	const uint8_t *p_stack = s_running->stack-2;
+	if (s_running != &s_main) {
+		LOG_INFO("Starting task %s 0x%02X", s_running->name, *p_stack);
+	}
+
 	// jump to scheduler
-	longjmp(s_main.context, 1);
+	longjmp(s_running->context, 1);
 }
 
 void task_wait_event(uint32_t event)
@@ -296,11 +295,8 @@ void task_delay_cancel(task_id_t task_id) {
  */
 void task_tick_manage(uint32_t tick_dur_) {
 
-	task_t* p_task = s_running;
-
-	if (!p_task) return;
-
 	for (int i=0; i < MAX_TASKS_NB; i++) {
+		task_t* p_task = &m_tasks[i];
 		if (p_task->timeout > 1) {
 			if (p_task->timeout <= tick_dur_) {
 				// unblock the task
@@ -310,7 +306,7 @@ void task_tick_manage(uint32_t tick_dur_) {
 				p_task->timeout -= tick_dur_;
 			}
 		}
-		p_task = p_task->next;
+
 	}
 
 }
