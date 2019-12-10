@@ -50,15 +50,14 @@ static uint32_t m_tasks_nb = 0;
 // Reference running task
 static task_t* s_running = NULL;
 
-static char *s_top = NULL; // top of stack
+static char *s_lframe = NULL; // top of stack
 static size_t stack_used = 0;
 
 bool task_begin(size_t stackSize)
 {
 	m_tasks_nb = 0;
 
-	// Set main task stack size
-	s_top = NULL;
+	s_lframe = NULL;
 
 	s_main.prev = &s_main;
 	s_main.next = &s_main;
@@ -131,8 +130,14 @@ static int _task_init(tasked_func_t loop, const char *name, size_t stackSize, ui
  */
 int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void *p_context)
 {
-	stack_used += stackSize + DEFAULT_STACK_SPACING;
+	char frame=0;
+	if (!s_lframe) s_lframe = &frame;
+
+	size_t addit = (s_lframe - &frame);
+	stack_used += stackSize + DEFAULT_STACK_SPACING + addit;
 	uint8_t stack[stack_used];
+
+	s_lframe = &frame;
 
 	// Create context for new task, caller will return
 	if (setjmp(s_main.context) == 0) {
@@ -145,8 +150,6 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
 void task_start(tasked_func_t idle_task, void *p_context)
 {
 	LOG_INFO("%u tasks recorded and starting", m_tasks_nb);
-
-	uint8_t frame=0;
 
 	stack_used += DEFAULT_STACK_SIZE + DEFAULT_STACK_SPACING;
 	uint8_t idle_stack[stack_used];
@@ -190,9 +193,11 @@ void task_yield()
 	} while (s_running->timeout > 1);
 
 	const uint8_t *p_stack = s_running->stack-2;
-	if (s_running != &s_main) {
-		LOG_INFO("Starting task %s 0x%02X", s_running->name, *p_stack);
-	}
+//	if (s_running != &s_main) {
+//		LOG_INFO("Starting task %s 0x%02X", s_running->name, *p_stack);
+//	}
+
+	assert(*p_stack == MAGIC);
 
 	// jump to scheduler
 	longjmp(s_running->context, 1);

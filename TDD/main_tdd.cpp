@@ -147,9 +147,9 @@ int main(void)
 
 	LOG_INFO("Unit testing...");
 
-	if (!test_sine_fitting()) {
-		exit(__LINE__);
-	}
+//	if (!test_sine_fitting()) {
+//		exit(__LINE__);
+//	}
 
 	if (!test_kalman_ext()) {
 		exit(__LINE__);
@@ -181,12 +181,12 @@ int main(void)
 
 	delay_ms(1);
 
-	task_begin(65536 * 5);
+	task_begin(20*4096);
 
-	task_create(peripherals_task,		"peripherals_task",		14096, NULL);
-	task_create(sensing_task,			"sensing_task",			14096, NULL);
-	task_create(actuating_task,			"actuating_task", 		14096, NULL);
-	task_create(simulator_task,			"simulator_task", 		14096, NULL);
+	task_create(peripherals_task,		"peripherals_task",		4*2048, NULL);
+	task_create(sensing_task,			"sensing_task",			4*2048, NULL);
+	task_create(actuating_task,			"actuating_task", 		4*2048, NULL);
+	task_create(simulator_task,			"simulator_task", 		4*2048, NULL);
 
 	task_start(idle_task, NULL);
 
