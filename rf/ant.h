@@ -8,8 +8,9 @@
 #define WILDCARD_TRANSMISSION_TYPE      0x00
 #define ANTPLUS_NETWORK_NUMBER          0x00      /**< Network number. */
 
-#define FEC_CHANNEL_NUMBER              0x00
+#define CT_CHANNEL_NUMBER               0x00
 #define BS_CHANNEL_NUMBER               0x01
+#define FEC_CHANNEL_NUMBER              0x02
 
 #define TACX_DEVICE_NUMBER              2846U
 

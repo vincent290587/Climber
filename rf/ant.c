@@ -55,6 +55,14 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 
         }
 
+        const ant_fec_message_layout_t * p_fec_message_payload = (ant_fec_message_layout_t *)p_ant_evt->message.ANT_MESSAGE_aucPayload;
+
+        if (p_fec_message_payload->page_number == 51) {
+//        	LOG_INFO("!!!!!!!!!!!!!!!! %u", p_fec_message_payload->page_number);
+            LOG_INFO("FEC rx page: 0x%02X %u", p_ant_evt->message.ANT_MESSAGE_ucMesgID, p_fec_message_payload->page_number);
+        }
+
+
 	} break;
 	case EVENT_RX_FAIL:
 		break;
@@ -63,8 +71,15 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 	case EVENT_RX_SEARCH_TIMEOUT:
 		break;
 	case EVENT_CHANNEL_CLOSED:
+	case EVENT_CHANNEL_COLLISION:
+		break;
+
+	default:
+
+		LOG_WARNING("BS evt %d", p_ant_evt->event);
 		break;
 	}
+
 
 	APP_ERROR_CHECK(err_code);
 }
@@ -83,12 +98,16 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 
 	switch(p_ant_evt->channel) {
 
-	case FEC_CHANNEL_NUMBER:
-		ant_evt_fec (p_ant_evt);
+	case CT_CHANNEL_NUMBER:
+		ant_evt_bs (p_ant_evt);
 		break;
 
 	case BS_CHANNEL_NUMBER:
 		ant_evt_bs (p_ant_evt);
+		break;
+
+	case FEC_CHANNEL_NUMBER:
+		ant_evt_fec(p_ant_evt);
 		break;
 
 	default:
@@ -104,7 +123,7 @@ NRF_SDH_ANT_OBSERVER(m_ant_observer, APP_ANT_OBSERVER_PRIO, ant_evt_handler, 0);
  */
 void ant_timers_init(void)
 {
-	fec_init();
+
 }
 
 /**@brief Function for initializing the BLE stack.
@@ -115,62 +134,12 @@ void ant_stack_init(void)
 {
 	ret_code_t err_code;
 
-	err_code = nrf_sdh_ant_enable();
-	APP_ERROR_CHECK(err_code);
+    err_code = nrf_sdh_ant_enable();
+    APP_ERROR_CHECK(err_code);
 
 	err_code = ant_plus_key_set(ANTPLUS_NETWORK_NUMBER);
 	APP_ERROR_CHECK(err_code);
 
-}
-
-/**@brief Function for HRM profile initialization.
- *
- * @details Initializes the HRM profile and open ANT channel.
- */
-static void ant_profile_setup(void)
-{
-
-	// FEC
-	fec_profile_setup();
-
-    // BS
-	const ant_search_config_t bs_search_config =
-	{
-			.channel_number        = BS_CHANNEL_NUMBER,
-			.low_priority_timeout  = ANT_LOW_PRIORITY_TIMEOUT_DISABLE,
-			.high_priority_timeout = 80,
-			.search_sharing_cycles = ANT_SEARCH_SHARING_CYCLES_DISABLE,
-			.search_priority       = ANT_SEARCH_PRIORITY_DEFAULT,
-			.waveform              = ANT_WAVEFORM_DEFAULT,
-	};
-
-    // Background search
-    const ant_channel_config_t bs_channel_config =
-    {
-        .channel_number    = BS_CHANNEL_NUMBER,
-        .channel_type      = CHANNEL_TYPE_SLAVE,
-        .ext_assign        = EXT_PARAM_ALWAYS_SEARCH,
-        .rf_freq           = 0x39u,              	// ANT+ frequency
-        .transmission_type = WILDCARD_TRANSMISSION_TYPE,
-        .device_type       = 0x00,   // Wild card
-        .device_number     = 0x00,              // Wild card
-        .channel_period    = 0x00,              // This is not taken into account.
-        .network_number    = ANTPLUS_NETWORK_NUMBER,
-    };
-
-	ret_code_t err_code;
-    err_code = ant_channel_init(&bs_channel_config);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = ant_search_init(&bs_search_config);
-    APP_ERROR_CHECK(err_code);
-
-    //    uint8_t pucANTLibConfig;
-    //    err_code = sd_ant_lib_config_get (&pucANTLibConfig);
-    //    APP_ERROR_CHECK(err_code);
-    //
-    //    err_code = sd_ant_lib_config_set (pucANTLibConfig | ANT_LIB_CONFIG_MESG_OUT_INC_RSSI);
-    //    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -185,97 +154,81 @@ static void continuous_scan_init()
         ANT_LIB_CONFIG_MESG_OUT_INC_RSSI | ANT_LIB_CONFIG_MESG_OUT_INC_DEVICE_ID);
     APP_ERROR_CHECK(err_code);
 
-    // Configure channel 0 for scanning mode, but do not open it.
-    // The scanning channel will be opened in scan mode for a short amount of time on a button press.
+    // Configure channel 0 for scanning mode
     ant_channel_config_t channel_config =
     {
-        .channel_number    = 0x00,
+        .channel_number    = CT_CHANNEL_NUMBER,
         .channel_type      = CHANNEL_TYPE_SLAVE,
         .ext_assign        = 0x00,
-        .rf_freq           = 0x39,
-        .transmission_type = WILDCARD_TRANSMISSION_TYPE,
+        .rf_freq           = FEC_ANTPLUS_RF_FREQ,
+        .transmission_type = 0x05u,
         .device_type       = FEC_DEVICE_TYPE,
-        .device_number     = 0x00,          // Wildcard
-        .channel_period    = 0x00,          // Not used, since this is going to be scanning
+        .device_number     = TACX_DEVICE_NUMBER,
+        .channel_period    = FEC_MSG_PERIOD,          // Not used, since this is going to be scanning
         .network_number    = ANTPLUS_NETWORK_NUMBER,
     };
 
     err_code = ant_channel_init(&channel_config);
     APP_ERROR_CHECK(err_code);
 
-    // Assign a second channel for sending messages on the reverse direction
-    // There is no need to configure any other parameters, this channel is never opened;
-    // its resources are used by ANT to send messages in the reverse direction while in
-    // continuous scanning mode.
-    err_code = sd_ant_channel_assign(0x01,
-                                     CHANNEL_TYPE_SLAVE,
-									 ANTPLUS_NETWORK_NUMBER,
-                                     0x00);
+    // Activate message reception from the slave as well
+    // This function starts receive scanning mode feature. Channel 0 must be assigned.  All other channels must be closed.
+    err_code = sd_ant_rx_scan_mode_start(0);
     APP_ERROR_CHECK(err_code);
 
-    err_code = sd_ant_channel_open(0x00);
-    APP_ERROR_CHECK(err_code);
 }
 
 
-void ant_search_start(eAntPairingSensorType search_type) {
-
-	ret_code_t err_code;
-
-    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
-    APP_ERROR_CHECK(err_code);
-
-	switch (search_type) {
-	case eAntPairingSensorTypeNone:
-		break;
-	case eAntPairingSensorTypeHRM:
-		break;
-	case eAntPairingSensorTypeBSC:
-		break;
-	case eAntPairingSensorTypeFEC:
-		break;
-	default:
-		break;
-	}
-
-}
-
-void ant_search_end(eAntPairingSensorType search_type, uint16_t dev_id) {
-
-	ret_code_t err_code;
-
-    err_code = sd_ant_channel_close(BS_CHANNEL_NUMBER);
-    APP_ERROR_CHECK(err_code);
-
-//    err_code = sd_ant_channel_unassign(BS_CHANNEL_NUMBER);
+//static void bs_scan_init(void) {
+//
+//    uint32_t err_code;
+//    // Set library config to report RSSI and Device ID
+//    err_code = sd_ant_lib_config_set(
+//        ANT_LIB_CONFIG_MESG_OUT_INC_RSSI | ANT_LIB_CONFIG_MESG_OUT_INC_DEVICE_ID);
 //    APP_ERROR_CHECK(err_code);
-
-	if (!dev_id) return;
-
-	switch (search_type) {
-	case eAntPairingSensorTypeNone:
-	    break;
-
-	case eAntPairingSensorTypeFEC:
-	{
-		// Set the new device ID.
-		ret_code_t err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
-				dev_id,
-				FEC_DEVICE_TYPE,
-				WILDCARD_TRANSMISSION_TYPE);
-		APP_ERROR_CHECK(err_code);
-	} break;
-	default:
-		break;
-	}
-}
+//
+//	// BS
+//	const ant_search_config_t bs_search_config =
+//	{
+//			.channel_number        = BS_CHANNEL_NUMBER,
+//			.low_priority_timeout  = ANT_LOW_PRIORITY_TIMEOUT_DISABLE,
+//			.high_priority_timeout = ANT_HIGH_PRIORITY_TIMEOUT_DISABLE,
+//			.search_sharing_cycles = ANT_SEARCH_SHARING_CYCLES_DISABLE,
+//			.search_priority       = ANT_SEARCH_PRIORITY_DEFAULT,
+//			.waveform              = ANT_WAVEFORM_DEFAULT,
+//	};
+//
+//	// Background search
+//	const ant_channel_config_t bs_channel_config =
+//	{
+//			.channel_number    = BS_CHANNEL_NUMBER,
+//			.channel_type      = CHANNEL_TYPE_SLAVE,
+//			.ext_assign        = 0,
+//			.rf_freq           = FEC_ANTPLUS_RF_FREQ,              	// ANT+ frequency
+//			.transmission_type = 0x05,
+//			.device_type       = 17u,
+//			.device_number     = TACX_DEVICE_NUMBER,
+//			.channel_period    = 8192u,
+//			.network_number    = ANTPLUS_NETWORK_NUMBER,
+//	};
+//
+//	err_code = ant_channel_init(&bs_channel_config);
+//	APP_ERROR_CHECK(err_code);
+//
+//    err_code = sd_ant_rx_scan_mode_start(0);
+//
+//	err_code = ant_search_init(&bs_search_config);
+//	APP_ERROR_CHECK(err_code);
+//
+//    err_code = sd_ant_channel_open(BS_CHANNEL_NUMBER);
+//    APP_ERROR_CHECK(err_code);
+//}
 
 /**
  *
  */
 void ant_setup_init(void) {
 
-	ant_profile_setup();
 
 }
 
@@ -284,21 +237,9 @@ void ant_setup_init(void) {
  */
 void ant_setup_start(void)
 {
-	ret_code_t err_code;
+//	bs_scan_init();
 
-	uint16_t fec_id = TACX_DEVICE_NUMBER;
-
-	// Set the new device ID.
-	err_code = sd_ant_channel_id_set(FEC_CHANNEL_NUMBER,
-			fec_id,
-			FEC_DEVICE_TYPE,
-			WILDCARD_TRANSMISSION_TYPE);
-	APP_ERROR_CHECK(err_code);
-
-	// Open the ANT channels
-	fec_profile_start();
-
-//	glasses_profile_start();
+	continuous_scan_init();
 
 	LOG_INFO("ANT started");
 }
@@ -312,21 +253,6 @@ void ant_setup_stop(void) {
  */
 void ant_tasks(void) {
 
-	// check all channels are open
-//	for (eAntSensorsChannelNumber channel = eAntSensorsChannelHRM; channel < eAntSensorsChannelBS; channel++) {
-//
-//		uint8_t status = 0;
-//		sd_ant_channel_status_get((uint8_t)channel, &status);
-//
-//		if (STATUS_SEARCHING_CHANNEL != status &&
-//				STATUS_TRACKING_CHANNEL != status) {
-//
-//			// channel is not searching and not tracking...
-//			// TODO smth
-//			LOG_WARNING("Channel %u status is weird...", (uint8_t)channel);
-//		}
-//
-//	}
 
 }
 

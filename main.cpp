@@ -154,7 +154,7 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 	{
 		error_info_t * p_info = (error_info_t *)info;
 		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
-				"ERROR %u [%s] at %s:%u",
+				"ERROR 0x%X [%s] at %s:%u",
 				(unsigned int)p_info->err_code,
 				nrf_strerror_get(p_info->err_code),
 				p_info->p_file_name,

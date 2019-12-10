@@ -46,6 +46,7 @@ ant_fec_message_layout_t m_fec_message_payload;
 static sFecInfo m_fec_info;
 
 static void roller_manager(void * p_context);
+sFecControl fec_control;
 
 /**
  *
@@ -61,12 +62,12 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 
 		break;
 	case EVENT_TRANSFER_TX_FAILED:
-		NRF_LOG_WARNING("ANT FEC TX failed");
+		LOG_DEBUG("ANT FEC TX failed");
 		break;
 
 	case EVENT_RX:
 	{
-		NRF_LOG_WARNING("ANT FEC RX");
+		LOG_INFO("ANT FEC RX");
 		uint16_t pusDeviceNumber = 0;
 		uint8_t pucDeviceType    = 0;
 		uint8_t pucTransmitType  = 0;
@@ -90,17 +91,17 @@ void ant_evt_fec (ant_evt_t * p_ant_evt)
 		is_fec_init = 0;
 		err_code = app_timer_stop(m_fec_update);
 		APP_ERROR_CHECK(err_code);
-		NRF_LOG_WARNING("ANT FEC EVENT_RX_FAIL_GO_TO_SEARCH");
+		LOG_DEBUG("ANT FEC EVENT_RX_FAIL_GO_TO_SEARCH");
 		break;
 	case EVENT_RX_SEARCH_TIMEOUT:
-		NRF_LOG_WARNING("ANT FEC EVENT_RX_SEARCH_TIMEOUT");
+		LOG_DEBUG("ANT FEC EVENT_RX_SEARCH_TIMEOUT");
 		break;
 	case EVENT_CHANNEL_CLOSED:
-		NRF_LOG_WARNING("ANT FEC EVENT_CHANNEL_CLOSED");
+		LOG_DEBUG("ANT FEC EVENT_CHANNEL_CLOSED");
 		break;
 
 	default:
-		NRF_LOG_WARNING("ANT FEC event %02X", p_ant_evt->event);
+		LOG_DEBUG("ANT FEC event %02X", p_ant_evt->event);
 		break;
 	}
 }
@@ -230,7 +231,7 @@ void roller_manager_tasks(void) {
 
 			is_fec_tx_pending = false;
 		} else {
-			NRF_LOG_WARNING("Transmission busy");
+			LOG_WARNING("Transmission busy");
 		}
 
 	}
