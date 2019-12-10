@@ -10,9 +10,9 @@ add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 
 if(CMAKE_HOST_UNIX)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -rdynamic")
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -rdynamic -fsanitize=address ")
 else()
-#add_compile_options(-msse2 -mno-ms-bitfields -std=gnu++0x -fmessage-length=0 -fstrict-overflow -Werror -Wsign-compare -Wcast-align -Wenum-compare -Wno-error=format -Wmissing-field-initializers)
+set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -msse2 -mno-ms-bitfields")
 add_definitions(-DWIN32)
 add_definitions(-D_WIN32_WINNT=0x0600)
 add_definitions(-DWINVER=0x600)
@@ -20,8 +20,8 @@ include_directories(./TDDW)
 endif()
 
 
-set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -fno-builtin --short-enums -nostdlib -MMD -nostdlib -ffunction-sections -fdata-sections -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti -fpermissive")
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive")
 
 
 # add the binary tree to the search path for include files
@@ -83,6 +83,8 @@ add_executable(Climber ${SRCS} ${HEADERS})
 
 
 if(CMAKE_HOST_UNIX)
+
+target_link_libraries(Climber asan)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND size --format=berkeley "${PROJECT_NAME}"

@@ -21,7 +21,7 @@ extern "C" {
  * @return ID of active task.
  */
 static inline task_id_t w_task_id_get(void) {
-	return 0;
+	return task_id_get();
 }
 
 /**@brief Yield CPU to other tasks.
