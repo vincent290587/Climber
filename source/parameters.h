@@ -15,7 +15,12 @@
 ///// CODE FLAGS
 
 
-//#define FDS_PRESENT
+
+#define FDS_PRESENT
+
+#define KALMAN_FREERUN_NB         20
+
+#define BIKE_REACH_MM             1000
 
 
 

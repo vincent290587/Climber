@@ -188,7 +188,9 @@ bool test_fram(void) {
 	if (!u_settings.isConfigValid())
 		return false;
 
-	if (!u_settings.resetConfig())
+	u_settings.resetConfig();
+
+	if (!u_settings.writeConfig())
 		return false;
 
 	if (!u_settings.isConfigValid())

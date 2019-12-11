@@ -197,8 +197,7 @@ void simulator_task(void * p_context) {
 		data_dispatcher__feed_target_slope(tgt_slope);
 
 		// calculate distance from desired slope
-		static const float bike_reach_mm = 1000;
-		int32_t front_el = (int32_t)(tgt_slope * bike_reach_mm / 100.0f);
+		int32_t front_el = (int32_t)(tgt_slope * BIKE_REACH_MM / 100.0f);
 		int target_dist = front_el + BIKE_HUB_DIST_MM;
 
 		// simulate actuator
@@ -212,7 +211,7 @@ void simulator_task(void * p_context) {
 		extern float	m_last_innov;
 		extern float	m_last_est_dist;
 
-		float sim_slope = ((float)vnh_dist_mm - BIKE_HUB_DIST_MM) * 100.0f / bike_reach_mm;
+		float sim_slope = ((float)vnh_dist_mm - BIKE_HUB_DIST_MM) * 100.0f / BIKE_REACH_MM;
 
 		tdd_logger_log_int(TDD_LOGGING_TIME, millis());
 

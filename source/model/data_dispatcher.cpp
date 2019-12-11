@@ -159,8 +159,7 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 void data_dispatcher__feed_target_slope(float slope) {
 
-	static const float bike_reach_mm = 1000;
-	int32_t front_el = (int32_t)(slope * bike_reach_mm / 100.0f);
+	int32_t front_el = (int32_t)(slope * BIKE_REACH_MM / 100.0f);
 
 	// calculate distance from desired slope
 	m_d_target = front_el + m_distance_cal;
@@ -215,7 +214,7 @@ void data_dispatcher__run(void) {
 
 	LOG_INFO("Target speed: %d mm/s", speed_mm_s);
 
-	if (m_nb_runs > 10) {
+	if (m_nb_runs > KALMAN_FREERUN_NB) {
 		vnh5019_driver__setM1Speed(speed_mm_s);
 	}
 
