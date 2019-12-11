@@ -12,6 +12,10 @@
 
 static bool m_is_searching = false;
 
+void ble_uninit(void) {
+
+}
+
 void ant_timers_init(void) {
 
 }

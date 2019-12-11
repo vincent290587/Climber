@@ -164,7 +164,17 @@ void data_dispatcher__feed_target_slope(float slope) {
 	// calculate distance from desired slope
 	m_d_target = front_el + m_distance_cal;
 
-	LOG_WARNING("Target el. dispatched: %d (mm) from %f \%", m_d_target, slope);
+	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", m_d_target, (int)(slope*10.0f));
+
+
+#if defined (BLE_STACK_SUPPORT_REQD)
+	// BLE disabling for maxing ANT+ antenna time
+	static int is_scanning = 1;
+	if (is_scanning) {
+		is_scanning = 0;
+		ble_uninit();
+	}
+#endif
 }
 
 void data_dispatcher__feed_distance(float distance) {

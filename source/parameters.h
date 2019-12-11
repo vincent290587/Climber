@@ -22,6 +22,6 @@
 
 #define BIKE_REACH_MM             1000
 
-
+#define SCAN_STOP_TIME_MS         (5 * 60 * 1000)
 
 #endif /* SOURCE_PARAMETERS_H_ */

@@ -32,6 +32,7 @@
 #include "ble_advdata.h"
 #include "ant.h"
 #include "Model.h"
+#include "millis.h"
 #include "ble_api_base.h"
 #include "data_dispatcher.h"
 #include "segger_wrapper.h"
@@ -171,7 +172,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
 
-		scan_start();
+		if (millis() < SCAN_STOP_TIME_MS) {
+			scan_start();
+		}
 
 	} break;
 
@@ -413,7 +416,9 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 	case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
 	{
 		NRF_LOG_INFO("Scan timed out.");
-		scan_start();
+		if (millis() < SCAN_STOP_TIME_MS) {
+			scan_start();
+		}
 	} break;
 
 	default:
@@ -528,17 +533,7 @@ static void gatt_init(void)
 
 void ble_start_evt(eBleEventType evt) {
 
-	switch (evt) {
-	case eBleEventTypeStartXfer:
-	{
-#ifdef BLE_STACK_SUPPORT_REQD
-		m_nus_xfer_state = eNusTransferStateInit;
-#endif
-	} break;
-	default:
-		LOG_WARNING("Weird event");
-		break;
-	}
+
 
 }
 
@@ -564,7 +559,18 @@ void ble_init(void)
 
 void ble_uninit(void) {
 
-	scan_stop();
+	if (!m_connected) {
+
+		LOG_WARNING("BLE Scan stop");
+		scan_stop();
+	} else {
+
+		LOG_WARNING("BLE Disconnection");
+
+		uint32_t err_code = sd_ble_gap_disconnect(m_pending_db_disc_conn,
+				BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+		APP_ERROR_CHECK(err_code);
+	}
 
 }
 
