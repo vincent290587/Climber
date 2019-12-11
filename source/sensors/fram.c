@@ -121,6 +121,8 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 		if (p_evt->result != FDS_SUCCESS)
 		{
 			LOG_ERROR("Record write error");
+		} else {
+			LOG_INFO("!! Record writen !! ");
 		}
 		m_fds_wr_pending = false;
 	} break;
@@ -130,7 +132,10 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 		if (p_evt->result != FDS_SUCCESS)
 		{
 			LOG_ERROR("Record update error");
+		} else {
+			LOG_INFO("!! Record updated !! ");
 		}
+		m_fds_wr_pending = false;
 	} break;
 
 	default:
@@ -153,6 +158,8 @@ void fram_init_sensor() {
 	LOG_INFO("FRAM init pending...");
 	LOG_FLUSH();
 
+	m_fds_initialized = false;
+
 	rc = fds_init();
 	APP_ERROR_CHECK(rc);
 
@@ -167,6 +174,8 @@ void fram_init_sensor() {
 
 	LOG_WARNING("FRAM init done");
 
+	fds_gc();
+
 }
 
 bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
@@ -175,6 +184,8 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 	fds_find_token_t  tok  = {0};
 
 	ASSERT(m_fds_initialized);
+
+	m_fram_task_id = w_task_id_get();
 
 	LOG_DEBUG("Reading config file...");
 
@@ -210,11 +221,13 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	fds_record_desc_t desc = {0};
+    fds_find_token_t  tok  = {0};
 
 	ASSERT(m_fds_initialized);
 
-	/* System config not found; write a new one. */
-	LOG_WARNING("FDS write");
+	m_fram_task_id = w_task_id_get();
+
+	LOG_WARNING("FDS write start");
 
 	fds_record_t _record =
 	{
@@ -225,18 +238,28 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 			.data.length_words = (length + 3) / sizeof(uint32_t),
 	};
 
-	ret_code_t rc = fds_record_write(&desc, &_record);
-	APP_ERROR_CHECK(rc);
-
 	m_fds_wr_pending = true;
 
-	w_task_delay(100);
+	ret_code_t rc = fds_record_find(CONFIG_FILE, CONFIG_REC_KEY, &desc, &tok);
+	if (rc == FDS_SUCCESS) {
 
-	if (m_fds_wr_pending) {
+        /* Write the updated record to flash. */
+        rc = fds_record_update(&desc, &_record);
+        APP_ERROR_CHECK(rc);
+	} else {
 
-		// timeout
-		return false;
+		/* System config not found; write a new one. */
+		rc = fds_record_write(&desc, &_record);
+		APP_ERROR_CHECK(rc);
 	}
+
+	while (m_fds_wr_pending) {
+
+		w_task_delay(20);
+
+	}
+
+	fds_gc();
 
 	return true;
 }
