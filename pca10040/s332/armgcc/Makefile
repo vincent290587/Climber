@@ -81,6 +81,14 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums -nostdlib -fno-exceptions
 
+ifeq ($(MMD), 1)
+CFLAGS += -DMMD -DCONFIG_JLINK_MONITOR_ENABLED
+SRC_FILES += $(PROJ_DIR)/MMD/JLINK_MONITOR.c
+SRC_FILES += $(PROJ_DIR)/MMD/JLINK_MONITOR_ISR_SES.s
+INC_FOLDERS += $(PROJ_DIR)/MMD
+$(info Building for monitor debug mode.)
+endif
+
 # C++ flags common to all targets
 CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
 

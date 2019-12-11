@@ -378,6 +378,10 @@ int main(void)
 {
 	ret_code_t err_code;
 
+#if CONFIG_JLINK_MONITOR_ENABLED
+	NVIC_SetPriority(DebugMonitor_IRQn, _PRIO_SD_LOW);
+#endif
+
 	// Initialize.
 	//Configure WDT.
 	nrfx_wdt_config_t wdt_config = NRFX_WDT_DEAFULT_CONFIG;

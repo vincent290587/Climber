@@ -165,7 +165,7 @@ void data_dispatcher__feed_target_slope(float slope) {
 	// calculate distance from desired slope
 	m_d_target = front_el + m_distance_cal;
 
-	LOG_DEBUG("Target el. dispatched: %d (mm) from %f \%", m_d_target, slope);
+	LOG_WARNING("Target el. dispatched: %d (mm) from %f \%", m_d_target, slope);
 }
 
 void data_dispatcher__feed_distance(float distance) {
