@@ -162,7 +162,7 @@
 // <4=> Debug
 
 #ifndef ANT_FEC_LOG_LEVEL
-#define ANT_FEC_LOG_LEVEL 3
+#define ANT_FEC_LOG_LEVEL 0
 #endif
 
 // <o> ANT_FEC_INFO_COLOR  - ANSI escape code prefix.
@@ -242,7 +242,7 @@
 #endif
 
 #ifndef ANT_FEC_PAGE_51_LOG_ENABLED
-#define ANT_FEC_PAGE_51_LOG_ENABLED 1
+#define ANT_FEC_PAGE_51_LOG_ENABLED 0
 #endif
 
 #ifndef ANT_FEC_PAGE_55_LOG_ENABLED
@@ -293,7 +293,7 @@
 // <e> ANT_FEC_PAGE_16_LOG_ENABLED - Enables logging of FEC page 16 in the module.
 //==========================================================
 #ifndef ANT_FEC_PAGE_16_LOG_ENABLED
-#define ANT_FEC_PAGE_16_LOG_ENABLED 1
+#define ANT_FEC_PAGE_16_LOG_ENABLED 0
 #endif
 #if  ANT_FEC_PAGE_16_LOG_ENABLED
 // <o> ANT_FEC_PAGE_16_LOG_LEVEL  - Default Severity level

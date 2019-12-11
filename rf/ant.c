@@ -53,16 +53,14 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 	case EVENT_RX:
 	{
 		uint16_t m_last_device_id;
-		uint8_t m_last_rssi = 0;
 
-        m_last_rssi = p_ant_evt->message.ANT_MESSAGE_aucExtData[5];
         m_last_device_id = uint16_decode(p_ant_evt->message.ANT_MESSAGE_aucExtData);
 
         if (m_last_device_id)
         {
         	m_last_device_id = uint16_decode(p_ant_evt->message.ANT_MESSAGE_aucExtData);
 
-    		LOG_DEBUG("Dev. ID 0x%04X %d", m_last_device_id, (int8_t)m_last_rssi);
+    		LOG_DEBUG("Dev. ID 0x%04X %d", m_last_device_id, (int8_t) p_ant_evt->message.ANT_MESSAGE_aucExtData[5]);
 
         }
 
