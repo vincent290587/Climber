@@ -29,8 +29,17 @@
 /**< Application's ANT observer priority. You shouldn't need to modify this value. */
 #define APP_ANT_OBSERVER_PRIO       1
 
-static ant_fec_profile_t m_fec_profile;
+static ant_fec_disp_cb_t m_fec_cb;
 
+static void _fec_evt_handler_ (ant_fec_profile_t *, ant_fec_evt_t);
+
+static ant_fec_profile_t m_fec_profile = {
+		.channel_number = CT_CHANNEL_NUMBER,
+		.p_disp_cb   = &m_fec_cb,
+		.evt_handler = &_fec_evt_handler_,
+};
+
+static void _fec_evt_handler_ (ant_fec_profile_t *p_profile, ant_fec_evt_t evt) { }
 
 /**
  * Event handler for background search
@@ -57,16 +66,24 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 
         }
 
-        ant_fec_disp_evt_handler(p_ant_evt, &m_fec_profile);
-
         const ant_fec_message_layout_t * p_fec_message_payload = (ant_fec_message_layout_t *)p_ant_evt->message.ANT_MESSAGE_aucPayload;
         if (p_fec_message_payload->page_number == 51) {
+
+            ant_fec_disp_evt_handler(p_ant_evt, &m_fec_profile);
 
             LOG_DEBUG("FEC rx page: 0x%02X %u", p_ant_evt->message.ANT_MESSAGE_ucMesgID, p_fec_message_payload->page_number);
 
         	uint16_t grade_slope = m_fec_profile.page_51.grade_slope;
         	float f_grade = (float)((int32_t)grade_slope * ANT_FEC_PAGE51_SLOPE_LSB - 200);
+
         	data_dispatcher__feed_target_slope(f_grade);
+
+        } else if (p_fec_message_payload->page_number == 16) {
+
+            ant_fec_disp_evt_handler(p_ant_evt, &m_fec_profile);
+        } else if (p_fec_message_payload->page_number == 25) {
+
+            ant_fec_disp_evt_handler(p_ant_evt, &m_fec_profile);
         }
 
 
