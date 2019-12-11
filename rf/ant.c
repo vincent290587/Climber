@@ -29,8 +29,6 @@
 /**< Application's ANT observer priority. You shouldn't need to modify this value. */
 #define APP_ANT_OBSERVER_PRIO       1
 
-#define ANT_FEC_PAGE51_SLOPE_LSB    (1/100)
-
 static ant_fec_profile_t m_fec_profile;
 
 

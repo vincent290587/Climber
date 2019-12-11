@@ -8,6 +8,7 @@
 #include <string.h>
 #include "utils.h"
 #include "fram.h"
+#include "boards.h"
 #include "Model.h"
 #include "parameters.h"
 #include "UserSettings.h"
@@ -44,8 +45,6 @@ bool UserSettings::isConfigValid(void) {
 
 	if (FRAM_SETTINGS_VERSION != m_params.version) {
 		LOG_ERROR("User parameters: wrong version, found %u", m_params.version);
-
-		this->resetConfig();
 	} else {
 		LOG_WARNING("User parameters V%u read correctly", m_params.version);
 	}
@@ -58,22 +57,20 @@ bool UserSettings::writeConfig(void) {
 	m_params.version = FRAM_SETTINGS_VERSION;
 	m_params.crc     = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
 
+	LOG_WARNING("User params written");
+
 	return fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
 }
 
-bool UserSettings::resetConfig(void) {
-
-	m_is_init = false;
+void UserSettings::resetConfig(void) {
 
 	memset(&m_params, 0, sizeof(sUserParameters));
 
-	m_params.version = FRAM_SETTINGS_VERSION;
-
-	m_params.crc = calculate_crc(&m_params.flat_user_params, sizeof(sUserParameters) - sizeof(m_params.crc));
+	m_params.calibration = 300;
 
 	LOG_WARNING("User params factory reset");
 
-	return fram_write_block(FRAM_SETTINGS_ADDRESS, &m_params.flat_user_params, sizeof(sUserParameters));
+	return;
 }
 
 void UserSettings::checkConfigVersion(void) {
@@ -89,5 +86,16 @@ void UserSettings::checkConfigVersion(void) {
 		} else {
 			m_is_init = true;
 		}
+	} else {
+
+#ifdef FDS_PRESENT
+		// can be here if flash page not found
+		// reset config
+		this->resetConfig();
+		if (!this->writeConfig()) {
+
+			LOG_ERROR("Write params error");
+		}
+#endif
 	}
 }

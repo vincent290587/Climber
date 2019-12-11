@@ -112,6 +112,7 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 		if (p_evt->result == FDS_SUCCESS)
 		{
 			m_fds_initialized = true;
+			LOG_WARNING("!! FDS init done !!");
 		}
 		break;
 
@@ -149,15 +150,19 @@ void fram_init_sensor() {
 	rc = fds_register(fds_evt_handler);
 	APP_ERROR_CHECK(rc);
 
+	LOG_INFO("FRAM init pending...");
+	LOG_FLUSH();
+
 	rc = fds_init();
 	APP_ERROR_CHECK(rc);
 
-	LOG_INFO("FRAM init pending...");
+	w_task_delay(200);
 
-	if (w_task_delay(300)) {
+	if (!m_fds_initialized) {
 
 		// timeout
 		LOG_ERROR("FRAM init timeout");
+		return;
 	}
 
 	LOG_WARNING("FRAM init done");
@@ -209,7 +214,7 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 	ASSERT(m_fds_initialized);
 
 	/* System config not found; write a new one. */
-	LOG_DEBUG("Writing config file...");
+	LOG_WARNING("FDS write");
 
 	fds_record_t _record =
 	{
@@ -225,7 +230,9 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	m_fds_wr_pending = true;
 
-	if (w_task_delay(100)) {
+	w_task_delay(100);
+
+	if (m_fds_wr_pending) {
 
 		// timeout
 		return false;

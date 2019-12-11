@@ -34,7 +34,7 @@ public:
 	UserSettings();
 
 	bool isConfigValid(void);
-	bool resetConfig(void);
+	void resetConfig(void);
 	bool writeConfig(void);
 
 	void checkConfigVersion(void);

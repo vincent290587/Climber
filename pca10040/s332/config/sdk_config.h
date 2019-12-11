@@ -3390,13 +3390,13 @@
 // <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver
 //==========================================================
 #ifndef NRFX_SPIM_ENABLED
-#define NRFX_SPIM_ENABLED 1
+#define NRFX_SPIM_ENABLED 0
 #endif
 // <q> NRFX_SPIM0_ENABLED  - Enable SPIM0 instance
 
 
 #ifndef NRFX_SPIM0_ENABLED
-#define NRFX_SPIM0_ENABLED 1
+#define NRFX_SPIM0_ENABLED 0
 #endif
 
 // <q> NRFX_SPIM1_ENABLED  - Enable SPIM1 instance
@@ -5733,7 +5733,7 @@
 // <i> The total amount of flash memory that is used by FDS amounts to @ref FDS_VIRTUAL_PAGES * @ref FDS_VIRTUAL_PAGE_SIZE * 4 bytes.
 
 #ifndef FDS_VIRTUAL_PAGES
-#define FDS_VIRTUAL_PAGES 5
+#define FDS_VIRTUAL_PAGES 3
 #endif
 
 // <o> FDS_VIRTUAL_PAGE_SIZE  - The size of a virtual flash page.
@@ -5827,7 +5827,7 @@
 //==========================================================
 // <o> FDS_MAX_USERS - Maximum number of callbacks that can be registered.
 #ifndef FDS_MAX_USERS
-#define FDS_MAX_USERS 4
+#define FDS_MAX_USERS 3
 #endif
 
 // </h>
