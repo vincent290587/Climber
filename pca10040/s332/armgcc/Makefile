@@ -75,6 +75,7 @@ CFLAGS += -Wall $(OPT)
 CFLAGS += -DFPU_INTERRUPT_MODE
 CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
 CFLAGS += -DFLOAT_ABI_HARD -fsingle-precision-constant
+CFLAGS += -Wdouble-promotion -Wfloat-conversion
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in separate section, this allows linker to discard unused ones
@@ -122,7 +123,7 @@ LDFLAGS += --specs=nano.specs
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
-LIB_FILES += -lc -lnosys -lm
+LIB_FILES += -lc -lnosys
 
 .PHONY: $(TARGETS) default all clean help flash flashl flash_softdevice
 

@@ -32,11 +32,11 @@ float max(float val1, float val2) {
 }
 
 double radians(double value) {
-	return value * M_PI / 180.;
+	return value * (double)M_PI / (double)180.;
 }
 
 double degrees(double value) {
-	return value * 180. / M_PI;
+	return value * (double)180. / (double)M_PI;
 }
 
 double sq(double value) {
