@@ -32,7 +32,7 @@ static VL53L1_DEV                     Dev = &dev;
 
 static uint8_t m_is_data_ready = 0;
 static VL53L1_RangingMeasurementData_t RangingData;
-static task_id_t m_vl_task_id = 0;
+static task_id_t m_vl_task_id = TASK_ID_INVALID;
 static uint32_t nb_error = 0;
 
 //#define I2C_TEST
@@ -238,7 +238,7 @@ static void _int_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
 int vl53l1_wrapper__init(void) {
 
-	m_vl_task_id = task_id_get();
+	m_vl_task_id = w_task_id_get();
 
 	_sensor_init();
 

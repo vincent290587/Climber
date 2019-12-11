@@ -26,7 +26,7 @@
 // reduce this to 55 ms to allow faster readings.
 #define INTER_MEASUREMENT_PERIOD_MS		80
 
-static task_id_t m_vl_task_id = 0;
+static task_id_t m_vl_task_id = TASK_ID_INVALID;
 static uint32_t nb_error = 0;
 
 static int m_td_vl_meas = 300;

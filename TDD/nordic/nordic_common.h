@@ -8,8 +8,6 @@
  */
 #define NRF_GPIO_PIN_MAP(port, pin) (((port) << 5) | ((pin) & 0x1F))
 
-#define LED_1              NRF_GPIO_PIN_MAP(0, 26)
-
 
 #ifdef __cplusplus
 extern "C" {

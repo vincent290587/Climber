@@ -32,7 +32,7 @@ typedef struct {
 } sUpdateType;
 
 static sUpdateType m_updated;
-static task_id_t m_task_id = 0;
+static task_id_t m_task_id = TASK_ID_INVALID;
 
 static sKalmanDescr m_k_lin;
 
@@ -127,6 +127,34 @@ void data_dispatcher__init(task_id_t _task_id) {
 	_kalman_init();
 
 	vnh5019_driver__init();
+
+	if (u_settings.isConfigValid()) {
+		sUserParameters *params = user_settings_get();
+		m_distance_cal = params->calibration;
+
+		LOG_INFO("FRAM cal: %d (mm) ", m_distance_cal);
+	} else {
+
+		LOG_ERROR("FRAM config not valid ");
+	}
+}
+
+void data_dispatcher__offset_calibration(int32_t cal) {
+
+	m_distance_cal += cal;
+
+	sUserParameters *params = user_settings_get();
+	params->calibration = m_distance_cal;
+
+	LOG_DEBUG("New cal: %d (mm) ", m_distance_cal);
+
+	if (u_settings.writeConfig()) {
+
+		LOG_INFO("FRAM cal saved ");
+	} else {
+
+		LOG_ERROR("FRAM cal NOT saved ");
+	}
 }
 
 void data_dispatcher__feed_target_slope(float slope) {

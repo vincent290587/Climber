@@ -18,6 +18,8 @@ public:
 	BinnedData() {
 	}
 
+	virtual ~BinnedData();
+
 	virtual uint32_t getTimeMax(void)=0;
 	virtual uint32_t getTimeTotal(void)=0;
 	virtual uint32_t getTimeZX(uint16_t i)=0;

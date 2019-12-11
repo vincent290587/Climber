@@ -43,8 +43,10 @@ typedef struct {
 	uint8_t el_time;
 } sFecInfo;
 
+
 typedef union {
 	struct {
+		int32_t  calibration;
 		uint16_t version;
 		uint16_t crc;
 	};

@@ -18,8 +18,22 @@ extern "C" {
 
 void fram_init_sensor(void);
 
+/**
+ *
+ * @param block_addr
+ * @param readout
+ * @param length
+ * @return true on success
+ */
 bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length);
 
+/**
+ *
+ * @param block_addr
+ * @param writeout
+ * @param length
+ * @return true on success
+ */
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length);
 
 #ifdef	__cplusplus

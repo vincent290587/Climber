@@ -39,6 +39,7 @@ int16_t tdd_vnh5019_driver__get_length(void) {
 
 void vnh5019_driver__init(void) {
 
+	w_task_delay(40);
 }
 
 void vnh5019_driver__setM1Speed(int16_t speed_mm_s)

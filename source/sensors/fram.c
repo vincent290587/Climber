@@ -8,6 +8,7 @@
 #include <string.h>
 #include "fram.h"
 #include "utils.h"
+#include "boards.h"
 #include "parameters.h"
 #include "nordic_common.h"
 #include "segger_wrapper.h"
@@ -96,9 +97,10 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 #define CONFIG_FILE     (0xF010)
 #define CONFIG_REC_KEY  (0x7010)
 
+static task_id_t m_fram_task_id = TASK_ID_INVALID;
+
 /* Flag to check fds initialization. */
 static bool volatile m_fds_initialized;
-static bool volatile m_fds_rd_pending;
 static bool volatile m_fds_wr_pending;
 
 
@@ -133,11 +135,15 @@ static void fds_evt_handler(fds_evt_t const * p_evt)
 	default:
 		break;
 	}
+
+	w_task_delay_cancel(m_fram_task_id);
 }
 
 void fram_init_sensor() {
 
 	ret_code_t rc;
+
+	m_fram_task_id = w_task_id_get();
 
 	/* Register first to receive an event when initialization is complete. */
 	rc = fds_register(fds_evt_handler);
@@ -146,11 +152,12 @@ void fram_init_sensor() {
 	rc = fds_init();
 	APP_ERROR_CHECK(rc);
 
-	LOG_WARNING("FRAM init pending...");
+	LOG_INFO("FRAM init pending...");
 
-	while (!m_fds_initialized)
-	{
-		perform_system_tasks_light();
+	if (w_task_delay(300)) {
+
+		// timeout
+		LOG_ERROR("FRAM init timeout");
 	}
 
 	LOG_WARNING("FRAM init done");
@@ -192,7 +199,7 @@ bool fram_read_block(uint16_t block_addr, uint8_t *readout, uint16_t length) {
 
 	LOG_ERROR("FDS record not found");
 
-	return true;
+	return false;
 }
 
 bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
@@ -218,8 +225,10 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 
 	m_fds_wr_pending = true;
 
-	while (m_fds_wr_pending) {
-		perform_system_tasks_light();
+	if (w_task_delay(100)) {
+
+		// timeout
+		return false;
 	}
 
 	return true;

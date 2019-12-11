@@ -6,6 +6,7 @@
  */
 
 #include "i2c.h"
+#include "fram.h"
 #include "Model.h"
 #include "helper.h"
 #include "gpio.h"
@@ -33,27 +34,6 @@ UserSettings   u_settings;
 sAppErrorDescr m_app_error __attribute__ ((section(".noinit")));
 
 
-/**
- *
- */
-void model_dispatch_sensors_update(void) {
-
-}
-
-/**
- *
- */
-void perform_system_tasks(void) {
-
-#if APP_SCHEDULER_ENABLED
-	app_sched_execute();
-#endif
-
-}
-
-/**
- *
- */
 void perform_system_tasks_light(void) {
 
 #if APP_SCHEDULER_ENABLED
@@ -86,11 +66,16 @@ void sensing_task(void * p_context)
 
 void actuating_task(void * p_context)
 {
+	// init parameters
+	fram_init_sensor();
+	u_settings.checkConfigVersion();
 
+	// init computational things
 	data_dispatcher__init(w_task_id_get());
 
 	for(;;)
 	{
+		// run filter
 		data_dispatcher__run();
 
 		wdt_reload();
@@ -98,11 +83,6 @@ void actuating_task(void * p_context)
 	}
 }
 
-/**
- * Task triggered every APP_TIMEOUT_DELAY_MS.
- *
- * @param p_context
- */
 void peripherals_task(void * p_context)
 {
 	for(;;)
@@ -136,9 +116,9 @@ void idle_task(void * p_context)
 {
 	for(;;)
 	{
-		LOG_PROCESS();
-
-		pwr_mgmt_run();
+		if (LOG_PROCESS() == false) {
+			pwr_mgmt_run();
+		}
 
 		w_task_yield();
 	}

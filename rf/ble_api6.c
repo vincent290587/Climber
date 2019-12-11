@@ -33,6 +33,7 @@
 #include "ant.h"
 #include "Model.h"
 #include "ble_api_base.h"
+#include "data_dispatcher.h"
 #include "segger_wrapper.h"
 #include "ring_buffer.h"
 #include "Model.h"
@@ -582,6 +583,17 @@ void ble_nus_log_text(const char * text) {
  * Send the log file to a remote computer
  */
 void ble_nus_tasks(void) {
+
+	while (RING_BUFF_IS_NOT_EMPTY(nus_rb1)) {
+		char c = RING_BUFF_GET_ELEM(nus_rb1);
+		RING_BUFFER_POP(nus_rb1);
+
+		if (c == 'U') {
+			data_dispatcher__offset_calibration(  5 );
+		} else if (c == 'D') {
+			data_dispatcher__offset_calibration( -5 );
+		}
+	}
 
 	while (m_connected &&
 			m_nus_xfer_array.length &&

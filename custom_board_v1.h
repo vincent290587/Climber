@@ -15,6 +15,8 @@ extern "C" {
 
 #include "nrf_gpio.h"
 
+#define FDS_PRESENT
+
 // LEDs definitions
 #define LEDS_NUMBER    1
 

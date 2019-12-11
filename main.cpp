@@ -15,8 +15,8 @@
 #include "ant.h"
 #include "bsp.h"
 #include "i2c.h"
-#include "fram.h"
 #include "millis.h"
+#include "boards.h"
 #include "ble_api_base.h"
 #include "app_scheduler.h"
 #include "app_timer.h"
@@ -443,10 +443,6 @@ int main(void)
 #endif
 #if defined (BLE_STACK_SUPPORT_REQD)
 	ble_init();
-#endif
-#ifdef FDS_PRESENT
-	fram_init_sensor();
-	u_settings.checkConfigVersion();
 #endif
 
 	LOG_INFO("App init done");

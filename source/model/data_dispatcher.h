@@ -20,6 +20,8 @@ void data_dispatcher__init(task_id_t _task_id);
 
 void data_dispatcher__run(void);
 
+void data_dispatcher__offset_calibration(int32_t cal);
+
 void data_dispatcher__feed_distance(float distance);
 
 /**
