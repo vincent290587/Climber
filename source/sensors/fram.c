@@ -253,10 +253,14 @@ bool fram_write_block(uint16_t block_addr, uint8_t *writeout, uint16_t length) {
 		APP_ERROR_CHECK(rc);
 	}
 
+	uint16_t timeout = 0;
 	while (m_fds_wr_pending) {
 
 		w_task_delay(20);
 
+		if (timeout++ > 100) {
+			return false;
+		}
 	}
 
 	fds_gc();
