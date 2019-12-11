@@ -39,7 +39,7 @@ static sKalmanDescr m_k_lin;
 static uint32_t m_update_time = 0;
 static uint32_t m_nb_runs = 0;
 static float m_distance = 0;
-static int32_t m_d_target = 0;
+static int32_t m_d_target = 320;
 static int32_t m_distance_cal = 300;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
@@ -195,7 +195,7 @@ void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps
 
 void data_dispatcher__run(void) {
 
-	while (!m_updated.acc || !m_updated.dist) {
+	while (!m_updated.acc || !m_updated.dist || m_d_target < 100) {
 		w_task_delay(20);
 		return;
 	}
