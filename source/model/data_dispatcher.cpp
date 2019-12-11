@@ -46,6 +46,7 @@ static float m_angular_rate_mdps[3];
 
 #ifdef TDD
 float m_last_est_dist = 0;
+float m_last_innov = 0;
 #endif
 
 void _kalman_init(void) {
@@ -73,23 +74,30 @@ void _kalman_init(void) {
 	// set R
 	m_k_lin.ker.matR.unity(DIST_STD_DEV_M * DIST_STD_DEV_M);
 
+	// init X
+	m_k_lin.ker.matX.set(0, 0, 325.0f);
+
 	LOG_INFO("Kalman lin. init !");
 }
 
 static float _kalman_run(void) {
 
-	// TODO run kalman
+	// run kalman
 	static sKalmanExtFeed feed;
 
 	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
+	m_update_time = millis();
 
 	feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
 	feed.matZ.set(0, 0, m_distance);
 
+	m_k_lin.ker.matB.zeros();
+
+	// set U
+	int16_t speed_mm_s = vnh5019_driver__getM1Speed();
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
-	// TODO set U
-	//feed.matU.set(1, 0, model_spd);
+	feed.matU.set(1, 0, (float)speed_mm_s);
 
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
 	m_k_lin.ker.matB.set(0, 1, feed.dt);
@@ -99,6 +107,11 @@ static float _kalman_run(void) {
 	LOG_INFO("Kalman run");
 
 	m_nb_runs++;
+
+#ifdef TDD
+	m_last_est_dist = m_k_lin.ker.matX.get(0,0);
+	m_last_innov = m_k_lin.ker.matKI.get(0,0);
+#endif
 
 	return m_k_lin.ker.matX.get(0,0);
 }
@@ -134,7 +147,6 @@ void data_dispatcher__feed_distance(float distance) {
 		return;
 	}
 	m_distance = distance;
-	m_update_time = millis();
 
 	m_updated.dist = 1;
 
@@ -164,10 +176,6 @@ void data_dispatcher__run(void) {
 
 	// run kalman
 	float f_dist_mm = _kalman_run();
-
-#ifdef TDD
-	m_last_est_dist = f_dist_mm;
-#endif
 
 	LOG_INFO("Filtered dist: %ld mm", (int32_t)(f_dist_mm));
 

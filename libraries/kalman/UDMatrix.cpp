@@ -140,7 +140,7 @@ void UDMatrix::print(void) {
 	for (unsigned i=0; i< this->m_rowSize; i++) {
 		for (unsigned j=0; j< this->m_colSize; j++) {
 
-			LOG_RAW_INFO("%3.3f ", this->m_data[i][j] );
+			LOG_RAW_INFO("%3.6f ", this->m_data[i][j] );
 
 		}
 		LOG_RAW_INFO("\r\n");

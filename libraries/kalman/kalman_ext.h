@@ -27,6 +27,7 @@ typedef struct {
 	UDMatrix matE;
 	UDMatrix matK;
 	UDMatrix matX;
+	UDMatrix matKI;
 	UDMatrix matXmi;
 	UDMatrix matPmi;
 	UDMatrix matP;

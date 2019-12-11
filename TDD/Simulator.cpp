@@ -115,16 +115,19 @@ void simulator_test(void) {
 }
 
 #define SIM_DT_MS                      50
-#define SIM_SLOPE_PERIOD_S             10000
+#define SIM_SLOPE_PERIOD_S             20000
+#define BIKE_HUB_DIST_MM               315
 
 
 enum {
-	TDD_LOGGING_SIM_SLOPE = TDD_LOGGING_USER_START,
-	TDD_LOGGING_SIM_MEAS,
+	TDD_LOGGING_TGT_SLOPE = TDD_LOGGING_USER_START,
 	TDD_LOGGING_MEAS_DIST,
+	TDD_LOGGING_EST_INNOV,
 	TDD_LOGGING_EST_DIST,
 	TDD_LOGGING_EST_ERROR,
 	TDD_LOGGING_MOTOR_SPEED,
+	TDD_LOGGING_ACT_POS,
+	TDD_LOGGING_SIM_SLOPE,
 	TDD_LOGGING_USER_END,
 };
 
@@ -134,14 +137,14 @@ void simulator_init(void) {
 
 	tdd_logger_log_name(TDD_LOGGING_TIME		, "millis");
 
-	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE	, "sim_slope");
-	tdd_logger_log_name(TDD_LOGGING_SIM_MEAS	, "sim_dist");
+	tdd_logger_log_name(TDD_LOGGING_TGT_SLOPE	, "target_slope");
+	tdd_logger_log_name(TDD_LOGGING_MEAS_DIST	, "target_dist");
+	tdd_logger_log_name(TDD_LOGGING_EST_INNOV	, "kal_innov");
 	tdd_logger_log_name(TDD_LOGGING_EST_DIST	, "est_dist");
 	tdd_logger_log_name(TDD_LOGGING_EST_ERROR	, "est_error");
-	tdd_logger_log_name(TDD_LOGGING_MEAS_DIST	, "meas_dist");
 	tdd_logger_log_name(TDD_LOGGING_MOTOR_SPEED	, "motor_speed");
-
-	tdd_logger_start();
+	tdd_logger_log_name(TDD_LOGGING_ACT_POS		, "act_pos");
+	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE	, "sim_slope");
 
 }
 
@@ -150,30 +153,37 @@ void simulator_task(void * p_context) {
 	simulator_init();
 
 	float sim_phase = 0;
-	float sim_slope = 0;
+	float tgt_slope = 0;
 
 	LOG_INFO("Simu %u ", millis());
 
 	for (;;) {
 
-		if (millis() < 15000) {
+		if (millis() < 5000) {
+
+			if (millis() > 1000) {
+
+				tdd_logger_start();
+			}
+
+		} else if (millis() < 15000) {
 
 			sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_S;
 
-			sim_slope = 14.5f * sinf(sim_phase);
+			tgt_slope = 4.5f * sinf(sim_phase);
 
-		} else if (millis() >= 15000 && millis() < 30000) {
+		} else if (millis() < 30000) {
 
 			static int nb_ind = 0;
 
 			if (!nb_ind) {
 
-				sim_slope = 8.5f;
+				tgt_slope = 4.0f;
 			}
 
-			if (nb_ind++ > 3000 / SIM_DT_MS) {
+			if (nb_ind++ > 3000 / SIM_DT_MS && millis() < 19000) {
 
-				sim_slope = -sim_slope;
+				tgt_slope = -14;
 				nb_ind = 1;
 			}
 
@@ -183,27 +193,36 @@ void simulator_task(void * p_context) {
 			exit(0);
 		}
 
-		data_dispatcher__feed_target_slope(sim_slope);
-
-		// inject meas in sensor
-		static const float bike_reach_mm = 1000;
-		int32_t front_el = (int32_t)(sim_slope * bike_reach_mm / 100.0f);
+		data_dispatcher__feed_target_slope(tgt_slope);
 
 		// calculate distance from desired slope
-		int meas = front_el + 315;
-		tdd_inject_vl53l1_measurement(meas);
+		static const float bike_reach_mm = 1000;
+		int32_t front_el = (int32_t)(tgt_slope * bike_reach_mm / 100.0f);
+		int target_dist = front_el + BIKE_HUB_DIST_MM;
+
+		// simulate actuator
+		int16_t vnh_dist_mm = tdd_vnh5019_driver__get_length();
+
+		// inject sim dist
+		tdd_inject_vl53l1_measurement(vnh_dist_mm);
 
 		// logging
 		extern int16_t	m_vnh_speed_mm_s;
+		extern float	m_last_innov;
 		extern float	m_last_est_dist;
+
+		float sim_slope = ((float)vnh_dist_mm - BIKE_HUB_DIST_MM) * 100.0f / bike_reach_mm;
+
 		tdd_logger_log_int(TDD_LOGGING_TIME, millis());
 
-		tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE	, sim_slope);
-		tdd_logger_log_int(TDD_LOGGING_SIM_MEAS		, meas);
-		tdd_logger_log_int(TDD_LOGGING_MEAS_DIST	, meas);
+		tdd_logger_log_float(TDD_LOGGING_TGT_SLOPE	, tgt_slope);
+		tdd_logger_log_int(TDD_LOGGING_MEAS_DIST	, target_dist);
+		tdd_logger_log_float(TDD_LOGGING_EST_INNOV	, m_last_innov);
 		tdd_logger_log_float(TDD_LOGGING_EST_DIST	, m_last_est_dist);
-		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, m_last_est_dist- (float)front_el);
+		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, 100.0f * (m_last_est_dist- (float)vnh_dist_mm) / (float)vnh_dist_mm);
 		tdd_logger_log_sint(TDD_LOGGING_MOTOR_SPEED	, m_vnh_speed_mm_s);
+		tdd_logger_log_int(TDD_LOGGING_ACT_POS		, vnh_dist_mm);
+		tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE	, sim_slope);
 
 		tdd_logger_flush();
 

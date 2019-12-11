@@ -17,18 +17,24 @@
 int16_t m_vnh_speed_mm_s = 0;
 uint32_t m_calc_last_time = 0;
 
-int16_t m_sim_length = 0;
+static float m_sim_length = 50;
 
 int16_t tdd_vnh5019_driver__get_length(void) {
 
-	int16_t delta = m_vnh_speed_mm_s * (millis() - m_calc_last_time);
+	float delta = (float)m_vnh_speed_mm_s * (float)(millis() - m_calc_last_time) / 1000.0f;
 
-	if (m_sim_length + delta > 200) m_sim_length = 200;
-	if (m_sim_length + delta <   0) m_sim_length = 0;
+	if (m_sim_length + delta > 200) {
+		m_sim_length = 200;
+	} else
+	if (m_sim_length + delta <   0) {
+		m_sim_length = 0;
+	} else {
+		m_sim_length += delta;
+	}
 
 	m_calc_last_time = millis();
 
-	return m_sim_length + 105;
+	return (int16_t)m_sim_length + 250;
 }
 
 void vnh5019_driver__init(void) {
@@ -38,6 +44,11 @@ void vnh5019_driver__init(void) {
 void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 {
 	m_vnh_speed_mm_s = speed_mm_s;
+}
+
+int16_t vnh5019_driver__getM1Speed(void)
+{
+	return m_vnh_speed_mm_s;
 }
 
 void vnh5019_driver__setM1Brake(uint16_t brake)

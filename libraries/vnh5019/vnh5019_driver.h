@@ -26,6 +26,8 @@ int16_t vnh5019_driver__getM1Speed(void);
 
 void vnh5019_driver__setM1Speed(int16_t speed_mm_s);
 
+int16_t vnh5019_driver__getM1Speed(void);
+
 void vnh5019_driver__setM1Brake(uint16_t brake);
 
 int32_t vnh5019_driver__getM1CurrentMilliamps(void);

@@ -55,6 +55,8 @@ void kalman_lin_init(sKalmanDescr *descr) {
 	descr->ker.matX.resize(descr->ker.ker_dim, 1);
 	descr->ker.matXmi.resize(descr->ker.ker_dim, 1);
 
+	descr->ker.matKI.resize(descr->ker.ker_dim, 1);
+
 	descr->ker.matK.resize(descr->ker.ker_dim, descr->ker.obs_dim);
 
 	// set C
@@ -123,13 +125,13 @@ void kalman_lin_feed(sKalmanDescr *descr, sKalmanExtFeed *feed) {
 	innov = feed->matZ - matI;
 
 	// update estimate
-	UDMatrix matKI;
-	matKI = descr->ker.matK * innov;
+	descr->ker.matKI = descr->ker.matK * innov;
 	descr->ker.matX = descr->ker.matXmi;
-	descr->ker.matX = descr->ker.matX + matKI;
+	descr->ker.matX = descr->ker.matX + descr->ker.matKI;
 
 	// update covariance
 	UDMatrix matTmp;
+	UDMatrix matKI;
 	matKI.resize(descr->ker.ker_dim, descr->ker.ker_dim);
 	matKI.unity();
 	matTmp = descr->ker.matK * descr->ker.matC;
@@ -186,13 +188,13 @@ void kalman_ext_feed(sKalmanDescr *descr, sKalmanExtFeed *feed) {
 	innov = feed->matZ - matI;
 
 	// update estimate
-	UDMatrix matKI;
-	matKI = descr->ker.matK * innov;
+	descr->ker.matKI = descr->ker.matK * innov;
 	descr->ker.matX = descr->ker.matXmi;
-	descr->ker.matX = descr->ker.matX + matKI;
+	descr->ker.matX = descr->ker.matX + descr->ker.matKI;
 
 	// update covariance
 	UDMatrix matTmp;
+	UDMatrix matKI;
 	matKI.resize(descr->ker.ker_dim, descr->ker.ker_dim);
 	matKI.unity();
 	matTmp = descr->ker.matK * descr->ker_ext.matH;
