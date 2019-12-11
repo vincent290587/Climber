@@ -62,7 +62,7 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
         {
         	m_last_device_id = uint16_decode(p_ant_evt->message.ANT_MESSAGE_aucExtData);
 
-    		LOG_WARNING("Dev. ID 0x%04X %d", m_last_device_id, (int8_t)m_last_rssi);
+    		LOG_DEBUG("Dev. ID 0x%04X %d", m_last_device_id, (int8_t)m_last_rssi);
 
         }
 
@@ -71,7 +71,7 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 
             ant_fec_disp_evt_handler(p_ant_evt, &m_fec_profile);
 
-            LOG_DEBUG("FEC rx page: 0x%02X %u", p_ant_evt->message.ANT_MESSAGE_ucMesgID, p_fec_message_payload->page_number);
+            LOG_WARNING("FEC rx page: 0x%02X %u", p_ant_evt->message.ANT_MESSAGE_ucMesgID, p_fec_message_payload->page_number);
 
         	uint16_t grade_slope = m_fec_profile.page_51.grade_slope;
         	float f_grade = (float)((int32_t)grade_slope * ANT_FEC_PAGE51_SLOPE_LSB - 200);
