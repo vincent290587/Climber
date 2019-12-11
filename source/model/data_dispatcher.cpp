@@ -44,6 +44,9 @@ static int32_t m_distance_cal = 300;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
 
+#ifdef TDD
+float m_last_est_dist = 0;
+#endif
 
 void _kalman_init(void) {
 
@@ -161,6 +164,10 @@ void data_dispatcher__run(void) {
 
 	// run kalman
 	float f_dist_mm = _kalman_run();
+
+#ifdef TDD
+	m_last_est_dist = f_dist_mm;
+#endif
 
 	LOG_INFO("Filtered dist: %ld mm", (int32_t)(f_dist_mm));
 

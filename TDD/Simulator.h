@@ -10,7 +10,6 @@
 
 #include "WString.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

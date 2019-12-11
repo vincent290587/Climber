@@ -31,6 +31,7 @@ include_directories(
 	TDD
 	TDD/drivers
     TDD/nordic
+    TDD/logger
 	TDD/timer
 	TDD/sensors
 	TDD/scheduler
@@ -57,6 +58,7 @@ set(SRCS
 	TDD/timer/timer.c
 	TDD/nordic/platform.c
 	TDD/nordic/app_scheduler.c
+	TDD/logger/tdd_logger.c
 	TDD/sensors/vnh5019_driver.c
 	TDD/sensors/vl53l1_wrapper.c
 	TDD/sensors/lsm6ds33_wrapper.c

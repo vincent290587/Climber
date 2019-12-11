@@ -11,6 +11,7 @@
 #include "millis.h"
 #include "kalman_ext.h"
 #include "Model.h"
+#include "tdd_logger.h"
 #include "Simulator.h"
 #include "data_dispatcher.h"
 #include "segger_wrapper.h"
@@ -116,8 +117,31 @@ void simulator_test(void) {
 #define SIM_DT_MS                      50
 #define SIM_SLOPE_PERIOD_S             10000
 
+
+enum {
+	TDD_LOGGING_SIM_SLOPE = TDD_LOGGING_USER_START,
+	TDD_LOGGING_SIM_MEAS,
+	TDD_LOGGING_MEAS_DIST,
+	TDD_LOGGING_EST_DIST,
+	TDD_LOGGING_EST_ERROR,
+	TDD_LOGGING_MOTOR_SPEED,
+	TDD_LOGGING_USER_END,
+};
+
 void simulator_init(void) {
 
+	tdd_logger_init("simu.txt");
+
+	tdd_logger_log_name(TDD_LOGGING_TIME		, "millis");
+
+	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE	, "sim_slope");
+	tdd_logger_log_name(TDD_LOGGING_SIM_MEAS	, "sim_dist");
+	tdd_logger_log_name(TDD_LOGGING_EST_DIST	, "est_dist");
+	tdd_logger_log_name(TDD_LOGGING_EST_ERROR	, "est_error");
+	tdd_logger_log_name(TDD_LOGGING_MEAS_DIST	, "meas_dist");
+	tdd_logger_log_name(TDD_LOGGING_MOTOR_SPEED	, "motor_speed");
+
+	tdd_logger_start();
 
 }
 
@@ -150,9 +174,12 @@ void simulator_task(void * p_context) {
 			if (nb_ind++ > 3000 / SIM_DT_MS) {
 
 				sim_slope = -sim_slope;
+				nb_ind = 1;
 			}
 
 		} else {
+
+			LOG_ERROR("Exiting simulation");
 			exit(0);
 		}
 
@@ -166,6 +193,19 @@ void simulator_task(void * p_context) {
 		int meas = front_el + 315;
 		tdd_inject_vl53l1_measurement(meas);
 
+		// logging
+		extern int16_t	m_vnh_speed_mm_s;
+		extern float	m_last_est_dist;
+		tdd_logger_log_int(TDD_LOGGING_TIME, millis());
+
+		tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE	, sim_slope);
+		tdd_logger_log_int(TDD_LOGGING_SIM_MEAS		, meas);
+		tdd_logger_log_int(TDD_LOGGING_MEAS_DIST	, meas);
+		tdd_logger_log_float(TDD_LOGGING_EST_DIST	, m_last_est_dist);
+		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, m_last_est_dist- (float)front_el);
+		tdd_logger_log_sint(TDD_LOGGING_MOTOR_SPEED	, m_vnh_speed_mm_s);
+
+		tdd_logger_flush();
 
 		w_task_delay(SIM_DT_MS);
 	}
