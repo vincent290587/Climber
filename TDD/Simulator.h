@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+void tdd_inject_vl53l1_measurement(int);
+
+int16_t tdd_vnh5019_driver__get_length(void);
+
 void simulator_test(void);
 
 void simulator_init(void);

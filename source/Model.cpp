@@ -60,7 +60,7 @@ void perform_system_tasks_light(void) {
 	app_sched_execute();
 #endif
 
-	if (NRF_LOG_PROCESS() == false)
+	if (LOG_PROCESS() == false)
 	{
 		pwr_mgmt_run();
 	}
@@ -114,6 +114,10 @@ void peripherals_task(void * p_context)
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 		ble_nus_tasks();
+#endif
+
+#if defined (ANT_STACK_SUPPORT_REQD)
+		ant_tasks();
 #endif
 
 		// BSP tasks

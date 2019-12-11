@@ -17,7 +17,7 @@
 #define LOG_ERROR(...)                 printf("\n");printf(__VA_ARGS__);printf("\n");printf("\n")
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
-#define LOG_PROCESS(...)               EMPTY_MACRO
+#define LOG_PROCESS(...)               false
 #define LOG_SET_TERM(X)                EMPTY_MACRO
 #define SVIEW_INIT(...)                EMPTY_MACRO
 #define USB_PRINTF(...)                EMPTY_MACRO
@@ -27,7 +27,7 @@
 #define NRF_LOG_DEBUG(...)             EMPTY_MACRO
 #define NRF_LOG_ERROR(...)             LOG_ERROR(__VA_ARGS__)
 #define NRF_LOG_FLUSH(...)             EMPTY_MACRO
-#define NRF_LOG_PROCESS(...)           0
+#define NRF_LOG_PROCESS(...)           false
 
 
 #define W_SYSVIEW_RecordEnterISR(...)  EMPTY_MACRO

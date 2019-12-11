@@ -21,13 +21,17 @@
 #include "ant_interface.h"
 
 #include "Model.h"
+#include "data_dispatcher.h"
 #include "segger_wrapper.h"
 
-#include "fec.h"
 
 
 /**< Application's ANT observer priority. You shouldn't need to modify this value. */
 #define APP_ANT_OBSERVER_PRIO       1
+
+#define ANT_FEC_PAGE51_SLOPE_LSB    (1/100)
+
+static ant_fec_profile_t m_fec_profile;
 
 
 /**
@@ -55,11 +59,16 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
 
         }
 
-        const ant_fec_message_layout_t * p_fec_message_payload = (ant_fec_message_layout_t *)p_ant_evt->message.ANT_MESSAGE_aucPayload;
+        ant_fec_disp_evt_handler(p_ant_evt, &m_fec_profile);
 
+        const ant_fec_message_layout_t * p_fec_message_payload = (ant_fec_message_layout_t *)p_ant_evt->message.ANT_MESSAGE_aucPayload;
         if (p_fec_message_payload->page_number == 51) {
-//        	LOG_INFO("!!!!!!!!!!!!!!!! %u", p_fec_message_payload->page_number);
-            LOG_INFO("FEC rx page: 0x%02X %u", p_ant_evt->message.ANT_MESSAGE_ucMesgID, p_fec_message_payload->page_number);
+
+            LOG_DEBUG("FEC rx page: 0x%02X %u", p_ant_evt->message.ANT_MESSAGE_ucMesgID, p_fec_message_payload->page_number);
+
+        	uint16_t grade_slope = m_fec_profile.page_51.grade_slope;
+        	float f_grade = (float)((int32_t)grade_slope * ANT_FEC_PAGE51_SLOPE_LSB - 200);
+        	data_dispatcher__feed_target_slope(f_grade);
         }
 
 
@@ -104,10 +113,6 @@ void ant_evt_handler(ant_evt_t * p_ant_evt, void * p_context)
 
 	case BS_CHANNEL_NUMBER:
 		ant_evt_bs (p_ant_evt);
-		break;
-
-	case FEC_CHANNEL_NUMBER:
-		ant_evt_fec(p_ant_evt);
 		break;
 
 	default:

@@ -12,6 +12,7 @@
 #include "kalman_ext.h"
 #include "Model.h"
 #include "Simulator.h"
+#include "data_dispatcher.h"
 #include "segger_wrapper.h"
 #include "math_wrapper.h"
 #include "assert_wrapper.h"
@@ -112,6 +113,8 @@ void simulator_test(void) {
 	}
 }
 
+#define SIM_DT_MS                      50
+#define SIM_SLOPE_PERIOD_S             10000
 
 void simulator_init(void) {
 
@@ -122,15 +125,49 @@ void simulator_task(void * p_context) {
 
 	simulator_init();
 
+	float sim_phase = 0;
+	float sim_slope = 0;
+
 	LOG_INFO("Simu %u ", millis());
 
 	for (;;) {
 
-		w_task_delay(50);
+		if (millis() < 15000) {
 
-		if (millis() > 10000) {
+			sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_S;
+
+			sim_slope = 14.5f * sinf(sim_phase);
+
+		} else if (millis() >= 15000 && millis() < 30000) {
+
+			static int nb_ind = 0;
+
+			if (!nb_ind) {
+
+				sim_slope = 8.5f;
+			}
+
+			if (nb_ind++ > 3000 / SIM_DT_MS) {
+
+				sim_slope = -sim_slope;
+			}
+
+		} else {
 			exit(0);
 		}
+
+		data_dispatcher__feed_target_slope(sim_slope);
+
+		// inject meas in sensor
+		static const float bike_reach_mm = 1000;
+		int32_t front_el = (int32_t)(sim_slope * bike_reach_mm / 100.0f);
+
+		// calculate distance from desired slope
+		int meas = front_el + 315;
+		tdd_inject_vl53l1_measurement(meas);
+
+
+		w_task_delay(SIM_DT_MS);
 	}
 
 }

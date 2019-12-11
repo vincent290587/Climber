@@ -20,9 +20,13 @@ void data_dispatcher__init(task_id_t _task_id);
 
 void data_dispatcher__run(void);
 
-void data_dispatcher__feed_target(float distance);
-
 void data_dispatcher__feed_distance(float distance);
+
+/**
+ *
+ * @param slope Slope in 100 * %
+ */
+void data_dispatcher__feed_target_slope(float slope);
 
 void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps[3]);
 

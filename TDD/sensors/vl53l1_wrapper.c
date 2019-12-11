@@ -29,7 +29,7 @@
 static task_id_t m_vl_task_id = 0;
 static uint32_t nb_error = 0;
 
-
+static int m_td_vl_meas = 300;
 
 static void _printRangingData(int status)
 {
@@ -38,13 +38,24 @@ static void _printRangingData(int status)
 	{
 		nb_error = 0;
 
-		//data_dispatcher__feed_distance((float)RangingData.RangeMilliMeter);
+		LOG_INFO("vl53l1_wrapper__measure %d (%u)", m_td_vl_meas, millis());
+
+		data_dispatcher__feed_distance((float)m_td_vl_meas);
+
+		// this is a hack
+		static float acceleration_mg[3], angular_rate_mdps[3];
+		data_dispatcher__feed_acc(acceleration_mg, angular_rate_mdps);
 
 	} else {
 		LOG_INFO("Measurement error %d", status);
 
 		nb_error++;
 	}
+}
+
+void tdd_inject_vl53l1_measurement(int meas) {
+
+	m_td_vl_meas = meas;
 }
 
 int vl53l1_wrapper__init(void) {
@@ -54,13 +65,11 @@ int vl53l1_wrapper__init(void) {
 	return 0;
 }
 
-#define VL53L1_RANGE_COMPLETION_POLLING_TIMEOUT_MS   2000
-
 int vl53l1_wrapper__measure(void) {
 
 	w_task_delay(80);
 
-	LOG_INFO("vl53l1_wrapper__measure %u", millis());
+	_printRangingData(0);
 
 	return 0;
 }

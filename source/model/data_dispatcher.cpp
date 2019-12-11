@@ -39,7 +39,8 @@ static sKalmanDescr m_k_lin;
 static uint32_t m_update_time = 0;
 static uint32_t m_nb_runs = 0;
 static float m_distance = 0;
-static float m_d_target = 300;
+static int32_t m_d_target = 0;
+static int32_t m_distance_cal = 300;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
 
@@ -112,15 +113,15 @@ void data_dispatcher__init(task_id_t _task_id) {
 	vnh5019_driver__init();
 }
 
-void data_dispatcher__feed_target(float distance) {
+void data_dispatcher__feed_target_slope(float slope) {
 
-	if (isnan(distance)) {
-		LOG_ERROR("Illegal float");
-		return;
-	}
+	static const float bike_reach_mm = 1000;
+	int32_t front_el = (int32_t)(slope * bike_reach_mm / 100.0f);
 
-	m_d_target = distance;
+	// calculate distance from desired slope
+	m_d_target = front_el + m_distance_cal;
 
+	LOG_DEBUG("Target el. dispatched: %d (mm) from %f \%", m_d_target, slope);
 }
 
 void data_dispatcher__feed_distance(float distance) {

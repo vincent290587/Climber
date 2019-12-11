@@ -87,7 +87,7 @@
 #define LOG_ERROR(...)                 LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
-#define LOG_PROCESS(...)               EMPTY_MACRO
+#define LOG_PROCESS(...)               false
 
 #endif
 
