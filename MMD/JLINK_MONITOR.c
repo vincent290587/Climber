@@ -15,8 +15,9 @@ Purpose : Implementation of debug monitor for J-Link monitor mode debug on Corte
 --------  END-OF-HEADER  ---------------------------------------------
 */
 
-#include "JLINK_MONITOR.h"
 #include "app_timer.h"
+#include "sdk_config.h"
+#include "JLINK_MONITOR.h"
 
 /*********************************************************************
 *

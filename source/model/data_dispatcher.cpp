@@ -78,6 +78,22 @@ void _kalman_init(void) {
 	m_k_lin.ker.matX.set(0, 0, 325.0f);
 
 	LOG_INFO("Kalman lin. init !");
+
+	/*
+	 * Slope can also be estimated using the following equations:
+	 * (if only I had in-game speed for ERG mode...)
+	 *
+	 * m.v_dot = m.gp + P_n.v
+	 *
+	 * gp = g.sin(a)
+	 *
+	 * sl = tan(a)
+	 *
+	 * | v  |   | 1      dt   0  |
+	 * | vp | = | P_n/m  0    1  | . Xm
+	 * | gp |   | 0      0    1  |
+	 *
+	 */
 }
 
 static float _kalman_run(void) {
