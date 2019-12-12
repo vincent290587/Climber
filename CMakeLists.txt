@@ -54,7 +54,6 @@ set(SRCS
     TDD/unit_testing.cpp
     TDD/Simulator.cpp
 	TDD/millis_tdd.c
-	TDD/order1_filter_tdd.c
 	TDD/timer/timer.c
 	TDD/nordic/platform.c
 	TDD/nordic/app_scheduler.c

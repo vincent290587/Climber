@@ -16,8 +16,6 @@
 #include "fram.h"
 #include "utils.h"
 
-#include "order1_filter.h"
-
 #define TEST_FILTRE_NB    15
 
 #define TEST_ROLLOF_NB    48759
