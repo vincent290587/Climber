@@ -91,7 +91,6 @@ INC_FOLDERS += \
   $(PROJ_DIR) \
   $(PROJ_DIR)/drivers \
   $(PROJ_DIR)/libraries/jscope \
-  $(PROJ_DIR)/libraries/filters \
   $(PROJ_DIR)/libraries/hardfault \
   $(PROJ_DIR)/libraries/lsm6ds3_STdC/driver \
   $(PROJ_DIR)/libraries/vl53l1x/core \

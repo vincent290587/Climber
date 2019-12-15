@@ -3770,7 +3770,7 @@
 // <9=> 31.25 kHz
 
 #ifndef NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY
-#define NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY 7
+#define NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY 2
 #endif
 
 // <o> NRFX_TIMER_DEFAULT_CONFIG_MODE  - Timer mode or operation
@@ -5283,7 +5283,7 @@
 
 
 #ifndef APP_PWM_ENABLED
-#define APP_PWM_ENABLED 0
+#define APP_PWM_ENABLED 1
 #endif
 
 // <e> APP_SCHEDULER_ENABLED - app_scheduler - Events scheduler
