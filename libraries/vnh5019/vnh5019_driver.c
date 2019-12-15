@@ -15,85 +15,76 @@
 #include "nrf_drv_saadc.h"
 #include "segger_wrapper.h"
 #include "vnh5019_driver.h"
+#include "app_pwm.h"
 
 #define SAMPLES_IN_BUFFER 1
 
-static nrf_drv_timer_t m_timer = NRF_DRV_TIMER_INSTANCE(2);
+#define PWM_FREQUENCY_HZ     10000UL
+#define PWM_PRECALING        1UL
+
+APP_PWM_INSTANCE(PWM1, 2);                   // Create the instance "PWM1" using TIMER1.
+
 static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
 static int16_t m_adc_value = 0;
 
 static eVNH5019State m_state = eVNH5019StateCoasting;
 static int16_t m_speed_mm_s = 0;
 
-void timer_dummy_handler(nrf_timer_event_t event_type, void * p_context) { }
+static volatile bool ready_flag;            // A flag indicating PWM status.
 
-static void _timer_configure(uint16_t freq_hz) {
+void pwm_ready_callback(uint32_t pwm_id)    // PWM callback function
+{
+    ready_flag = true;
+}
 
-	uint32_t compare_evt_addr;
-	uint32_t gpiote_task_addr;
-	nrf_ppi_channel_t ppi_channel;
+static void _pwm_configure(void) {
+
 	ret_code_t err_code;
-	nrf_drv_gpiote_out_config_t config = GPIOTE_CONFIG_OUT_TASK_TOGGLE(false);
 
-	err_code = nrf_drv_gpiote_out_init(VNH_PWM1, &config);
-	APP_ERROR_CHECK(err_code);
+	nrf_gpio_pin_clear(VNH_PWM1);
 
-	nrf_drv_timer_extended_compare(&m_timer,
-			NRF_TIMER_CC_CHANNEL0,
-			500 * 1000UL,
-			NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
-			false);
+    /* 2-channel PWM, 200Hz, output on DK LED pins. */
+    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(10UL * PWM_FREQUENCY_HZ, VNH_PWM1);
 
-	err_code = nrf_drv_ppi_channel_alloc(&ppi_channel);
-	APP_ERROR_CHECK(err_code);
+    /* Initialize and enable PWM. */
+    err_code = app_pwm_init(&PWM1, &pwm1_cfg, pwm_ready_callback);
+    APP_ERROR_CHECK(err_code);
 
-	compare_evt_addr = nrf_drv_timer_event_address_get(&m_timer, NRF_TIMER_EVENT_COMPARE0);
-	gpiote_task_addr = nrf_drv_gpiote_out_task_addr_get(VNH_PWM1);
-
-	err_code = nrf_drv_ppi_channel_assign(ppi_channel, compare_evt_addr, gpiote_task_addr);
-	APP_ERROR_CHECK(err_code);
-
-	err_code = nrf_drv_ppi_channel_enable(ppi_channel);
-	APP_ERROR_CHECK(err_code);
-
-	nrf_drv_gpiote_out_task_enable(VNH_PWM1);
-
+    app_pwm_enable(&PWM1);
 }
 
 /**
  * Returns the true PWM frequency applied
  */
-static uint16_t _pwm_signal_set(uint16_t freq_hz) {
+static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
 
-	if (freq_hz > 19500) freq_hz = 19500;
+	if (duty_cycle > 100) duty_cycle = 100;
 
 	// start sampling SAADC
 	nrf_drv_saadc_sample();
 
-	// Disable timer
-	if (nrf_drv_timer_is_enabled(&m_timer))
-		nrf_drv_timer_disable(&m_timer);
+	if (duty_cycle > 2) {
 
-	if (freq_hz > 3000) {
+		uint32_t div = (100 - duty_cycle) / PWM_PRECALING;
 
-		uint32_t div = 125000UL / freq_hz / 2;
+		LOG_INFO("PWM signal duty cycle: %lu (freq = %u)", div, duty_cycle);
 
-		LOG_INFO("PWM signal frequency: %u (div = %lu)", freq_hz, div);
+        ready_flag = false;
+        /* Set the duty cycle - keep trying until PWM is ready... */
+        while (app_pwm_channel_duty_set(&PWM1, 0, div) == NRF_ERROR_BUSY) {
+        	w_task_yield();
+        }
 
-		nrf_drv_timer_extended_compare(&m_timer,
-					NRF_TIMER_CC_CHANNEL0,
-					div,
-					NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK,
-					false);
-
-		// Enable timer
-		nrf_drv_timer_enable(&m_timer);
-
-		return freq_hz;
+		return duty_cycle;
 	} else {
-		nrf_gpio_pin_set(VNH_PWM1);
 
-		LOG_INFO("PWM signal frequency: %u OFF", freq_hz);
+		LOG_INFO("PWM signal frequency: %u OFF", duty_cycle);
+
+        ready_flag = false;
+        /* Set the duty cycle - keep trying until PWM is ready... */
+        while (app_pwm_channel_duty_set(&PWM1, 0, 0) == NRF_ERROR_BUSY) {
+        	w_task_yield();
+        }
 
 		m_state = eVNH5019StateCoasting;
 
@@ -180,13 +171,9 @@ void vnh5019_driver__init(void) {
 	int err_code = nrf_drv_ppi_init();
 	APP_ERROR_CHECK(err_code);
 
-	nrf_drv_timer_config_t timer_cfg = NRF_DRV_TIMER_DEFAULT_CONFIG;
-	err_code = nrf_drv_timer_init(&m_timer, &timer_cfg, timer_dummy_handler);
-	APP_ERROR_CHECK(err_code);
-
 	_saadc_init();
 
-	_timer_configure(0);
+	_pwm_configure();
 }
 
 int16_t vnh5019_driver__getM1Speed(void) {
@@ -197,7 +184,7 @@ int16_t vnh5019_driver__getM1Speed(void) {
 void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 {
 	unsigned char reverse = 0;
-	uint16_t freq_hz = 0;
+	uint16_t duty_cycle = 0;
 
 	if (speed_mm_s < 0)
 	{
@@ -207,18 +194,18 @@ void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 
 	if (speed_mm_s < 16)
 	{
-		freq_hz = (speed_mm_s * 1000 * 20) / 16;
+		duty_cycle = (speed_mm_s * 100) / 16;
 	} else {
-		freq_hz = 20000;
+		duty_cycle = 100;
 	}
 
 	m_state = eVNH5019StateDriving;
 
 	// set PWM signal
-	if (!_pwm_signal_set(freq_hz)) {
+	if (!_pwm_signal_set(duty_cycle)) {
 
 		// forced coasting
-		speed_mm_s = 0;
+		duty_cycle = 0;
 	}
 
 	// save speed

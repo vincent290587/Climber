@@ -52,7 +52,9 @@ void sensing_task(void * p_context)
 
 	vl53l1_wrapper__init();
 
+#ifdef HAS_LSM6
 	lsm6ds33_wrapper__init();
+#endif
 
 	for(;;)
 	{

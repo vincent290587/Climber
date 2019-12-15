@@ -47,7 +47,7 @@ include $(PROJ_DIR)/ble.files
 LIB_FILES += -lm -lstdc++
 
 # Optimization flags
-OPT = -O3 -g3
+OPT = -Og -g3
 # Uncomment the line below to enable link time optimization
 #OPT += -flto
 

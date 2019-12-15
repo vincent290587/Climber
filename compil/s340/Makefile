@@ -65,6 +65,7 @@ CFLAGS += -DNRF52840
 CFLAGS += -DNRF52840_XXAA
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DCONFIG_NFCT_PINS_AS_GPIOS
+CFLAGS += -DCONFIG_GPIO_AS_PINRESET
 CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -D__HEAP_SIZE=2048
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
@@ -95,6 +96,7 @@ ASMFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 ASMFLAGS += -DARM_MATH_CM4
 ASMFLAGS += -DSOFTDEVICE_PRESENT
 ASMFLAGS += -DBOARD_CUSTOM
+ASMFLAGS += -DCONFIG_GPIO_AS_PINRESET
 ASMFLAGS += -DNRF52840
 ASMFLAGS += -DNRF52840_XXAA
 ASMFLAGS += -D__HEAP_SIZE=2048
@@ -151,17 +153,17 @@ settings:
 	nrfutil settings generate --family NRF52840 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --application-version 1 --bootloader-version 1 --bl-settings-version 1 settings.hex
 
 dfu_softdevice:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10_soft.zip
-	nrfutil pkg display stravaV10_soft.zip
-	nrfutil dfu usb-serial -pkg stravaV10_soft.zip -p $(COM_PORT)
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0 --softdevice $(SDK_ROOT)/$(SOFTDEVICE) --key-file $(SDK_ROOT)/../vault/priv.pem Climber_soft.zip
+	nrfutil pkg display Climber_soft.zip
+	nrfutil dfu usb-serial -pkg Climber_soft.zip -p $(COM_PORT)
 
 dfu:
-	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem stravaV10.zip
-	nrfutil pkg display stravaV10.zip
-	nrfutil dfu usb-serial -pkg stravaV10.zip -p $(COM_PORT)
+	nrfutil --verbose pkg generate --hw-version 52 --sd-req 0xb9 --application-version 1 --application $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex --key-file $(SDK_ROOT)/../vault/priv.pem Climber.zip
+	nrfutil pkg display Climber.zip
+	nrfutil dfu usb-serial -pkg Climber.zip -p $(COM_PORT)
 
 dfu_send:
-	nrfutil dfu usb_serial -pkg stravaV10.zip -p $(COM_PORT)
+	nrfutil dfu usb_serial -pkg Climber.zip -p $(COM_PORT)
 
 jumper: $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex
 	mergehex -m $(SDK_ROOT)/$(SOFTDEVICE) $(OUTPUT_DIRECTORY)/nrf52840_xxaa.hex -o $(OUTPUT_DIRECTORY)/merged.hex
