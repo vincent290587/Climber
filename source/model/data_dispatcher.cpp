@@ -53,8 +53,8 @@ float m_last_innov = 0;
 void _kalman_init(void) {
 
 	// init kalman
-	m_k_lin.ker.ker_dim = 7;
-	m_k_lin.ker.obs_dim = 3;
+	m_k_lin.ker.ker_dim = 8;
+	m_k_lin.ker.obs_dim = 4;
 
 	kalman_lin_init(&m_k_lin);
 
@@ -92,25 +92,28 @@ void _kalman_init(void) {
 	 *
 	 * | d  |
 	 * | dd |
-	 * | v  |   | 1      dt     0     0    0 |
-	 * | vp | = | 0       0    -g     0    0 |
-	 * | sa |   | 0       0     1     0    0 | . Xm
-	 * | h  |   | 0       0     0     1   dt |
-	 * | hp |   | 0       0     v     0    1 |
+	 * | v  |   | 1      dt     0     0    0      0 |
+	 * | vp | = | 0       0    -g     0    0  P/m.v |
+	 * | sa |   | 0       0     1     0    0      0 | . Xm
+	 * | h  |   | 0       0     0     1   dt      0 |
+	 * | hp |   | 0       0     v     0    1      0 |
+	 * | Pn |   | 0       0     0     0    0      1 |
 	 *
-1.000000 0.140000 0.000000 0.000000 0.000000 0.000000 0.000000
+1.000000 0.140000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
 
-0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
 
-0.000000 0.000000 1.000000 0.140000 0.000000 0.000000 0.000000
+0.000000 0.000000 1.000000 0.140000 0.000000 0.000000 0.000000 0.000000
 
-0.000000 0.000000 0.000000 0.000000 -9.810000 0.000000 0.000000
+0.000000 0.000000 0.000000 0.000000 -9.810000 0.000000 0.000000 0.001449
 
-0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000
 
-0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.140000
+0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.140000 0.000000
 
-0.000000 0.000000 0.000000 0.000000 10.000000 0.000000 1.000000
+0.000000 0.000000 0.000000 0.000000 10.000000 0.000000 1.000000 0.000000
+
+0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
 	 *
 	 */
 }
@@ -134,6 +137,7 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matC.set(0, 0, 1);
 	m_k_lin.ker.matC.set(1, 2, 1);
 	m_k_lin.ker.matC.set(2, 5, 1);
+	m_k_lin.ker.matC.set(3, 7, 1);
 
 	// command mapping
 	m_k_lin.ker.matB.zeros();
@@ -154,7 +158,7 @@ static float _kalman_run(void) {
 		vp1 = m_power / (69.0f * m_speed) ;
 	}
 
-	feed.matU.set(3, 0, vp1);
+	feed.matZ.set(3, 0, m_power);
 
 	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
@@ -163,6 +167,7 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matA.set(3, 2, 0);
 	m_k_lin.ker.matA.set(3, 3, 0);
 	m_k_lin.ker.matA.set(3, 4, -9.81f);
+	m_k_lin.ker.matA.set(3, 7, 1 / (69.0f * m_speed));
 	m_k_lin.ker.matA.set(4, 4, 1);
 	m_k_lin.ker.matA.set(5, 5, 1);
 	m_k_lin.ker.matA.set(5, 6, feed.dt);
@@ -180,6 +185,7 @@ static float _kalman_run(void) {
 #ifdef TDD
 	m_last_est_dist = m_k_lin.ker.matX.get(0,0);
 	m_last_innov    = m_k_lin.ker.matKI.get(0,0);
+	m_k_lin.ker.matX.print();
 #endif
 
 	return m_k_lin.ker.matX.get(0,0);
