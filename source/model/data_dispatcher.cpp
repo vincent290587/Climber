@@ -93,10 +93,24 @@ void _kalman_init(void) {
 	 * | d  |
 	 * | dd |
 	 * | v  |   | 1      dt     0     0    0 |
-	 * | vp | = | P_n/m.v 0  -1/g     0    0 |
+	 * | vp | = | 0       0    -g     0    0 |
 	 * | sa |   | 0       0     1     0    0 | . Xm
 	 * | h  |   | 0       0     0     1   dt |
 	 * | hp |   | 0       0     v     0    1 |
+	 *
+1.000000 0.140000 0.000000 0.000000 0.000000 0.000000 0.000000
+
+0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+
+0.000000 0.000000 1.000000 0.140000 0.000000 0.000000 0.000000
+
+0.000000 0.000000 0.000000 0.000000 -9.810000 0.000000 0.000000
+
+0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000
+
+0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.140000
+
+0.000000 0.000000 0.000000 0.000000 10.000000 0.000000 1.000000
 	 *
 	 */
 }
@@ -124,6 +138,7 @@ static float _kalman_run(void) {
 	// command mapping
 	m_k_lin.ker.matB.zeros();
 	m_k_lin.ker.matB.set(0, 1, feed.dt);
+	m_k_lin.ker.matB.set(3, 3, 1);
 
 	// set command: U
 	int16_t speed_mm_s = vnh5019_driver__getM1Speed();
@@ -139,11 +154,13 @@ static float _kalman_run(void) {
 		vp1 = m_power / (69.0f * m_speed) ;
 	}
 
+	feed.matU.set(3, 0, vp1);
+
 	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
 	m_k_lin.ker.matA.set(2, 2, 1);
 	m_k_lin.ker.matA.set(2, 3, feed.dt);
-	m_k_lin.ker.matA.set(3, 2, vp1);
+	m_k_lin.ker.matA.set(3, 2, 0);
 	m_k_lin.ker.matA.set(3, 3, 0);
 	m_k_lin.ker.matA.set(3, 4, -9.81f);
 	m_k_lin.ker.matA.set(4, 4, 1);
@@ -152,6 +169,7 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matA.set(6, 4, m_speed);
 	m_k_lin.ker.matA.set(6, 6, 1);
 
+//	m_k_lin.ker.matA.print();exit(0);
 
 	kalman_lin_feed(&m_k_lin, &feed);
 
