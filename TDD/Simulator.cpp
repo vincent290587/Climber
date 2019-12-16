@@ -206,7 +206,7 @@ void simulator_task(void * p_context) {
 		// inject sim dist
 		tdd_inject_vl53l1_measurement(vnh_dist_mm);
 
-		const float slope = 0.1f;
+		const float slope = 0.1f + 0.2f * sinf(sim_phase);;
 
 		// inject sim erg
 		float m_speed = 10.0f;
@@ -223,6 +223,7 @@ void simulator_task(void * p_context) {
 		extern int16_t	m_vnh_speed_mm_s;
 		extern float	m_last_innov;
 		extern float	m_last_est_dist;
+		extern float	m_last_est_slope;
 
 		float sim_slope = ((float)vnh_dist_mm - BIKE_HUB_DIST_MM) * 100.0f / BIKE_REACH_MM;
 

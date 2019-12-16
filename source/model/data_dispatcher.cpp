@@ -48,6 +48,7 @@ static float m_speed, m_alti, m_power;
 #ifdef TDD
 float m_last_est_dist = 0;
 float m_last_innov = 0;
+float m_last_est_slope = 0;
 #endif
 
 void _kalman_init(void) {
@@ -64,8 +65,9 @@ void _kalman_init(void) {
 	m_k_lin.ker.matB.zeros();
 	m_k_lin.ker.matB.print();
 
-	// set Q
+	// set Q: kernel noise
 	m_k_lin.ker.matQ.unity(1 / 20.);
+	m_k_lin.ker.matQ.set(4, 4, 1 / 80.);
 
 	// set P
 	m_k_lin.ker.matP.ones(900);
@@ -101,7 +103,7 @@ void _kalman_init(void) {
 	 *
 1.000000 0.150000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
 
-0.000000 1.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
 
 0.000000 0.000000 1.000000 0.150000 0.000000 0.000000 0.000000 0.000000
 
@@ -123,6 +125,14 @@ static float _kalman_run(void) {
 	// run kalman
 	static sKalmanExtFeed feed;
 
+	// calculate net power
+	float vp1 = 0.0f;
+	if (m_speed > 1.0f) {
+		float speed28 = powf(m_speed, 2.8f);
+		m_power -= (0.0102f * speed28) + 9.428f;
+		vp1 = m_power / (69.0f * m_speed) ;
+	}
+
 	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
 	m_update_time = millis();
 
@@ -132,6 +142,7 @@ static float _kalman_run(void) {
 	feed.matZ.set(0, 0, m_distance);
 	feed.matZ.set(1, 0, m_speed);
 	feed.matZ.set(2, 0, m_alti);
+	feed.matZ.set(3, 0, m_power);
 
 	// measures mapping
 	m_k_lin.ker.matC.set(0, 0, 1);
@@ -150,18 +161,9 @@ static float _kalman_run(void) {
 	feed.matU.zeros();
 	feed.matU.set(1, 0, (float)speed_mm_s);
 
-	// calculate net power
-	float vp1 = 0.0f;
-	if (m_speed > 1.0f) {
-		float speed28 = powf(m_speed, 2.8f);
-		m_power -= (0.0102f * speed28) + 9.428f;
-		vp1 = m_power / (69.0f * m_speed) ;
-	}
-
-	feed.matZ.set(3, 0, m_power);
-
 	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
+	m_k_lin.ker.matA.set(1, 1, 0);
 	m_k_lin.ker.matA.set(2, 2, 1);
 	m_k_lin.ker.matA.set(2, 3, feed.dt);
 	m_k_lin.ker.matA.set(3, 2, 0);
@@ -183,9 +185,11 @@ static float _kalman_run(void) {
 	m_nb_runs++;
 
 #ifdef TDD
-	m_last_est_dist = m_k_lin.ker.matX.get(0,0);
-	m_last_innov    = m_k_lin.ker.matKI.get(0,0);
-	m_k_lin.ker.matX.print();
+	m_last_est_dist = m_k_lin.ker.matX.get(0, 0);
+	m_last_innov    = m_k_lin.ker.matKI.get(0, 0);
+
+	m_last_est_slope = m_k_lin.ker.matX.get(4, 0);
+
 #endif
 
 	return m_k_lin.ker.matX.get(0,0);
