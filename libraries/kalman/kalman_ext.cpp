@@ -13,6 +13,7 @@
 
 #include "kalman_ext.h"
 #include "math_wrapper.h"
+#include "assert_wrapper.h"
 #include "nordic_common.h"
 #include "segger_wrapper.h"
 

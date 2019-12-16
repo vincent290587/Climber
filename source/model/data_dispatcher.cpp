@@ -43,6 +43,7 @@ static int32_t m_d_target = 320;
 static int32_t m_distance_cal = 300;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
+static float m_speed, m_alti, m_power;
 
 #ifdef TDD
 float m_last_est_dist = 0;
@@ -52,8 +53,8 @@ float m_last_innov = 0;
 void _kalman_init(void) {
 
 	// init kalman
-	m_k_lin.ker.ker_dim = 2;
-	m_k_lin.ker.obs_dim = 1;
+	m_k_lin.ker.ker_dim = 7;
+	m_k_lin.ker.obs_dim = 3;
 
 	kalman_lin_init(&m_k_lin);
 
@@ -62,8 +63,6 @@ void _kalman_init(void) {
 
 	m_k_lin.ker.matB.zeros();
 	m_k_lin.ker.matB.print();
-
-	m_k_lin.ker.matC.set(0, 0, 1);
 
 	// set Q
 	m_k_lin.ker.matQ.unity(1 / 20.);
@@ -91,6 +90,8 @@ void _kalman_init(void) {
 	 *
 	 * hp = v.sin(a)
 	 *
+	 * | d  |
+	 * | dd |
 	 * | v  |   | 1      dt     0     0    0 |
 	 * | vp | = | P_n/m.v 0  -1/g     0    0 |
 	 * | sa |   | 0       0     1     0    0 | . Xm
@@ -108,19 +109,49 @@ static float _kalman_run(void) {
 	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
 	m_update_time = millis();
 
-	feed.matZ.resize(m_k_lin.ker.obs_dim, m_k_lin.ker.obs_dim);
+	// set measures: Z
+	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
+	feed.matZ.zeros();
 	feed.matZ.set(0, 0, m_distance);
+	feed.matZ.set(1, 0, m_speed);
+	feed.matZ.set(2, 0, m_alti);
 
+	// measures mapping
+	m_k_lin.ker.matC.set(0, 0, 1);
+	m_k_lin.ker.matC.set(1, 2, 1);
+	m_k_lin.ker.matC.set(2, 5, 1);
+
+	// command mapping
 	m_k_lin.ker.matB.zeros();
+	m_k_lin.ker.matB.set(0, 1, feed.dt);
 
-	// set U
+	// set command: U
 	int16_t speed_mm_s = vnh5019_driver__getM1Speed();
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
 	feed.matU.set(1, 0, (float)speed_mm_s);
 
+	// calculate net power
+	float vp1 = 0.0f;
+	if (m_speed > 1.0f) {
+		float speed28 = powf(m_speed, 2.8f);
+		m_power -= (0.0102f * speed28) + 9.428f;
+		vp1 = m_power / (69.0f * m_speed) ;
+	}
+
+	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
-	m_k_lin.ker.matB.set(0, 1, feed.dt);
+	m_k_lin.ker.matA.set(2, 2, 1);
+	m_k_lin.ker.matA.set(2, 3, feed.dt);
+	m_k_lin.ker.matA.set(3, 2, vp1);
+	m_k_lin.ker.matA.set(3, 3, 0);
+	m_k_lin.ker.matA.set(3, 4, -9.81f);
+	m_k_lin.ker.matA.set(4, 4, 1);
+	m_k_lin.ker.matA.set(5, 5, 1);
+	m_k_lin.ker.matA.set(5, 6, feed.dt);
+	m_k_lin.ker.matA.set(6, 4, m_speed);
+	m_k_lin.ker.matA.set(6, 6, 1);
+
 
 	kalman_lin_feed(&m_k_lin, &feed);
 
@@ -130,7 +161,7 @@ static float _kalman_run(void) {
 
 #ifdef TDD
 	m_last_est_dist = m_k_lin.ker.matX.get(0,0);
-	m_last_innov = m_k_lin.ker.matKI.get(0,0);
+	m_last_innov    = m_k_lin.ker.matKI.get(0,0);
 #endif
 
 	return m_k_lin.ker.matX.get(0,0);
@@ -208,6 +239,14 @@ void data_dispatcher__feed_distance(float distance) {
 	m_updated.dist = 1;
 
 	w_task_delay_cancel(m_task_id);
+
+}
+
+void data_dispatcher__feed_erg(float speed, float alti, float power) {
+
+	m_alti  = alti;
+	m_speed = speed;
+	m_power = power;
 
 }
 
