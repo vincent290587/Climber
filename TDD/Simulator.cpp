@@ -206,6 +206,19 @@ void simulator_task(void * p_context) {
 		// inject sim dist
 		tdd_inject_vl53l1_measurement(vnh_dist_mm);
 
+		const float slope = 0.1f;
+
+		// inject sim erg
+		float m_speed = 10.0f;
+		float speed28 = powf(m_speed, 2.8f);
+		float v_speed = m_speed * sin(slope);
+		float power = v_speed * 69 * 9.81 + (0.0102f * speed28) + 9.428f;
+		static float alti = 200;
+		float dh = v_speed * SIM_DT_MS / 1000.0f;
+		alti += dh;
+
+		data_dispatcher__feed_erg(m_speed, alti, power);
+
 		// logging
 		extern int16_t	m_vnh_speed_mm_s;
 		extern float	m_last_innov;
