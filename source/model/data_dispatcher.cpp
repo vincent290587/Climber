@@ -81,17 +81,21 @@ void _kalman_init(void) {
 
 	/*
 	 * Slope can also be estimated using the following equations:
-	 * (if only I had in-game speed for ERG mode...)
+	 * (if only I had in-game slope for ERG mode...)
 	 *
-	 * m.v_dot = m.gp + P_n.v
+	 * m.v_dot = m.gp + P_n/v
 	 *
 	 * gp = g.sin(a)
 	 *
 	 * sl = tan(a)
 	 *
-	 * | v  |   | 1      dt   0  |
-	 * | vp | = | P_n/m  0    1  | . Xm
-	 * | gp |   | 0      0    1  |
+	 * hp = v.sin(a)
+	 *
+	 * | v  |   | 1      dt     0     0    0 |
+	 * | vp | = | P_n/m.v 0  -1/g     0    0 |
+	 * | sa |   | 0       0     1     0    0 | . Xm
+	 * | h  |   | 0       0     0     1   dt |
+	 * | hp |   | 0       0     v     0    1 |
 	 *
 	 */
 }
