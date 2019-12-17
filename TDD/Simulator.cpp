@@ -115,7 +115,7 @@ void simulator_test(void) {
 }
 
 #define SIM_DT_MS                      50
-#define SIM_SLOPE_PERIOD_S             20000
+#define SIM_SLOPE_PERIOD_MS            20000
 #define BIKE_HUB_DIST_MM               315
 
 
@@ -162,14 +162,14 @@ void simulator_task(void * p_context) {
 
 		if (millis() < 5000) {
 
-			if (millis() > 1000) {
+			if (millis() > 1500) {
 
 				tdd_logger_start();
 			}
 
 		} else if (millis() < 15000) {
 
-			sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_S;
+			sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_MS;
 
 			tgt_slope = 4.5f * sinf(sim_phase);
 
@@ -206,6 +206,8 @@ void simulator_task(void * p_context) {
 		// inject sim dist
 		tdd_inject_vl53l1_measurement(vnh_dist_mm);
 
+#if 1
+		// changing slope with constant speed
 		const float slope = 0.1f + 0.2f * sinf(sim_phase);
 
 		// inject sim erg
@@ -216,6 +218,30 @@ void simulator_task(void * p_context) {
 		static float alti = 200;
 		float dh = v_speed * SIM_DT_MS / 1000.0f;
 		alti += dh;
+#elif 0
+		// constant slope with changing power and speed
+		const float slope = 0.1f;
+		const float inc_speed = 0.02f;
+
+		// inject sim erg
+		static float m_speed = 1.0f;
+		m_speed += inc_speed;
+		float speed28 = powf(m_speed, 2.8f);
+		float v_speed = m_speed * sin(slope);
+		float power = v_speed * 69 * 9.81 + (0.0102f * speed28) + 9.428f + inc_speed * 69.0f * 1000.0f / (SIM_DT_MS / m_speed);
+		static float alti = 200;
+		float dh = v_speed * SIM_DT_MS / 1000.0f;
+		alti += dh;
+#else
+		// constant net power=0, slope and speed auto
+		const float alti = 110.0f + 10.0f * sinf(sim_phase);
+		const float power = 0;
+		const float slope = 1000.0f * 2.0f * M_PI * cosf(sim_phase) / SIM_SLOPE_PERIOD_MS;
+		const float inc_speed = 0.02f;
+
+		// inject sim erg
+		const float m_speed = 20.0f - sqrtf( 2.0f * 9.81f * (alti - 100.0f));
+#endif
 
 		data_dispatcher__feed_erg(m_speed, alti, power);
 
