@@ -35,6 +35,7 @@
 #include "millis.h"
 #include "ble_api_base.h"
 #include "data_dispatcher.h"
+#include "zpm_decoder.h"
 #include "segger_wrapper.h"
 #include "ring_buffer.h"
 #include "Model.h"
@@ -84,9 +85,6 @@ BLE_NUS_C_DEF(m_ble_nus_c);
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
 
-#define NUS_RB_SIZE      1024
-RING_BUFFER_DEF(nus_rb1, NUS_RB_SIZE);
-
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
 
@@ -101,10 +99,11 @@ static task_id_t m_periph_id = TASK_ID_INVALID;
 
 typedef struct {
 	uint8_t p_xfer_str[200];
-	int16_t length;
+	uint16_t length;
 } sNusXfer;
 
-static sNusXfer m_nus_xfer_array;
+static sNusXfer m_nus_xfer_tx_array;
+static sNusXfer m_nus_xfer_rx_array;
 
 static void scan_start(void);
 
@@ -325,20 +324,8 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		LOG_DEBUG("Received %u chars from BLE !", p_evt->data_len);
 
 		{
-			for (uint16_t i=0; i < p_evt->data_len; i++) {
-
-				char c = p_evt->p_data[i];
-
-				if (RING_BUFF_IS_NOT_FULL(nus_rb1)) {
-					RING_BUFFER_ADD_ATOMIC(nus_rb1, c);
-				} else {
-					LOG_ERROR("NUS ring buffer full");
-
-					// empty ring buffer
-					RING_BUFF_EMPTY(nus_rb1);
-				}
-
-			}
+			m_nus_xfer_rx_array.length = p_evt->data_len;
+			memcpy(m_nus_xfer_rx_array.p_xfer_str, p_evt->p_data, p_evt->data_len);
 
 			// unblock NUS servicing task
 			if (m_periph_id != TASK_ID_INVALID) {
@@ -578,7 +565,7 @@ void ble_nus_log_text(const char * text) {
 
 	// create log
 	if (!text) return;
-	m_nus_xfer_array.length = snprintf((char*)m_nus_xfer_array.p_xfer_str, sizeof(m_nus_xfer_array.p_xfer_str),
+	m_nus_xfer_tx_array.length = snprintf((char*)m_nus_xfer_tx_array.p_xfer_str, sizeof(m_nus_xfer_tx_array.p_xfer_str),
 			text);
 
 }
@@ -590,22 +577,39 @@ void ble_nus_log_text(const char * text) {
  */
 void ble_nus_tasks(void) {
 
-	while (RING_BUFF_IS_NOT_EMPTY(nus_rb1)) {
-		char c = RING_BUFF_GET_ELEM(nus_rb1);
-		RING_BUFFER_POP(nus_rb1);
+	if (m_nus_xfer_rx_array.length) {
 
-		if (c == 'U') {
+		// decode
+		switch(m_nus_xfer_rx_array.p_xfer_str[0]) {
+
+		// ZPM ERG mode information
+		case '>':
+		{
+			// decode packet
+			zpm_decoder__handle(&m_nus_xfer_rx_array.p_xfer_str[1], m_nus_xfer_rx_array.length);
+		} break;
+
+		// calibration commands
+		case 'U':
 			data_dispatcher__offset_calibration(  5 );
-		} else if (c == 'D') {
+			break;
+		case 'D':
 			data_dispatcher__offset_calibration( -5 );
+			break;
+
+		default:
+			LOG_WARNING("Unknown NUS packet");
+			break;
 		}
+
+		memset(&m_nus_xfer_rx_array, 0, sizeof(m_nus_xfer_rx_array));
 	}
 
 	while (m_connected &&
-			m_nus_xfer_array.length &&
+			m_nus_xfer_tx_array.length &&
 			m_nus_cts) {
 
-		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.p_xfer_str, m_nus_xfer_array.length);
+		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_tx_array.p_xfer_str, m_nus_xfer_tx_array.length);
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
@@ -625,15 +629,15 @@ void ble_nus_tasks(void) {
 
 		case NRF_SUCCESS:
 		{
-			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_array.length);
+			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
 
 			m_nus_packet_nb++;
-			m_nus_xfer_array.length = 0;
+			m_nus_xfer_tx_array.length = 0;
 		} break;
 
 		default:
 		{
-			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_array.length, BLE_NUS_MAX_DATA_LEN);
+			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_tx_array.length, BLE_NUS_MAX_DATA_LEN);
 			return;
 		} break;
 		}

@@ -10,7 +10,7 @@ The concept was inspired from OpenGradeSim, but with different strategy / parts 
 - [x] Kalman filtering
 - [x] Actuator command
 - [x] User params flash saving
-- [ ] ANT FE-C Power / speed to slope conversion
+- [x] ANT FE-C ERG mode slope simulation
 
 # Concept
 
@@ -20,7 +20,10 @@ You know the rest ;-)
 
 ## Slope detection
 
-The current in-game slope is sniffed using an ANT+ continuous scanner directly with the nRF52 radio, which makes it available only the in non-workout mode of Zwift.  
+The current in-game slope is sniffed using an ANT+ continuous scanner directly with the nRF52 radio.  
+The software can work in 2 modes:   
+- When in simulation mode, the slope is directly obtained from the game ANT+ packets,
+- When in ERG mode, the slope is estimated using a 6 states kalman filter feeding on speed / power and altitude. 
 
 
 ## Incline achievement
