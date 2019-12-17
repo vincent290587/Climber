@@ -5,6 +5,7 @@
  *      Author: v.golle
  */
 
+#include <cmath>
 #include "UDMatrix.h"
 #include "assert_wrapper.h"
 #include "segger_wrapper.h"
@@ -132,9 +133,13 @@ void UDMatrix::mul(udm_type_t val) {
 
 }
 
-void UDMatrix::print(void) {
+void UDMatrix::print(const char *str) {
 
 #ifdef TDD
+	if (str) {
+		LOG_RAW_INFO("----------  %s  ---------------", str);
+		LOG_RAW_INFO("\r\n");
+	}
 	LOG_RAW_INFO("----------  Matrix ---------------");
 	LOG_RAW_INFO("\r\n");
 	for (unsigned i=0; i< this->m_rowSize; i++) {
@@ -154,6 +159,8 @@ void UDMatrix::print(void) {
  */
 UDMatrix UDMatrix::invert() {
 
+	ASSERT(this->m_colSize > 0);
+	ASSERT(this->m_rowSize > 0);
 	ASSERT(this->m_colSize == this->m_rowSize);
 
 	udm_type_t temp;
@@ -270,6 +277,35 @@ void UDMatrix::ones(udm_type_t val) {
 		}
 	}
 
+}
+
+
+void UDMatrix::normalize(void) {
+
+	for (unsigned i=0; i< this->m_rowSize; i++) {
+		for (unsigned j=0; j< this->m_colSize; j++) {
+
+			if (std::fabs(this->m_data[i][j]) < 1e-10) {
+				this->m_data[i][j] = 0;
+			}
+
+		}
+	}
+}
+
+void UDMatrix::bound(udm_type_t min_val, udm_type_t max_val) {
+
+	for (unsigned i=0; i< this->m_rowSize; i++) {
+		for (unsigned j=0; j< this->m_colSize; j++) {
+
+			if (std::fabs(this->m_data[i][j]) < min_val) {
+				this->m_data[i][j] = min_val;
+			} else if (std::fabs(this->m_data[i][j]) > max_val) {
+				this->m_data[i][j] = max_val;
+			}
+
+		}
+	}
 }
 
 void UDMatrix::zeros(void) {

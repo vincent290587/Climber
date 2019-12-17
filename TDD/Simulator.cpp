@@ -206,7 +206,7 @@ void simulator_task(void * p_context) {
 		// inject sim dist
 		tdd_inject_vl53l1_measurement(vnh_dist_mm);
 
-		const float slope = 0.1f + 0.2f * sinf(sim_phase);;
+		const float slope = 0.1f + 0.2f * sinf(sim_phase);
 
 		// inject sim erg
 		float m_speed = 10.0f;
