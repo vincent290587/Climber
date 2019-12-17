@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "gpio.h"
 #include "nordic_common.h"
 #include "nrf_sdm.h"
 #include "ble.h"
@@ -599,11 +600,15 @@ void ble_nus_tasks(void) {
 		} else if (c == 'D') {
 			data_dispatcher__offset_calibration( -5 );
 		}
+
+		gpio_toggle(LED_1);
 	}
 
 	while (m_connected &&
 			m_nus_xfer_array.length &&
 			m_nus_cts) {
+
+		gpio_toggle(LED_1);
 
 		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.p_xfer_str, m_nus_xfer_array.length);
 

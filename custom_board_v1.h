@@ -57,19 +57,19 @@ extern "C" {
 
 //#define HAS_LSM6
 
-#define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 25)
-#define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 24)
+#define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 17)
+#define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 15)
 
 #define LSM6_INT1        NRF_GPIO_PIN_MAP(0, 23)
 #define LSM6_INT2        NRF_GPIO_PIN_MAP(0, 26)
 
-#define VL53_INT         NRF_GPIO_PIN_MAP(0, 22)
+#define VL53_INT         NRF_GPIO_PIN_MAP(0, 13)
 
-#define VNH_INA1         NRF_GPIO_PIN_MAP(0, 4)
-#define VNH_INB1         NRF_GPIO_PIN_MAP(0, 28)
-#define VNH_PWM1         NRF_GPIO_PIN_MAP(0, 20)
-#define VNH_CS1          NRF_GPIO_PIN_MAP(0, 30)
-#define VNH_DIAG1        NRF_GPIO_PIN_MAP(0,  2)
+#define VNH_INA1         NRF_GPIO_PIN_MAP(1, 13)
+#define VNH_INB1         NRF_GPIO_PIN_MAP(1, 15)
+#define VNH_PWM1         NRF_GPIO_PIN_MAP(1, 10)
+#define VNH_CS1          NRF_GPIO_PIN_MAP(0, 29)
+#define VNH_DIAG1        NRF_GPIO_PIN_MAP(0, 31)
 
 #define HWFC           true
 

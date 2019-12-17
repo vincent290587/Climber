@@ -57,9 +57,9 @@ CFLAGS += $(OPT)
 #CFLAGS += -DUSB_ENABLED -DUSE_VCOM_LOGS=1
 CFLAGS += -DNRF_DRV_USBD_ERRATA_ENABLE=1
 #CFLAGS += -DUSE_SVIEW=1 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
-CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=1 -DUSE_RTT=1
+CFLAGS += -DUSE_SVIEW=0 -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
 #CFLAGS += -DUSE_SVIEW=0 -DUSE_JSCOPE -DNRF_LOG_ENABLED=0 -DUSE_RTT=1
-CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
+#CFLAGS += -DDEBUG -DDEBUG_NRF -DDEBUG_NRF_USER
 CFLAGS += -DUSE_APP_CONFIG
 CFLAGS += -DNRF52840
 CFLAGS += -DNRF52840_XXAA
@@ -77,7 +77,7 @@ CFLAGS += -DNRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED=1
 CFLAGS += -DS340
 CFLAGS += -DFLOAT_ABI_HARD
 CFLAGS += -mcpu=cortex-m4 -DARM_MATH_CM4 -fsingle-precision-constant
-#CFLAGS += -Wdouble-promotion -Wfloat-conversion
+CFLAGS += -Wdouble-promotion -Wfloat-conversion
 CFLAGS += -mthumb -mabi=aapcs
 CFLAGS += -Wall 
 CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
@@ -114,7 +114,7 @@ LDFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # let linker to dump unused sections
 LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
-LDFLAGS += --specs=nano.specs -u _printf_float -u _scanf_float
+LDFLAGS += --specs=nano.specs -u _printf_float
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.

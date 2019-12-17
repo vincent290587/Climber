@@ -10,6 +10,7 @@
 #include "boards.h"
 #include "helper.h"
 #include "millis.h"
+#include "parameters.h"
 #include "nrf_drv_timer.h"
 #include "nrf_drv_ppi.h"
 #include "nrf_drv_saadc.h"
@@ -20,7 +21,6 @@
 #define SAMPLES_IN_BUFFER 1
 
 #define PWM_FREQUENCY_HZ     10000UL
-#define PWM_PRECALING        1UL
 
 APP_PWM_INSTANCE(PWM1, 2);                   // Create the instance "PWM1" using TIMER1.
 
@@ -63,9 +63,9 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
 	// start sampling SAADC
 	nrf_drv_saadc_sample();
 
-	if (duty_cycle > 2) {
+	if (duty_cycle > 10) {
 
-		uint32_t div = (100 - duty_cycle) / PWM_PRECALING;
+		uint32_t div = 100 - duty_cycle;
 
 		LOG_INFO("PWM signal duty cycle: %lu (freq = %u)", div, duty_cycle);
 
@@ -85,8 +85,6 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
         while (app_pwm_channel_duty_set(&PWM1, 0, 0) == NRF_ERROR_BUSY) {
         	w_task_yield();
         }
-
-		m_state = eVNH5019StateCoasting;
 
 		return 0;
 	}
@@ -129,7 +127,7 @@ static void _saadc_init(void)
 	nrf_drv_saadc_config_t saadc_config = NRF_DRV_SAADC_DEFAULT_CONFIG;
 
 	ret_code_t err_code;
-	nrf_saadc_channel_config_t channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_DIFFERENTIAL(5, 6); // TODO set pins
+	nrf_saadc_channel_config_t channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(VNH_CS1);
 
 	//Configure SAADC channel
 	channel_config.reference = NRF_SAADC_REFERENCE_INTERNAL;                              //Set internal reference of fixed 0.6 volts
@@ -166,7 +164,7 @@ void vnh5019_driver__init(void) {
 	nrf_gpio_cfg_input(VNH_DIAG1, NRF_GPIO_PIN_PULLUP);
 
 	nrf_gpio_cfg_output(VNH_PWM1);
-	nrf_gpio_pin_set(VNH_PWM1);
+	nrf_gpio_pin_clear(VNH_PWM1);
 
 	int err_code = nrf_drv_ppi_init();
 	APP_ERROR_CHECK(err_code);
@@ -194,37 +192,54 @@ void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 
 	if (speed_mm_s < 16)
 	{
-		duty_cycle = (speed_mm_s * 100) / 16;
+		duty_cycle = (speed_mm_s * VNH_FULL_SCALE) / 16;
 	} else {
-		duty_cycle = 100;
+		duty_cycle = VNH_FULL_SCALE;
 	}
 
 	m_state = eVNH5019StateDriving;
 
 	// set PWM signal
-	if (!_pwm_signal_set(duty_cycle)) {
+	duty_cycle = _pwm_signal_set(duty_cycle);
+	if (!duty_cycle) {
 
-		// forced coasting
-		duty_cycle = 0;
+		// forced coastin
+		m_state = eVNH5019StateCoasting;
 	}
 
-	// save speed
-	m_speed_mm_s = speed_mm_s;
+	gpio_set(LED_2);
+	gpio_set(LED_3);
+	gpio_set(LED_4);
 
-	if (speed_mm_s == 0)
+	if (duty_cycle == 0)
 	{
 		digitalWrite(VNH_INA1, LOW);   // Make the motor coast no
 		digitalWrite(VNH_INB1, LOW);   // matter which direction it is spinning.
+
+		// save speed
+		m_speed_mm_s = 0;
+
+		gpio_clear(LED_2);
 	}
 	else if (reverse)
 	{
 		digitalWrite(VNH_INA1, LOW);
 		digitalWrite(VNH_INB1, HIGH);
+
+		// save speed
+		m_speed_mm_s = -speed_mm_s;
+
+		gpio_clear(LED_3);
 	}
 	else
 	{
 		digitalWrite(VNH_INA1, HIGH);
 		digitalWrite(VNH_INB1, LOW);
+
+		// save speed
+		m_speed_mm_s =  speed_mm_s;
+
+		gpio_clear(LED_4);
 	}
 }
 

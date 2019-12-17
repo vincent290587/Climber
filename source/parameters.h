@@ -24,4 +24,8 @@
 
 #define SCAN_STOP_TIME_MS         (5 * 60 * 1000)
 
+#define VNH_FULL_SCALE            60
+
+#define DEFAULT_TARGET_DISTANCE   240
+
 #endif /* SOURCE_PARAMETERS_H_ */
