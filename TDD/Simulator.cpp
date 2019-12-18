@@ -120,7 +120,8 @@ void simulator_test(void) {
 
 #define SIM_DT_MS                      50
 #define SIM_SLOPE_PERIOD_MS            20000
-#define BIKE_HUB_DIST_MM               315
+#define BIKE_HUB_DIST_MM               340
+#define VNH_HUB_OFFSET                 80.0f
 
 
 enum {
@@ -147,7 +148,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_EST_DIST	, "est_dist");
 	tdd_logger_log_name(TDD_LOGGING_EST_ERROR	, "est_error");
 	tdd_logger_log_name(TDD_LOGGING_MOTOR_SPEED	, "motor_speed");
-	tdd_logger_log_name(TDD_LOGGING_ACT_POS		, "act_pos");
+	tdd_logger_log_name(TDD_LOGGING_ACT_POS		, "cur_dist");
 	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE	, "sim_slope");
 
 	data_dispatcher__offset_calibration(15);
@@ -208,7 +209,7 @@ void simulator_task(void * p_context) {
 		int16_t vnh_dist_mm = tdd_vnh5019_driver__get_length();
 
 		// inject sim dist
-		tdd_inject_vl53l1_measurement(vnh_dist_mm);
+		tdd_inject_vl53l1_measurement(vnh_dist_mm - VNH_HUB_OFFSET);
 
 #if 1
 		// changing slope with constant speed

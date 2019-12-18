@@ -127,10 +127,12 @@ static float _kalman_run(void) {
 
 	// calculate net power
 	float vp1 = 0.0f;
+	float _sf_speed = 0.1f;
 	if (m_speed > 1.0f) {
 		float speed28 = powf(m_speed, 2.8f);
 		m_power -= (0.0102f * speed28) + 9.428f;
 		vp1 = m_power / (69.0f * m_speed) ;
+		_sf_speed = m_speed;
 	}
 
 	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
@@ -169,11 +171,11 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matA.set(3, 2, 0);
 	m_k_lin.ker.matA.set(3, 3, 0);
 	m_k_lin.ker.matA.set(3, 4, -9.81f);
-	m_k_lin.ker.matA.set(3, 7, 1 / (69.0f * m_speed));
+	m_k_lin.ker.matA.set(3, 7, 1 / (69.0f * _sf_speed));
 	m_k_lin.ker.matA.set(4, 4, 1);
 	m_k_lin.ker.matA.set(5, 5, 1);
 	m_k_lin.ker.matA.set(5, 6, feed.dt);
-	m_k_lin.ker.matA.set(6, 4, m_speed);
+	m_k_lin.ker.matA.set(6, 4, _sf_speed);
 	m_k_lin.ker.matA.set(6, 6, 0);
 
 	//m_k_lin.ker.matA.print();exit(0);
@@ -307,7 +309,7 @@ void data_dispatcher__run(void) {
 	// run kalman
 	float f_dist_mm = _kalman_run();
 
-	LOG_INFO("Filtered dist: %ld mm", (int32_t)(f_dist_mm));
+	LOG_INFO("Filtered dist: %ld mm -- target dist %ld", (int32_t)(f_dist_mm), (int32_t)(m_d_target));
 
 	// calculate target speed
 	float delta_target = regFenLim(m_d_target - f_dist_mm, -32.0f, 32.0f, -16.0f, 16.0f) ;

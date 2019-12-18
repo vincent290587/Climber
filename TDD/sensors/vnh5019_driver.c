@@ -17,7 +17,7 @@
 int16_t m_vnh_speed_mm_s = 0;
 uint32_t m_calc_last_time = 0;
 
-static float m_sim_length = 50;
+static float m_sim_length = 25;
 
 int16_t tdd_vnh5019_driver__get_length(void) {
 
@@ -34,7 +34,7 @@ int16_t tdd_vnh5019_driver__get_length(void) {
 
 	m_calc_last_time = millis();
 
-	return (int16_t)m_sim_length + 250;
+	return (int16_t)m_sim_length + 300;
 }
 
 void vnh5019_driver__init(void) {
