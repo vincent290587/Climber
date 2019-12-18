@@ -567,8 +567,13 @@ void ble_nus_log_text(const char * text) {
 
 	// create log
 	if (!text) return;
+
 	m_nus_xfer_tx_array.length = snprintf((char*)m_nus_xfer_tx_array.p_xfer_str, sizeof(m_nus_xfer_tx_array.p_xfer_str),
 			text);
+
+	if (m_periph_id != TASK_ID_INVALID) {
+		w_task_delay_cancel(m_periph_id)
+	}
 
 }
 
@@ -578,6 +583,8 @@ void ble_nus_log_text(const char * text) {
  * Send the log file to a remote computer
  */
 void ble_nus_tasks(void) {
+
+	m_periph_id = w_task_id_get();
 
 	if (m_nus_xfer_rx_array.length) {
 

@@ -55,8 +55,6 @@ extern "C" {
 
 #define BSP_SELF_PINRESET_PIN NRF_GPIO_PIN_MAP(0,19)
 
-//#define HAS_LSM6
-
 #define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 17)
 #define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 15)
 
@@ -72,6 +70,9 @@ extern "C" {
 #define VNH_DIAG1        NRF_GPIO_PIN_MAP(0, 31)
 
 #define HWFC           true
+
+//#define HAS_LSM6
+#define HAS_VL53L1
 
 #ifdef __cplusplus
 }

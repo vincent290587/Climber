@@ -50,7 +50,9 @@ void sensing_task(void * p_context)
 {
 	w_task_delay(50);
 
+#ifdef HAS_VL53L1
 	vl53l1_wrapper__init();
+#endif
 
 #ifdef HAS_LSM6
 	lsm6ds33_wrapper__init();
@@ -59,7 +61,11 @@ void sensing_task(void * p_context)
 	for(;;)
 	{
 
+#ifdef HAS_VL53L1
 		vl53l1_wrapper__measure();
+#else
+		w_task_delay(50);
+#endif
 
 	}
 }
