@@ -74,7 +74,7 @@ static void ant_evt_bs (ant_evt_t * p_ant_evt)
         	uint16_t grade_slope = m_fec_profile.page_51.grade_slope;
         	float f_grade = (float)((int32_t)grade_slope * ANT_FEC_PAGE51_SLOPE_LSB - 200);
 
-        	data_dispatcher__feed_target_slope(f_grade);
+        	data_dispatcher__feed_target_slope(ZWIFT_SLOPE_FACTOR * f_grade);
 
         } else if (p_fec_message_payload->page_number == 16) {
 

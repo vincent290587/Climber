@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "gpio.h"
 #include "nordic_common.h"
 #include "nrf_sdm.h"
 #include "ble.h"
@@ -139,6 +140,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 		LOG_INFO("Connected.");
 		m_connected = true;
+		m_nus_cts = true;
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
