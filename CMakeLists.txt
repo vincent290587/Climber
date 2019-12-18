@@ -10,7 +10,7 @@ add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 
 if(CMAKE_HOST_UNIX)
-set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -rdynamic -fsanitize=address ")
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -rdynamic -fsanitize=address")
 else()
 set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -msse2 -mno-ms-bitfields")
 add_definitions(-DWIN32)
@@ -20,8 +20,8 @@ include_directories(./TDDW)
 endif()
 
 
-set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant")
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive")
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -ggdb -fno-omit-frame-pointer --short-enums -MMD -ffunction-sections -fdata-sections -fno-strict-aliasing -fsingle-precision-constant -frounding-math -fsignaling-nans")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=gnu++0x -fno-rtti -fpermissive -fexceptions")
 
 
 # add the binary tree to the search path for include files
@@ -43,6 +43,7 @@ include_directories(
     source
 	source/model
 	source/sensors
+	zpm
 	pca10040/s332/config
     )
 
@@ -72,6 +73,7 @@ set(SRCS
     source/sensors/fram.c
 	source/model/UserSettings.cpp
 	source/model/data_dispatcher.cpp
+	zpm/zpm_decoder.cpp
     )
     
 set(HEADERS

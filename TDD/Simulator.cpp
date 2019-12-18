@@ -14,6 +14,7 @@
 #include "tdd_logger.h"
 #include "Simulator.h"
 #include "data_dispatcher.h"
+#include "zpm_decoder.h"
 #include "segger_wrapper.h"
 #include "math_wrapper.h"
 #include "assert_wrapper.h"
@@ -74,6 +75,9 @@ void _init(void) {
 }
 
 void simulator_test(void) {
+
+	const char * zpm_data = "V40000000P340H1567";
+	zpm_decoder__handle((uint8_t*)zpm_data, strlen(zpm_data));
 
 	_init();
 

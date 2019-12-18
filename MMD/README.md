@@ -1,4 +1,4 @@
-# Monitor Mode Debugging in Keil ÂµVision5 and Segger Embedded Studio
+# Monitor Mode Debugging in Keil µVision5 and Segger Embedded Studio
 
 ## Introduction
 Monitor Mode Debugging enables you to halt and step through low priority code whilst letting high priority code execute as normal. With MMD you can debug your application while maintaining a BLE connection. 
@@ -6,7 +6,7 @@ Monitor Mode Debugging enables you to halt and step through low priority code wh
 Requirements:
 * nRF5_SDK16.0
 * nRF52DK (PCA10040)
-* Keil ÂµVision5 or Segger Embedded Studio V3.30
+* Keil µVision5 or Segger Embedded Studio V3.30
 * nRF Connect (mobile or computer)
 
 
