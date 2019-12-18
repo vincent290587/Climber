@@ -248,8 +248,8 @@ void simulator_task(void * p_context) {
 		const float m_speed = 20.0f - sqrtf( 2.0f * 9.81f * (alti - 100.0f));
 #endif
 
-//		data_dispatcher__feed_erg(m_speed, alti, power);
-		data_dispatcher__feed_erg(0, 0, 0);
+		data_dispatcher__feed_erg(m_speed, alti, power);
+//		data_dispatcher__feed_erg(0, 0, 0);
 
 		// logging
 		extern int16_t	m_vnh_speed_mm_s;
