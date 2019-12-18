@@ -28,4 +28,6 @@
 
 #define DEFAULT_TARGET_DISTANCE   240
 
+#define ZWIFT_SLOPE_FACTOR        2.0f
+
 #endif /* SOURCE_PARAMETERS_H_ */

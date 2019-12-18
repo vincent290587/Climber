@@ -63,7 +63,7 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
 	// start sampling SAADC
 	nrf_drv_saadc_sample();
 
-	if (duty_cycle > 10) {
+	if (duty_cycle > 4) {
 
 		uint32_t div = 100 - duty_cycle;
 
