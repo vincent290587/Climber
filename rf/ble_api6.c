@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "gpio.h"
 #include "nordic_common.h"
 #include "nrf_sdm.h"
 #include "ble.h"
@@ -140,6 +141,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 		LOG_INFO("Connected.");
 		m_connected = true;
+		m_nus_cts = true;
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
@@ -599,11 +601,15 @@ void ble_nus_tasks(void) {
 		} else if (c == 'D') {
 			data_dispatcher__offset_calibration( -5 );
 		}
+
+		gpio_toggle(LED_1);
 	}
 
 	while (m_connected &&
 			m_nus_xfer_array.length &&
 			m_nus_cts) {
+
+		gpio_toggle(LED_1);
 
 		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_array.p_xfer_str, m_nus_xfer_array.length);
 

@@ -39,8 +39,8 @@ static sKalmanDescr m_k_lin;
 static uint32_t m_update_time = 0;
 static uint32_t m_nb_runs = 0;
 static float m_distance = 0;
-static int32_t m_d_target = 320;
-static int32_t m_distance_cal = 300;
+static int32_t m_d_target = 0;
+static int32_t m_distance_cal = DEFAULT_TARGET_DISTANCE;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
 
@@ -146,10 +146,15 @@ void data_dispatcher__init(task_id_t _task_id) {
 
 	if (u_settings.isConfigValid()) {
 		sUserParameters *params = user_settings_get();
+
 		m_distance_cal = params->calibration;
+		m_d_target = m_distance_cal;
 
 		LOG_INFO("FRAM cal: %d (mm) ", m_distance_cal);
 	} else {
+
+		m_distance_cal = DEFAULT_TARGET_DISTANCE;
+		m_d_target = DEFAULT_TARGET_DISTANCE;
 
 		LOG_ERROR("FRAM config not valid ");
 	}
@@ -158,6 +163,7 @@ void data_dispatcher__init(task_id_t _task_id) {
 void data_dispatcher__offset_calibration(int32_t cal) {
 
 	m_distance_cal += cal;
+	m_d_target += cal;
 
 	sUserParameters *params = user_settings_get();
 	params->calibration = m_distance_cal;
@@ -220,7 +226,7 @@ void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps
 
 void data_dispatcher__run(void) {
 
-	while (!m_updated.acc || !m_updated.dist || m_d_target < 100) {
+	while (!m_updated.dist) {
 		w_task_delay(20);
 		return;
 	}
@@ -233,15 +239,23 @@ void data_dispatcher__run(void) {
 	LOG_INFO("Filtered dist: %ld mm", (int32_t)(f_dist_mm));
 
 	// calculate target speed
-	float delta_target = regFenLim(m_d_target - f_dist_mm, -17.0f, 17.0f, -17.0f, 17.0f) ;
+	float delta_target = regFenLim(m_d_target - f_dist_mm, -32.0f, 32.0f, -16.0f, 16.0f) ;
 
 	int16_t i_delta_mm = (int16_t)delta_target;
 	int16_t speed_mm_s = (int16_t)i_delta_mm;
 
-	LOG_INFO("Target speed: %d mm/s", speed_mm_s);
+	static int16_t speed_mm_s_filt = 0;
+	speed_mm_s_filt = 3 * speed_mm_s  + 7 * speed_mm_s_filt;
+	speed_mm_s_filt /= 10;
+
+	LOG_INFO("Target speed: %d mm/s %d mm/s", speed_mm_s, speed_mm_s_filt);
 
 	if (m_nb_runs > KALMAN_FREERUN_NB) {
-		vnh5019_driver__setM1Speed(speed_mm_s);
+		vnh5019_driver__setM1Speed(speed_mm_s_filt);
+	}
+
+	if (vnh5019_driver__getM1Fault()) {
+
 	}
 
 #ifdef USE_JSCOPE
@@ -250,10 +264,10 @@ void data_dispatcher__run(void) {
 	jscope.flush();
 #endif
 
-#ifdef BLE_STACK_SUPPORT_REQD
-	static char s_buffer[60];
+#if defined (BLE_STACK_SUPPORT_REQD)
+	static char s_buffer[80];
 
-	snprintf(s_buffer, sizeof(s_buffer), "hi :-) %lu", millis());
+	snprintf(s_buffer, sizeof(s_buffer), "Commanded speed: %d mm/s dist: %ld\r\n", speed_mm_s, (int32_t)(f_dist_mm));
 
 	// log through BLE every second
 	ble_nus_log_text(s_buffer);

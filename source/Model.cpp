@@ -61,8 +61,6 @@ void sensing_task(void * p_context)
 
 		vl53l1_wrapper__measure();
 
-		gpio_toggle(LED_1);
-
 	}
 }
 

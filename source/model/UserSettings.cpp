@@ -66,7 +66,7 @@ void UserSettings::resetConfig(void) {
 
 	memset(&m_params, 0, sizeof(sUserParameters));
 
-	m_params.calibration = 300;
+	m_params.calibration = DEFAULT_TARGET_DISTANCE;
 
 	LOG_WARNING("User params factory reset");
 
