@@ -175,7 +175,7 @@ static void _sensor_init(void) {
 	status = VL53L1_DataInit(Dev);
 	status = VL53L1_StaticInit(Dev);
 	status = VL53L1_set_interrupt_polarity(Dev, VL53L1_DEVICEINTERRUPTPOLARITY_ACTIVE_LOW);
-	status = VL53L1_SetDistanceMode(Dev, VL53L1_DISTANCEMODE_LONG);
+	status = VL53L1_SetDistanceMode(Dev, VL53L1_DISTANCEMODE_SHORT);
 	status = VL53L1_SetMeasurementTimingBudgetMicroSeconds(Dev, MEASUREMENT_BUDGET_MS * 1000);
 	status = VL53L1_SetInterMeasurementPeriodMilliSeconds(Dev, INTER_MEASUREMENT_PERIOD_MS);
 
