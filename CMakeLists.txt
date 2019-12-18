@@ -10,7 +10,7 @@ add_definitions(-D__HEAP_SIZE=150000)
 add_definitions(-D_USE_MATH_DEFINES)
 
 if(CMAKE_HOST_UNIX)
-set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -rdynamic -fsanitize=address")
+set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -Og -rdynamic -fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize-recover")
 else()
 set(CMAKE_C_FLAGS    "${CMAKE_CXX_FLAGS} -msse2 -mno-ms-bitfields")
 add_definitions(-DWIN32)
@@ -87,7 +87,7 @@ add_executable(Climber ${SRCS} ${HEADERS})
 
 if(CMAKE_HOST_UNIX)
 
-target_link_libraries(Climber asan)
+target_link_libraries(Climber ubsan)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND size --format=berkeley "${PROJECT_NAME}"
