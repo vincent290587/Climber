@@ -13,6 +13,7 @@
 
 #include "kalman_ext.h"
 #include "math_wrapper.h"
+#include "assert_wrapper.h"
 #include "nordic_common.h"
 #include "segger_wrapper.h"
 
@@ -107,6 +108,7 @@ void kalman_lin_feed(sKalmanDescr *descr, sKalmanExtFeed *feed) {
 	descr->ker.matPmi = descr->ker.matA * descr->ker.matP;
 	descr->ker.matPmi = descr->ker.matPmi * matAt;
 	descr->ker.matPmi = descr->ker.matPmi + descr->ker.matQ;
+	descr->ker.matPmi.bound(1e-15, 1e12);
 
 	// update kalman gain
 	UDMatrix matCt;
@@ -170,6 +172,7 @@ void kalman_ext_feed(sKalmanDescr *descr, sKalmanExtFeed *feed) {
 	descr->ker.matPmi = descr->ker.matA * descr->ker.matP;
 	descr->ker.matPmi = descr->ker.matPmi * matAt;
 	descr->ker.matPmi = descr->ker.matPmi + descr->ker.matQ;
+	descr->ker.matPmi.bound(1e-5, 1e3);
 
 	// update extended kalman gain
 	UDMatrix matHt;

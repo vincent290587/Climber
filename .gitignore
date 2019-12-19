@@ -1,6 +1,7 @@
 build/
 _build*/
 CMakeFiles/
+node_modules/
 *.local
 *.o
 *.d

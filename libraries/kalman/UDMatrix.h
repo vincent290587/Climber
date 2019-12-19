@@ -27,12 +27,15 @@ public:
 	void unity(udm_type_t res = (udm_type_t)1);
 	void ones(udm_type_t res = (udm_type_t)1);
 	void zeros(void);
-	void print(void);
+	void print(const char *str = nullptr);
 	void div(udm_type_t val);
 	void mul(udm_type_t val);
 	void resize(unsigned _rowSize, unsigned _colSize);
 
 	bool isEmpty(void) {if (!m_rowSize || !m_colSize) return true; return false;}
+
+	void normalize(void);
+	void bound(udm_type_t min_val, udm_type_t max_val);
 
 	UDMatrix operator+(UDMatrix &s_mat);
 	UDMatrix operator-(UDMatrix &s_mat);

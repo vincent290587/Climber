@@ -16,9 +16,9 @@ extern "C" {
 #define LEDS_NUMBER    1
 
 #define LED_1            NRF_GPIO_PIN_MAP(0, 17)
-#define LED_2            NRF_GPIO_PIN_MAP(0, 17)
-#define LED_3            NRF_GPIO_PIN_MAP(0, 17)
-#define LED_4            NRF_GPIO_PIN_MAP(0, 17)
+#define LED_2            NRF_GPIO_PIN_MAP(0, 18)
+#define LED_3            NRF_GPIO_PIN_MAP(0, 19)
+#define LED_4            NRF_GPIO_PIN_MAP(0, 20)
 
 #define LEDS_ACTIVE_STATE 1
 

@@ -14,6 +14,7 @@
 #include "tdd_logger.h"
 #include "Simulator.h"
 #include "data_dispatcher.h"
+#include "zpm_decoder.h"
 #include "segger_wrapper.h"
 #include "math_wrapper.h"
 #include "assert_wrapper.h"
@@ -75,6 +76,9 @@ void _init(void) {
 
 void simulator_test(void) {
 
+	const char * zpm_data = "V40000000P340H1567";
+	zpm_decoder__handle((uint8_t*)zpm_data, strlen(zpm_data));
+
 	_init();
 
 	for (int i=0; i < 250; i++) {
@@ -115,8 +119,9 @@ void simulator_test(void) {
 }
 
 #define SIM_DT_MS                      50
-#define SIM_SLOPE_PERIOD_S             20000
-#define BIKE_HUB_DIST_MM               315
+#define SIM_SLOPE_PERIOD_MS            20000
+#define BIKE_HUB_DIST_MM               340
+#define VNH_HUB_OFFSET                 80.0f
 
 
 enum {
@@ -143,7 +148,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_EST_DIST	, "est_dist");
 	tdd_logger_log_name(TDD_LOGGING_EST_ERROR	, "est_error");
 	tdd_logger_log_name(TDD_LOGGING_MOTOR_SPEED	, "motor_speed");
-	tdd_logger_log_name(TDD_LOGGING_ACT_POS		, "act_pos");
+	tdd_logger_log_name(TDD_LOGGING_ACT_POS		, "cur_dist");
 	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE	, "sim_slope");
 
 	data_dispatcher__offset_calibration(15);
@@ -160,16 +165,16 @@ void simulator_task(void * p_context) {
 
 	for (;;) {
 
+		sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_MS;
+
 		if (millis() < 5000) {
 
-			if (millis() > 1000) {
+			if (millis() > 1500) {
 
 				tdd_logger_start();
 			}
 
 		} else if (millis() < 15000) {
-
-			sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_S;
 
 			tgt_slope = 4.5f * sinf(sim_phase);
 
@@ -184,7 +189,7 @@ void simulator_task(void * p_context) {
 
 			if (nb_ind++ > 3000 / SIM_DT_MS && millis() < 19000) {
 
-				tgt_slope = -14;
+				tgt_slope = -3;
 				nb_ind = 1;
 			}
 
@@ -194,33 +199,72 @@ void simulator_task(void * p_context) {
 			exit(0);
 		}
 
-		data_dispatcher__feed_target_slope(tgt_slope);
-
-		// calculate distance from desired slope
-		int32_t front_el = (int32_t)(tgt_slope * BIKE_REACH_MM / 100.0f);
-		int target_dist = front_el + BIKE_HUB_DIST_MM;
-
 		// simulate actuator
 		int16_t vnh_dist_mm = tdd_vnh5019_driver__get_length();
 
 		// inject sim dist
-		tdd_inject_vl53l1_measurement(vnh_dist_mm);
+		tdd_inject_vl53l1_measurement(vnh_dist_mm - VNH_HUB_OFFSET + distr_alt(generator));
+
+#if 0
+		// changing slope with constant speed
+		const float slope = atanf( tgt_slope / 100.0f );
+
+		// inject sim erg
+		float m_speed = 10.0f;
+		float speed28 = powf(m_speed, 2.8f);
+		float v_speed = m_speed * sin(slope);
+		float power = v_speed * 69 * 9.81 + (0.0102f * speed28) + 9.428f;
+		static float alti = 200;
+		float dh = v_speed * SIM_DT_MS / 1000.0f;
+		alti += dh;
+#elif 0
+		// constant slope with changing power and speed
+		const float slope = 0.1f;
+		tgt_slope = 100.0f * tanf( slope );
+		const float inc_speed = 0.02f;
+
+		// inject sim erg
+		static float m_speed = 1.0f;
+		m_speed += inc_speed;
+		float speed28 = powf(m_speed, 2.8f);
+		float v_speed = m_speed * sin(slope);
+		float power = v_speed * 69 * 9.81 + (0.0102f * speed28) + 9.428f + inc_speed * 69.0f * 1000.0f / (SIM_DT_MS / m_speed);
+		static float alti = 200;
+		float dh = v_speed * SIM_DT_MS / 1000.0f;
+		alti += dh;
+#elif 0
+		// constant net power=0, slope and speed auto
+		const float alti_diff = 2.0f;
+		const float alti = 110.0f - alti_diff * sinf(sim_phase);
+		const float power = 0;
+		const float slope = - SIM_DT_MS * alti_diff * 2.0f * M_PI * cosf(sim_phase) / SIM_SLOPE_PERIOD_MS;
+		tgt_slope = 100.0f * tanf( slope );
+
+		// inject sim erg
+		const float m_speed = sqrtf( - 2.0f * 9.81f * (alti - 110.0f) + 12.0f * 12.0f);
+#endif
+
+		data_dispatcher__feed_target_slope(tgt_slope);
+//		data_dispatcher__feed_erg(m_speed, alti, power);
+//		data_dispatcher__feed_erg(0, 0, 0);
 
 		// logging
-		extern int16_t	m_vnh_speed_mm_s;
+		extern int16_t 	m_vnh_duty_cycle;
 		extern float	m_last_innov;
 		extern float	m_last_est_dist;
+		extern float	m_last_est_slope;
+		extern float	m_last_target;
 
-		float sim_slope = ((float)vnh_dist_mm - BIKE_HUB_DIST_MM) * 100.0f / BIKE_REACH_MM;
+		float sim_slope = ((float)vnh_dist_mm - BIKE_HUB_DIST_MM + 5) * 100.0f / BIKE_REACH_MM;
 
 		tdd_logger_log_int(TDD_LOGGING_TIME, millis());
 
 		tdd_logger_log_float(TDD_LOGGING_TGT_SLOPE	, tgt_slope);
-		tdd_logger_log_int(TDD_LOGGING_MEAS_DIST	, target_dist);
+		tdd_logger_log_sint(TDD_LOGGING_MEAS_DIST	, m_last_target);
 		tdd_logger_log_float(TDD_LOGGING_EST_INNOV	, m_last_innov);
 		tdd_logger_log_float(TDD_LOGGING_EST_DIST	, m_last_est_dist);
-		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, 100.0f * (m_last_est_dist- (float)vnh_dist_mm) / (float)vnh_dist_mm);
-		tdd_logger_log_sint(TDD_LOGGING_MOTOR_SPEED	, m_vnh_speed_mm_s);
+		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, m_last_est_dist + VNH_HUB_OFFSET - (float)vnh_dist_mm);
+		tdd_logger_log_sint(TDD_LOGGING_MOTOR_SPEED	, m_vnh_duty_cycle);
 		tdd_logger_log_int(TDD_LOGGING_ACT_POS		, vnh_dist_mm);
 		tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE	, sim_slope);
 

@@ -30,6 +30,8 @@ void data_dispatcher__feed_distance(float distance);
  */
 void data_dispatcher__feed_target_slope(float slope);
 
+void data_dispatcher__feed_erg(float speed, float alti, float power);
+
 void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps[3]);
 
 #ifdef __cplusplus
