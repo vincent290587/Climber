@@ -396,16 +396,13 @@ void data_dispatcher__run(void) {
 		duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE);
 
 		static float m_d_target_prev = 0;
-		static float intergrator = 0;
-		intergrator = 5 * intergrator + 5 * ((m_d_target - m_d_target_prev) * 10.0f);
-		intergrator /= 10;
+		static float k_deriv = 0;
+		k_deriv = 0.5f * k_deriv + 0.5f * ((m_d_target - m_d_target_prev) * 10.0f);
 		m_d_target_prev = m_d_target;
 		// limit integration
-		intergrator = regFenLim((float)intergrator, -20.0f, 20.0f, -20.0f, 20.0f);
+		k_deriv = regFenLim(k_deriv, -20.0f, 20.0f, -20.0f, 20.0f);
 
-		duty_target += regFenLim((float)intergrator, -3.0f, 3.0f, -35.0f, 35.0f);
-
-//		float duty_target = _perform_motor_control(f_dist_mm);
+		duty_target += regFenLim(k_deriv, -3.0f, 3.0f, -35.0f, 35.0f);
 
 		int16_t i_duty_delta = (int16_t)duty_target;
 
@@ -432,7 +429,10 @@ void data_dispatcher__run(void) {
 #if defined (BLE_STACK_SUPPORT_REQD)
 	static char s_buffer[80];
 
-	snprintf(s_buffer, sizeof(s_buffer), "Commanded speed: %d mm/s dist: %ld\r\n", speed_mm_s, (int32_t)(f_dist_mm));
+	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %ld dist: %ld tgt: %ld \r\n",
+			i_duty_delta,
+			(int32_t)(f_dist_mm),
+			(int32_t)(m_d_target));
 
 	// log through BLE every second
 	ble_nus_log_text(s_buffer);
