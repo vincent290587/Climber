@@ -220,7 +220,7 @@ void simulator_task(void * p_context) {
 #elif 0
 		// constant slope with changing power and speed
 		const float slope = 0.1f;
-		tgt_slope = 100.0f * atanf( slope );
+		tgt_slope = 100.0f * tanf( slope );
 		const float inc_speed = 0.02f;
 
 		// inject sim erg
@@ -234,14 +234,14 @@ void simulator_task(void * p_context) {
 		alti += dh;
 #elif 0
 		// constant net power=0, slope and speed auto
-		const float alti = 110.0f - 2.0f * sinf(sim_phase);
+		const float alti_diff = 2.0f;
+		const float alti = 110.0f - alti_diff * sinf(sim_phase);
 		const float power = 0;
-		const float slope = - SIM_DT_MS * 2.0f * 2.0f * M_PI * cosf(sim_phase) / SIM_SLOPE_PERIOD_MS;
+		const float slope = - SIM_DT_MS * alti_diff * 2.0f * M_PI * cosf(sim_phase) / SIM_SLOPE_PERIOD_MS;
 		tgt_slope = 100.0f * tanf( slope );
-		const float inc_speed = 0.02f;
 
 		// inject sim erg
-		const float m_speed = 20.0f - sqrtf( 2.0f * 9.81f * (alti - 100.0f));
+		const float m_speed = sqrtf( - 2.0f * 9.81f * (alti - 110.0f) + 12.0f * 12.0f);
 #endif
 
 		data_dispatcher__feed_target_slope(tgt_slope);

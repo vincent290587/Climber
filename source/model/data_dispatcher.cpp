@@ -228,6 +228,7 @@ static float _kalman_erg_run(void) {
 	m_k_erg.ker.matB.set(1, 1, 1);
 
 	// set command: U
+	feed.matU.zeros();
 
 	// set core
 	m_k_erg.ker.matA.set(0, 0, 1);
