@@ -165,6 +165,8 @@ void simulator_task(void * p_context) {
 
 	for (;;) {
 
+		sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_MS;
+
 		if (millis() < 5000) {
 
 			if (millis() > 1500) {
@@ -173,8 +175,6 @@ void simulator_task(void * p_context) {
 			}
 
 		} else if (millis() < 15000) {
-
-			sim_phase += SIM_DT_MS * 2.0f * M_PI / SIM_SLOPE_PERIOD_MS;
 
 			tgt_slope = 4.5f * sinf(sim_phase);
 
@@ -199,8 +199,6 @@ void simulator_task(void * p_context) {
 			exit(0);
 		}
 
-		data_dispatcher__feed_target_slope(tgt_slope);
-
 		// calculate distance from desired slope
 		int32_t front_el = (int32_t)(tgt_slope * BIKE_REACH_MM / 100.0f);
 		int target_dist = front_el + BIKE_HUB_DIST_MM;
@@ -213,7 +211,7 @@ void simulator_task(void * p_context) {
 
 #if 1
 		// changing slope with constant speed
-		const float slope = 0.1f + 0.2f * sinf(sim_phase);
+		const float slope = atanf( tgt_slope / 100.0f );
 
 		// inject sim erg
 		float m_speed = 10.0f;
@@ -226,6 +224,7 @@ void simulator_task(void * p_context) {
 #elif 0
 		// constant slope with changing power and speed
 		const float slope = 0.1f;
+		tgt_slope = 100.0f * atanf( slope );
 		const float inc_speed = 0.02f;
 
 		// inject sim erg
@@ -239,15 +238,17 @@ void simulator_task(void * p_context) {
 		alti += dh;
 #else
 		// constant net power=0, slope and speed auto
-		const float alti = 110.0f + 10.0f * sinf(sim_phase);
+		const float alti = 110.0f + 5.0f * sinf(sim_phase);
 		const float power = 0;
-		const float slope = 1000.0f * 2.0f * M_PI * cosf(sim_phase) / SIM_SLOPE_PERIOD_MS;
+		const float slope = SIM_DT_MS * 5.0f * 2.0f * M_PI * cosf(sim_phase) / SIM_SLOPE_PERIOD_MS;
+		tgt_slope = 100.0f * tanf( slope );
 		const float inc_speed = 0.02f;
 
 		// inject sim erg
 		const float m_speed = 20.0f - sqrtf( 2.0f * 9.81f * (alti - 100.0f));
 #endif
 
+//		data_dispatcher__feed_target_slope(tgt_slope);
 		data_dispatcher__feed_erg(m_speed, alti, power);
 //		data_dispatcher__feed_erg(0, 0, 0);
 

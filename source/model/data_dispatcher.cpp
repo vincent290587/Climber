@@ -5,6 +5,7 @@
  *      Author: v.golle
  */
 
+#include <cmath>
 #include <string.h>
 #include "gpio.h"
 #include "utils.h"
@@ -30,12 +31,14 @@ JScope jscope;
 typedef struct {
 	uint8_t acc;
 	uint8_t dist;
+	uint8_t erg;
 } sUpdateType;
 
 static sUpdateType m_updated;
 static task_id_t m_task_id = TASK_ID_INVALID;
 
 static sKalmanDescr m_k_lin;
+static sKalmanDescr m_k_erg;
 
 static uint32_t m_update_time = 0;
 static uint32_t m_nb_runs = 0;
@@ -55,8 +58,8 @@ float m_last_est_slope = 0;
 void _kalman_init(void) {
 
 	// init kalman
-	m_k_lin.ker.ker_dim = 8;
-	m_k_lin.ker.obs_dim = 4;
+	m_k_lin.ker.ker_dim = 2;
+	m_k_lin.ker.obs_dim = 1;
 
 	kalman_lin_init(&m_k_lin);
 
@@ -69,7 +72,6 @@ void _kalman_init(void) {
 	// set Q: kernel noise
 	m_k_lin.ker.matQ.unity(1 / 20.);
 	m_k_lin.ker.matQ.set(1, 1, 1 / 5.);
-	m_k_lin.ker.matQ.set(4, 4, 1 / 80.);
 
 	// set P
 	m_k_lin.ker.matP.ones(900);
@@ -81,6 +83,81 @@ void _kalman_init(void) {
 	m_k_lin.ker.matX.set(0, 0, DEFAULT_TARGET_DISTANCE);
 
 	LOG_INFO("Kalman lin. init !");
+
+}
+
+static float _kalman_run(void) {
+
+	// run kalman
+	static sKalmanExtFeed feed;
+
+	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
+	m_update_time = millis();
+
+	// set measures: Z
+	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
+	feed.matZ.zeros();
+	feed.matZ.set(0, 0, m_distance);
+
+	// measures mapping
+	m_k_lin.ker.matC.set(0, 0, 1);
+
+	// command mapping
+	m_k_lin.ker.matB.zeros();
+	m_k_lin.ker.matB.set(0, 1, feed.dt);
+
+	// set command: U
+	int16_t speed_mm_s = regFenLim(vnh5019_driver__getM1_duty(), -100.0f, 100.0f, -16.0f, 16.0f);
+	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
+	feed.matU.zeros();
+	feed.matU.set(1, 0, (float)speed_mm_s / 3.0f);
+
+	// set core
+	m_k_lin.ker.matA.set(0, 1, feed.dt);
+	m_k_lin.ker.matA.set(1, 1, 1);
+
+	kalman_lin_feed(&m_k_lin, &feed);
+
+	LOG_DEBUG("Kalman run");
+
+	m_nb_runs++;
+
+#ifdef TDD
+	m_last_est_dist = m_k_lin.ker.matX.get(0, 0);
+	m_last_innov    = m_k_lin.ker.matKI.get(0, 0);
+#endif
+
+	return m_k_lin.ker.matX.get(0,0);
+}
+
+void _kalman_erg_init(void) {
+
+	// init kalman
+	m_k_erg.ker.ker_dim = 6;
+	m_k_erg.ker.obs_dim = 3;
+
+	kalman_lin_init(&m_k_erg);
+
+	m_k_erg.ker.matA.unity();
+	m_k_erg.ker.matA.print();
+
+	m_k_erg.ker.matB.zeros();
+	m_k_erg.ker.matB.print();
+
+	// set Q: kernel noise
+	m_k_erg.ker.matQ.unity(1 / 20.);
+	m_k_erg.ker.matQ.set(2, 2, 1 / 80.);
+
+	// set P
+	m_k_erg.ker.matP.ones(900);
+
+	// set R
+	m_k_erg.ker.matR.unity(DIST_STD_DEV_M * DIST_STD_DEV_M);
+
+	// init X
+	m_k_erg.ker.matX.set(0, 0, 0);
+
+	LOG_INFO("Kalman ERG init !");
 
 	/*
 	 * Slope can also be estimated using the following equations:
@@ -94,8 +171,6 @@ void _kalman_init(void) {
 	 *
 	 * hp = v.sin(a)
 	 *
-	 * | d  |
-	 * | dd |
 	 * | v  |   | 1      dt     0     0    0      0 |
 	 * | vp | = | 0       0    -g     0    0  P/m.v |
 	 * | sa |   | 0       0     1     0    0      0 | . Xm
@@ -103,29 +178,23 @@ void _kalman_init(void) {
 	 * | hp |   | 0       0     v     0    0      0 |
 	 * | Pn |   | 0       0     0     0    0      1 |
 	 *
-1.000000 0.150000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
 
-0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+		1.000000 0.090000 0.000000 0.000000 0.000000 0.000000
+		0.000000 0.000000 -9.810000 0.000000 0.000000 0.001449
+		0.000000 0.000000 1.000000 0.000000 0.000000 0.000000
+		0.000000 0.000000 0.000000 1.000000 0.090000 0.000000
+		0.000000 0.000000 10.000000 0.000000 0.000000 0.000000
+		0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
 
-0.000000 0.000000 1.000000 0.150000 0.000000 0.000000 0.000000 0.000000
-
-0.000000 0.000000 0.000000 0.000000 -9.810000 0.000000 0.000000 0.001449
-
-0.000000 0.000000 0.000000 0.000000 1.000000 0.000000 0.000000 0.000000
-
-0.000000 0.000000 0.000000 0.000000 0.000000 1.000000 0.150000 0.000000
-
-0.000000 0.000000 0.000000 0.000000 10.000000 0.000000 0.000000 0.000000
-
-0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 1.000000
 	 *
 	 */
 }
 
-static float _kalman_run(void) {
+static float _kalman_erg_run(void) {
 
 	// run kalman
 	static sKalmanExtFeed feed;
+	static uint32_t _update_time;
 
 	// calculate net power
 	float vp1 = 10.0f / 69.0f;
@@ -137,66 +206,49 @@ static float _kalman_run(void) {
 		m_speed = KAL_ERG_SPD_LIMIT;
 	}
 
-	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
-	m_update_time = millis();
+	feed.dt = 0.001f * (float)(millis() - _update_time); // in seconds
+	_update_time = millis();
 
 	// set measures: Z
-	feed.matZ.resize(m_k_lin.ker.obs_dim, 1);
+	feed.matZ.resize(m_k_erg.ker.obs_dim, 1);
 	feed.matZ.zeros();
-	feed.matZ.set(0, 0, m_distance);
-	feed.matZ.set(1, 0, m_speed);
-	feed.matZ.set(2, 0, m_alti);
-	feed.matZ.set(3, 0, m_power);
+	feed.matZ.set(0, 0, m_speed);
+	feed.matZ.set(1, 0, m_alti);
+	feed.matZ.set(2, 0, m_power);
 
 	// measures mapping
-	m_k_lin.ker.matC.set(0, 0, 1);
-	m_k_lin.ker.matC.set(1, 2, 1);
-	m_k_lin.ker.matC.set(2, 5, 1);
-	m_k_lin.ker.matC.set(3, 7, 1);
+	m_k_erg.ker.matC.set(0, 0, 1);
+	m_k_erg.ker.matC.set(1, 3, 1);
+	m_k_erg.ker.matC.set(2, 5, 1);
 
 	// command mapping
-	m_k_lin.ker.matB.zeros();
-	m_k_lin.ker.matB.set(0, 1, feed.dt);
-	m_k_lin.ker.matB.set(3, 3, 1);
+	m_k_erg.ker.matB.zeros();
+	m_k_erg.ker.matB.set(1, 1, 1);
 
 	// set command: U
-	int16_t speed_mm_s = regFenLim(vnh5019_driver__getM1_duty(), -100.0f, 100.0f, -16.0f, 16.0f);
-	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
-	feed.matU.zeros();
-	feed.matU.set(1, 0, (float)speed_mm_s / 3.0f);
 
 	// set core
-	m_k_lin.ker.matA.set(0, 1, feed.dt);
-	m_k_lin.ker.matA.set(1, 1, 1);
-	m_k_lin.ker.matA.set(2, 2, 1);
-	m_k_lin.ker.matA.set(2, 3, feed.dt);
-	m_k_lin.ker.matA.set(3, 2, 0);
-	m_k_lin.ker.matA.set(3, 3, 0);
-	m_k_lin.ker.matA.set(3, 4, -9.81f);
-	m_k_lin.ker.matA.set(3, 7, vp1);
-	m_k_lin.ker.matA.set(4, 4, 1);
-	m_k_lin.ker.matA.set(5, 5, 1);
-	m_k_lin.ker.matA.set(5, 6, feed.dt);
-	m_k_lin.ker.matA.set(6, 4, m_speed);
-	m_k_lin.ker.matA.set(6, 6, 0);
+	m_k_erg.ker.matA.set(0, 0, 1);
+	m_k_erg.ker.matA.set(0, 1, feed.dt);
+	m_k_erg.ker.matA.set(1, 0, 0);
+	m_k_erg.ker.matA.set(1, 1, 0);
+	m_k_erg.ker.matA.set(1, 2, -9.81f);
+	m_k_erg.ker.matA.set(1, 5, vp1);
+	m_k_erg.ker.matA.set(2, 2, 1);
+	m_k_erg.ker.matA.set(3, 3, 1);
+	m_k_erg.ker.matA.set(3, 4, feed.dt);
+	m_k_erg.ker.matA.set(4, 2, m_speed);
+	m_k_erg.ker.matA.set(4, 4, 0);
 
-	//m_k_lin.ker.matA.print();exit(0);
-
-	kalman_lin_feed(&m_k_lin, &feed);
+	kalman_lin_feed(&m_k_erg, &feed);
 
 	LOG_INFO("Kalman run");
 
-	m_nb_runs++;
-
 #ifdef TDD
-	m_last_est_dist = m_k_lin.ker.matX.get(0, 0);
-	m_last_innov    = m_k_lin.ker.matKI.get(0, 0);
-
-	m_last_est_slope = m_k_lin.ker.matX.get(4, 0);
-
+	m_last_est_slope = m_k_erg.ker.matX.get(2, 0);
 #endif
 
-	return m_k_lin.ker.matX.get(0,0);
+	return m_k_erg.ker.matX.get(2,0);
 }
 
 void data_dispatcher__init(task_id_t _task_id) {
@@ -208,6 +260,8 @@ void data_dispatcher__init(task_id_t _task_id) {
 #endif
 
 	_kalman_init();
+
+	_kalman_erg_init();
 
 	vnh5019_driver__init();
 
@@ -248,12 +302,18 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 void data_dispatcher__feed_target_slope(float slope) {
 
+	if (isnan(slope) ||
+			fabsf(slope) > 45.0f) {
+		LOG_ERROR("Illegal float");
+		return;
+	}
+
 	float front_el = slope * BIKE_REACH_MM / 100.0f;
 
 	// calculate distance from desired slope
 	m_d_target = front_el + (float)m_distance_cal;
 
-	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", m_d_target, (int)(slope*10.0f));
+	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", (int)m_d_target, (int)(slope*10.0f));
 
 
 #if defined (BLE_STACK_SUPPORT_REQD)
@@ -286,6 +346,10 @@ void data_dispatcher__feed_erg(float speed, float alti, float power) {
 	m_speed = speed;
 	m_power = power;
 
+	m_updated.erg = 1;
+
+	w_task_delay_cancel(m_task_id);
+
 }
 
 void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps[3]) {
@@ -301,34 +365,46 @@ void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps
 
 void data_dispatcher__run(void) {
 
-	while (!m_updated.dist) {
-		w_task_delay(20);
-		return;
-	}
-	m_updated.acc = 0;
-	m_updated.dist = 0;
+	if (m_updated.erg) {
 
-	// run kalman
-	float f_dist_mm = _kalman_run();
+		m_updated.erg = 0;
 
-	LOG_INFO("Filtered dist: %ld mm -- target dist %ld", (int32_t)(f_dist_mm), (int32_t)(m_d_target));
+		// run kalman
+		float f_slope_rad = _kalman_erg_run();
 
-	// calculate target speed
-	float duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE) ;
+		float f_slope_pc = 100.0f * tanf(f_slope_rad);
 
-	int16_t i_duty_delta = (int16_t)duty_target;
+		data_dispatcher__feed_target_slope(f_slope_pc);
 
-	static int16_t duty_delta_filt = 0;
-	duty_delta_filt = 5 * i_duty_delta  + 5 * duty_delta_filt;
-	duty_delta_filt /= 10;
-
-	LOG_INFO("Target duty: %d  f: %d ", i_duty_delta, duty_delta_filt);
-
-	if (m_nb_runs > KALMAN_FREERUN_NB) {
-		vnh5019_driver__setM1_duty(duty_delta_filt);
 	}
 
-	if (vnh5019_driver__getM1Fault()) {
+	if (m_updated.dist) {
+
+		m_updated.dist = 0;
+
+		// run kalman
+		float f_dist_mm = _kalman_run();
+
+		LOG_INFO("Filtered dist: %ld mm -- target dist %ld", (int32_t)(f_dist_mm), (int32_t)(m_d_target));
+
+		// calculate target speed
+		float duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE) ;
+
+		int16_t i_duty_delta = (int16_t)duty_target;
+
+		static int16_t duty_delta_filt = 0;
+		duty_delta_filt = 3 * i_duty_delta  + 7 * duty_delta_filt;
+		duty_delta_filt /= 10;
+
+		LOG_INFO("Target duty: %d  f: %d ", i_duty_delta, duty_delta_filt);
+
+		if (m_nb_runs > KALMAN_FREERUN_NB) {
+			vnh5019_driver__setM1_duty(duty_delta_filt);
+		}
+
+		if (vnh5019_driver__getM1Fault()) {
+
+		}
 
 	}
 
