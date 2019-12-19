@@ -572,7 +572,7 @@ void ble_nus_log_text(const char * text) {
 			text);
 
 	if (m_periph_id != TASK_ID_INVALID) {
-		w_task_delay_cancel(m_periph_id)
+		w_task_delay_cancel(m_periph_id);
 	}
 
 }

@@ -148,7 +148,7 @@ void _kalman_erg_init(void) {
 
 	// set Q: kernel noise
 	m_k_erg.ker.matQ.unity(1 / 20.);
-	m_k_erg.ker.matQ.set(2, 2, 1 / 80.);
+	m_k_erg.ker.matQ.set(2, 2, 1 / 5.);
 
 	// set P
 	m_k_erg.ker.matP.ones(900);
@@ -194,66 +194,72 @@ void _kalman_erg_init(void) {
 
 static float _kalman_erg_run(void) {
 
-	// run kalman
+//	// run kalman
 	static sKalmanExtFeed feed;
 	static uint32_t _update_time;
 	static uint32_t _nb_runs = 0;
 
+	static float res = 0;
+	static float alti_prev = 0;
+	static const float time_const = 0.3f;
+
 	// calculate net power
-	if (m_speed > KAL_ERG_SPD_LIMIT) {
-		float speed28 = powf(m_speed, 2.8f);
-		m_power -= (0.0102f * speed28) + 9.428f;
-	} else {
-		m_speed = KAL_ERG_SPD_LIMIT;
+	if (m_speed < KAL_ERG_SPD_LIMIT) {
+		_update_time = millis();
+		alti_prev = m_alti;
+		return res;
 	}
-	float vp1 = 1 / (69.0f * m_speed);
 
 	feed.dt = 0.001f * (float)(millis() - _update_time); // in seconds
 	_update_time = millis();
 
-	// set measures: Z
-	feed.matZ.resize(m_k_erg.ker.obs_dim, 1);
-	feed.matZ.zeros();
-	feed.matZ.set(0, 0, m_speed);
-	feed.matZ.set(1, 0, m_alti);
-	feed.matZ.set(2, 0, m_power);
+//	// set measures: Z
+//	feed.matZ.resize(m_k_erg.ker.obs_dim, 1);
+//	feed.matZ.zeros();
+//	feed.matZ.set(0, 0, m_speed);
+//	feed.matZ.set(1, 0, m_alti);
+//	feed.matZ.set(2, 0, m_power);
+//
+//	// measures mapping
+//	m_k_erg.ker.matC.set(0, 0, 1);
+//	m_k_erg.ker.matC.set(1, 3, 1);
+//	m_k_erg.ker.matC.set(2, 5, 1);
+//
+//	// command mapping
+//	m_k_erg.ker.matB.zeros();
+//
+//	// set command: U
+//	feed.matU.zeros();
+//
+//	// set core
+//	m_k_erg.ker.matA.set(0, 0, 1);
+//	m_k_erg.ker.matA.set(0, 1, feed.dt);
+//	m_k_erg.ker.matA.set(1, 0, 0);
+//	m_k_erg.ker.matA.set(1, 1, 0);
+//	m_k_erg.ker.matA.set(1, 2, -9.81f);
+//	m_k_erg.ker.matA.set(1, 5, vp1);
+//	m_k_erg.ker.matA.set(2, 2, 1);
+//	m_k_erg.ker.matA.set(3, 3, 1);
+//	m_k_erg.ker.matA.set(3, 4, feed.dt);
+//	m_k_erg.ker.matA.set(4, 2, m_speed);
+//	m_k_erg.ker.matA.set(4, 4, 0);
+//
+//	//kalman_lin_feed(&m_k_erg, &feed);
+//
 
-	// measures mapping
-	m_k_erg.ker.matC.set(0, 0, 1);
-	m_k_erg.ker.matC.set(1, 3, 1);
-	m_k_erg.ker.matC.set(2, 5, 1);
-
-	// command mapping
-	m_k_erg.ker.matB.zeros();
-	m_k_erg.ker.matB.set(1, 1, 1);
-
-	// set command: U
-	feed.matU.zeros();
-
-	// set core
-	m_k_erg.ker.matA.set(0, 0, 1);
-	m_k_erg.ker.matA.set(0, 1, feed.dt);
-	m_k_erg.ker.matA.set(1, 0, 0);
-	m_k_erg.ker.matA.set(1, 1, 0);
-	m_k_erg.ker.matA.set(1, 2, -9.81f);
-	m_k_erg.ker.matA.set(1, 5, vp1);
-	m_k_erg.ker.matA.set(2, 2, 1);
-	m_k_erg.ker.matA.set(3, 3, 1);
-	m_k_erg.ker.matA.set(3, 4, feed.dt);
-	m_k_erg.ker.matA.set(4, 2, m_speed);
-	m_k_erg.ker.matA.set(4, 4, 0);
-
-	kalman_lin_feed(&m_k_erg, &feed);
-
-#ifdef TDD
-	m_last_est_slope = m_k_erg.ker.matX.get(2, 0);
-#endif
-
-	if (_nb_runs++ < KALMAN_FREERUN_NB) {
+	if (_nb_runs++ < 10) {
+		alti_prev = m_alti;
 		return 0;
 	}
 
-	return m_k_erg.ker.matX.get(2,0);
+	res = time_const * res + (1.0f - time_const) * asinf((m_alti - alti_prev) / (feed.dt * m_speed));
+	alti_prev = m_alti;
+
+#ifdef TDD
+	m_last_est_slope = res;
+#endif
+
+	return res;
 }
 
 void data_dispatcher__init(task_id_t _task_id) {
@@ -307,7 +313,7 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 void data_dispatcher__feed_target_slope(float slope) {
 
-	if (isnan(slope) ||
+	if (std::isnan(slope) ||
 			fabsf(slope) > 45.0f) {
 		LOG_ERROR("Illegal float");
 		return;
@@ -341,7 +347,7 @@ void data_dispatcher__feed_target_slope(float slope) {
 
 void data_dispatcher__feed_distance(float distance) {
 
-	if (isnan(distance)) {
+	if (std::isnan(distance)) {
 		LOG_ERROR("Illegal float");
 		return;
 	}
@@ -423,6 +429,18 @@ void data_dispatcher__run(void) {
 
 		}
 
+#if defined (BLE_STACK_SUPPORT_REQD)
+	static char s_buffer[80];
+
+	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %d -- dist: %d -- tgt: %d \r\n",
+			i_duty_delta,
+			(int32_t)(f_dist_mm),
+			(int32_t)(m_d_target));
+
+	// log through BLE every second
+	ble_nus_log_text(s_buffer);
+#endif
+
 	}
 
 #ifdef TDD
@@ -433,17 +451,5 @@ void data_dispatcher__run(void) {
 	jscope.inputData(f_dist_mm , 0);
 	jscope.inputData(m_distance, 4);
 	jscope.flush();
-#endif
-
-#if defined (BLE_STACK_SUPPORT_REQD)
-	static char s_buffer[80];
-
-	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %ld -- dist: %ld -- tgt: %ld \r\n",
-			i_duty_delta,
-			(int32_t)(f_dist_mm),
-			(int32_t)(m_d_target));
-
-	// log through BLE every second
-	ble_nus_log_text(s_buffer);
 #endif
 }
