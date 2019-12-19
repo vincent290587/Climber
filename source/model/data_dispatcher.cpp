@@ -25,7 +25,7 @@
 JScope jscope;
 #endif
 
-#define DIST_STD_DEV_M                8.0f
+#define DIST_STD_DEV_M                6.0f
 #define ERG_STD_DEV_M                 0.1f
 #define KAL_ERG_SPD_LIMIT             1.5f
 
@@ -109,7 +109,7 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matB.set(0, 1, feed.dt);
 
 	// set command: U
-	int16_t speed_mm_s = regFenLim(vnh5019_driver__getM1_duty(), -VNH_FULL_SCALE, VNH_FULL_SCALE, -16.0f, 16.0f);
+	int16_t speed_mm_s = (int16_t)regFenLim(vnh5019_driver__getM1_duty(), -VNH_FULL_SCALE, VNH_FULL_SCALE, -16.0f, 16.0f);
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
 	feed.matU.set(1, 0, (float)speed_mm_s);
@@ -407,8 +407,13 @@ void data_dispatcher__run(void) {
 		LOG_INFO("Filtered dist: %ld mm -- target dist %ld", (int32_t)(f_dist_mm), (int32_t)(m_d_target));
 
 		// calculate target speed
+		float error = m_d_target - f_dist_mm;
 		float duty_target = 0.0f;
-		duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE);
+		duty_target = regFenLim(error, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE);
+
+		if (fabsf(error) < 3.0f) {
+			duty_target = 0;
+		}
 
 		static float m_d_target_prev = 0;
 		static float k_deriv = 0;
@@ -432,10 +437,13 @@ void data_dispatcher__run(void) {
 #if defined (BLE_STACK_SUPPORT_REQD)
 	static char s_buffer[80];
 
-	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %d -- dist: %d -- tgt: %d \r\n",
+	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %d (%ld mm) -- est spd %ld -- dist: %ld -- tgt: %ld (%ld) \r\n",
 			i_duty_delta,
+			(int32_t)m_distance,
+			(int32_t)m_k_lin.ker.matX.get(1,0),
 			(int32_t)(f_dist_mm),
-			(int32_t)(m_d_target));
+			(int32_t)(m_d_target),
+			(int32_t)(error * 10.0f));
 
 	// log through BLE every second
 	ble_nus_log_text(s_buffer);
