@@ -421,12 +421,15 @@ void data_dispatcher__run(void) {
 		float duty_target = 0.0f;
 		duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE);
 
-//		static int32_t intergrator = 0;
-//		intergrator += (int32_t)((m_d_target - f_dist_mm) * 10.0f);
-//		// limit integration
-//		intergrator = (int32_t)regFenLim(intergrator, -50.0f, 50.0f, -50.0f, 50.0f);
-//
-//		duty_target += regFenLim((float)intergrator / 10.0f, -50.0f, 50.0f, -30.0f, 30.0f);
+		static float m_d_target_prev = 0;
+		static float intergrator = 0;
+		intergrator = 5 * intergrator + 5 * ((m_d_target - m_d_target_prev) * 10.0f);
+		intergrator /= 10;
+		m_d_target_prev = m_d_target;
+		// limit integration
+		intergrator = regFenLim((float)intergrator, -50.0f, 50.0f, -50.0f, 50.0f);
+
+		duty_target += regFenLim((float)intergrator, -5.0f, 5.0f, -40.0f, 40.0f);
 
 //		float duty_target = _perform_motor_control(f_dist_mm);
 
