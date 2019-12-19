@@ -11,6 +11,7 @@ SRC_FILES += \
   $(wildcard $(PROJ_DIR)/libraries/vl53l1x/platform/*.c) \
   $(wildcard $(PROJ_DIR)/libraries/*/*.cpp) \
   $(wildcard $(PROJ_DIR)/rf/*.c) \
+  $(wildcard $(PROJ_DIR)/zpm/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/*.c) \
   $(wildcard $(PROJ_DIR)/source/*.cpp) \
   $(wildcard $(PROJ_DIR)/source/model/*.c) \
@@ -102,6 +103,7 @@ INC_FOLDERS += \
   $(PROJ_DIR)/libraries/utils \
   $(PROJ_DIR)/libraries/rtt \
   $(PROJ_DIR)/rf \
+  $(PROJ_DIR)/zpm \
   $(PROJ_DIR)/source \
   $(PROJ_DIR)/source/model \
   $(PROJ_DIR)/source/scheduling \

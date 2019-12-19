@@ -572,7 +572,7 @@ void ble_nus_log_text(const char * text) {
 			text);
 
 	if (m_periph_id != TASK_ID_INVALID) {
-		w_task_delay_cancel(m_periph_id)
+		w_task_delay_cancel(m_periph_id);
 	}
 
 }
@@ -600,11 +600,17 @@ void ble_nus_tasks(void) {
 
 		// calibration commands
 		case 'U':
-			data_dispatcher__offset_calibration(  5 );
-			break;
+		{
+			for (int i=0; i < m_nus_xfer_rx_array.length; i++) {
+				if (m_nus_xfer_rx_array.p_xfer_str[0] == 'U') data_dispatcher__offset_calibration(  5 );
+			}
+		} break;
 		case 'D':
-			data_dispatcher__offset_calibration( -5 );
-			break;
+		{
+			for (int i=0; i < m_nus_xfer_rx_array.length; i++) {
+				if (m_nus_xfer_rx_array.p_xfer_str[0] == 'D') data_dispatcher__offset_calibration( -5 );
+			}
+		} break;
 
 		default:
 			LOG_WARNING("Unknown NUS packet");

@@ -19,13 +19,15 @@ void zpm_decoder__handle(uint8_t *data, uint16_t length) {
 
 	int32_t data1, data2, data3;
 
-	int res = sscanf((char*)data, "V%dP%dH%d", &data1, &data2, &data3);
+	int res = sscanf((char*)data, "V%ldP%ldH%ld", &data1, &data2, &data3);
 
 	float speed_ms = data1 / 3600000.0f;
 	float power    = data2;
 	float alti     = data3;
 
 	if (res == 3) {
+
+		LOG_INFO("ZPM decoded ! (%d)", res);
 
 		data_dispatcher__feed_erg(speed_ms, alti, power);
 	} else {

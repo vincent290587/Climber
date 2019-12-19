@@ -81,6 +81,8 @@ void actuating_task(void * p_context)
 
 	for(;;)
 	{
+		w_task_delay(50);
+
 		// run filter
 		data_dispatcher__run();
 

@@ -17,7 +17,7 @@ const ip = require('internal-ip').v4.sync();
 
 try {
 	const SerialPort = require('serialport')
-	var port = new SerialPort('COM17', {
+	var port = new SerialPort('COM21', {
 		baudRate: 115200
 	})
 } catch(e) {
@@ -37,7 +37,7 @@ if (ZwiftPacketMonitor && Cap) {
 		
         console.log(serverWorldTime, playerState)
 		
-		let ser_msg = '>V' + playerState.speed + 'P' + playerState.power + 'H' + playerState.climbing
+		let ser_msg = '>V' + playerState.speed + 'P' + playerState.power + 'H' + playerState.climbing + '\n'
 		port.write(ser_msg)
 		
     })
