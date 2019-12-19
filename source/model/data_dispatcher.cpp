@@ -25,7 +25,8 @@
 JScope jscope;
 #endif
 
-#define DIST_STD_DEV_M                0.8f
+#define DIST_STD_DEV_M                8.0f
+#define ERG_STD_DEV_M                 0.1f
 #define KAL_ERG_SPD_LIMIT             1.5f
 
 typedef struct {
@@ -53,6 +54,7 @@ static float m_speed, m_alti, m_power;
 float m_last_est_dist = 0;
 float m_last_innov = 0;
 float m_last_est_slope = 0;
+float m_last_target = 0;
 #endif
 
 void _kalman_init(void) {
@@ -107,10 +109,10 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matB.set(0, 1, feed.dt);
 
 	// set command: U
-	int16_t speed_mm_s = regFenLim(vnh5019_driver__getM1_duty(), -100.0f, 100.0f, -16.0f, 16.0f);
+	int16_t speed_mm_s = regFenLim(vnh5019_driver__getM1_duty(), -VNH_FULL_SCALE, VNH_FULL_SCALE, -16.0f, 16.0f);
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
-	feed.matU.set(1, 0, (float)speed_mm_s / 3.0f);
+	feed.matU.set(1, 0, (float)speed_mm_s);
 
 	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
@@ -151,8 +153,8 @@ void _kalman_erg_init(void) {
 	// set P
 	m_k_erg.ker.matP.ones(900);
 
-	// set R
-	m_k_erg.ker.matR.unity(DIST_STD_DEV_M * DIST_STD_DEV_M);
+	// set R: measurement noise
+	m_k_erg.ker.matR.unity(ERG_STD_DEV_M * ERG_STD_DEV_M);
 
 	// init X
 	m_k_erg.ker.matX.set(0, 0, 0);
@@ -195,6 +197,7 @@ static float _kalman_erg_run(void) {
 	// run kalman
 	static sKalmanExtFeed feed;
 	static uint32_t _update_time;
+	static uint32_t _nb_runs = 0;
 
 	// calculate net power
 	float vp1 = 10.0f / 69.0f;
@@ -242,11 +245,13 @@ static float _kalman_erg_run(void) {
 
 	kalman_lin_feed(&m_k_erg, &feed);
 
-	LOG_INFO("Kalman run");
-
 #ifdef TDD
 	m_last_est_slope = m_k_erg.ker.matX.get(2, 0);
 #endif
+
+	if (_nb_runs++ < KALMAN_FREERUN_NB) {
+		return 0;
+	}
 
 	return m_k_erg.ker.matX.get(2,0);
 }
@@ -363,6 +368,31 @@ void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps
 
 }
 
+static float _perform_motor_control(float f_dist_mm) {
+
+	static float errorlast = 0, integral = 0, derivative = 0;
+
+	static float Kp = 20, Ki = 0, Kd = 0;
+
+	float dt = 0.080f;
+
+	float error = m_d_target - f_dist_mm;
+	float duty_target = (Kp * error) + (Ki * integral) + (Kd * derivative);
+
+	if (duty_target > 100)
+		duty_target = 100;
+	else if (duty_target < -100)
+		duty_target = -100;
+	else
+	     integral += (error * dt);
+
+	derivative = (error - errorlast) / dt;
+
+	errorlast = error;
+
+	return duty_target;
+}
+
 void data_dispatcher__run(void) {
 
 	if (m_updated.erg) {
@@ -388,18 +418,22 @@ void data_dispatcher__run(void) {
 		LOG_INFO("Filtered dist: %ld mm -- target dist %ld", (int32_t)(f_dist_mm), (int32_t)(m_d_target));
 
 		// calculate target speed
-		float duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE) ;
+		float duty_target = 0.0f;
+		duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE);
+
+//		static int32_t intergrator = 0;
+//		intergrator += (int32_t)((m_d_target - f_dist_mm) * 10.0f);
+//		// limit integration
+//		intergrator = (int32_t)regFenLim(intergrator, -50.0f, 50.0f, -50.0f, 50.0f);
+//
+//		duty_target += regFenLim((float)intergrator / 10.0f, -50.0f, 50.0f, -30.0f, 30.0f);
+
+//		float duty_target = _perform_motor_control(f_dist_mm);
 
 		int16_t i_duty_delta = (int16_t)duty_target;
 
-		static int16_t duty_delta_filt = 0;
-		duty_delta_filt = 3 * i_duty_delta  + 7 * duty_delta_filt;
-		duty_delta_filt /= 10;
-
-		LOG_INFO("Target duty: %d  f: %d ", i_duty_delta, duty_delta_filt);
-
 		if (m_nb_runs > KALMAN_FREERUN_NB) {
-			vnh5019_driver__setM1_duty(duty_delta_filt);
+			vnh5019_driver__setM1_duty(i_duty_delta);
 		}
 
 		if (vnh5019_driver__getM1Fault()) {
@@ -407,6 +441,10 @@ void data_dispatcher__run(void) {
 		}
 
 	}
+
+#ifdef TDD
+	m_last_target = m_d_target;
+#endif
 
 #ifdef USE_JSCOPE
 	jscope.inputData(f_dist_mm , 0);

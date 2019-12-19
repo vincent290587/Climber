@@ -23,7 +23,7 @@ static float m_sim_length = 25;
 int16_t tdd_vnh5019_driver__get_length(void) {
 
 	// map actuator speed to command
-	m_vnh_speed_mm_s = regFenLim(m_vnh_duty_cycle, -100.0f, 100.0f, -16.0f, 16.0f);
+	m_vnh_speed_mm_s = regFenLim(m_vnh_duty_cycle, -50.0f, 50.0f, -16.0f, 16.0f);
 
 	float delta = (float)m_vnh_speed_mm_s * (float)(millis() - m_calc_last_time) / 1000.0f;
 
