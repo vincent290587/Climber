@@ -265,7 +265,7 @@ void simulator_task(void * p_context) {
 		tdd_logger_log_int(TDD_LOGGING_MEAS_DIST	, target_dist);
 		tdd_logger_log_float(TDD_LOGGING_EST_INNOV	, m_last_innov);
 		tdd_logger_log_float(TDD_LOGGING_EST_DIST	, m_last_est_dist);
-		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, 100.0f * (m_last_est_dist- (float)vnh_dist_mm) / (float)vnh_dist_mm);
+		tdd_logger_log_float(TDD_LOGGING_EST_ERROR	, m_last_est_dist + VNH_HUB_OFFSET - (float)vnh_dist_mm);
 		tdd_logger_log_sint(TDD_LOGGING_MOTOR_SPEED	, m_vnh_speed_mm_s);
 		tdd_logger_log_int(TDD_LOGGING_ACT_POS		, vnh_dist_mm);
 		tdd_logger_log_float(TDD_LOGGING_SIM_SLOPE	, sim_slope);

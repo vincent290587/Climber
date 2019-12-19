@@ -159,11 +159,11 @@ static float _kalman_run(void) {
 	int16_t speed_mm_s = vnh5019_driver__getM1Speed();
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
-	feed.matU.set(1, 0, (float)speed_mm_s);
+	feed.matU.set(1, 0, (float)speed_mm_s / 3.0f);
 
 	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
-	m_k_lin.ker.matA.set(1, 1, 0);
+	m_k_lin.ker.matA.set(1, 1, 1);
 	m_k_lin.ker.matA.set(2, 2, 1);
 	m_k_lin.ker.matA.set(2, 3, feed.dt);
 	m_k_lin.ker.matA.set(3, 2, 0);
