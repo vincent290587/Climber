@@ -25,6 +25,7 @@ JScope jscope;
 #endif
 
 #define DIST_STD_DEV_M                0.8f
+#define KAL_ERG_SPD_LIMIT             1.5f
 
 typedef struct {
 	uint8_t acc;
@@ -39,7 +40,7 @@ static sKalmanDescr m_k_lin;
 static uint32_t m_update_time = 0;
 static uint32_t m_nb_runs = 0;
 static float m_distance = 0;
-static int32_t m_d_target = 0;
+static float m_d_target = 0;
 static int32_t m_distance_cal = DEFAULT_TARGET_DISTANCE;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
@@ -67,6 +68,7 @@ void _kalman_init(void) {
 
 	// set Q: kernel noise
 	m_k_lin.ker.matQ.unity(1 / 20.);
+	m_k_lin.ker.matQ.set(1, 1, 1 / 5.);
 	m_k_lin.ker.matQ.set(4, 4, 1 / 80.);
 
 	// set P
@@ -76,7 +78,7 @@ void _kalman_init(void) {
 	m_k_lin.ker.matR.unity(DIST_STD_DEV_M * DIST_STD_DEV_M);
 
 	// init X
-	m_k_lin.ker.matX.set(0, 0, 325.0f);
+	m_k_lin.ker.matX.set(0, 0, DEFAULT_TARGET_DISTANCE);
 
 	LOG_INFO("Kalman lin. init !");
 
@@ -126,11 +128,13 @@ static float _kalman_run(void) {
 	static sKalmanExtFeed feed;
 
 	// calculate net power
-	float vp1 = 0.0f;
-	if (m_speed > 1.0f) {
+	float vp1 = 10.0f / 69.0f;
+	if (m_speed > KAL_ERG_SPD_LIMIT) {
 		float speed28 = powf(m_speed, 2.8f);
 		m_power -= (0.0102f * speed28) + 9.428f;
 		vp1 = 1 / (69.0f * m_speed);
+	} else {
+		m_speed = KAL_ERG_SPD_LIMIT;
 	}
 
 	feed.dt = 0.001f * (float)(millis() - m_update_time); // in seconds
@@ -156,7 +160,7 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matB.set(3, 3, 1);
 
 	// set command: U
-	int16_t speed_mm_s = vnh5019_driver__getM1Speed();
+	int16_t speed_mm_s = regFenLim(vnh5019_driver__getM1_duty(), -100.0f, 100.0f, -16.0f, 16.0f);
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
 	feed.matU.set(1, 0, (float)speed_mm_s / 3.0f);
@@ -226,7 +230,7 @@ void data_dispatcher__init(task_id_t _task_id) {
 void data_dispatcher__offset_calibration(int32_t cal) {
 
 	m_distance_cal += cal;
-	m_d_target += cal;
+	m_d_target += (float)cal;
 
 	sUserParameters *params = user_settings_get();
 	params->calibration = m_distance_cal;
@@ -244,10 +248,10 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 void data_dispatcher__feed_target_slope(float slope) {
 
-	int32_t front_el = (int32_t)(slope * BIKE_REACH_MM / 100.0f);
+	float front_el = slope * BIKE_REACH_MM / 100.0f;
 
 	// calculate distance from desired slope
-	m_d_target = front_el + m_distance_cal;
+	m_d_target = front_el + (float)m_distance_cal;
 
 	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", m_d_target, (int)(slope*10.0f));
 
@@ -310,19 +314,18 @@ void data_dispatcher__run(void) {
 	LOG_INFO("Filtered dist: %ld mm -- target dist %ld", (int32_t)(f_dist_mm), (int32_t)(m_d_target));
 
 	// calculate target speed
-	float delta_target = regFenLim(m_d_target - f_dist_mm, -32.0f, 32.0f, -16.0f, 16.0f) ;
+	float duty_target = regFenLim(m_d_target - f_dist_mm, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE) ;
 
-	int16_t i_delta_mm = (int16_t)delta_target;
-	int16_t speed_mm_s = (int16_t)i_delta_mm;
+	int16_t i_duty_delta = (int16_t)duty_target;
 
-	static int16_t speed_mm_s_filt = 0;
-	speed_mm_s_filt = 3 * speed_mm_s  + 7 * speed_mm_s_filt;
-	speed_mm_s_filt /= 10;
+	static int16_t duty_delta_filt = 0;
+	duty_delta_filt = 5 * i_duty_delta  + 5 * duty_delta_filt;
+	duty_delta_filt /= 10;
 
-	LOG_INFO("Target speed: %d mm/s %d mm/s", speed_mm_s, speed_mm_s_filt);
+	LOG_INFO("Target duty: %d  f: %d ", i_duty_delta, duty_delta_filt);
 
 	if (m_nb_runs > KALMAN_FREERUN_NB) {
-		vnh5019_driver__setM1Speed(speed_mm_s_filt);
+		vnh5019_driver__setM1_duty(duty_delta_filt);
 	}
 
 	if (vnh5019_driver__getM1Fault()) {

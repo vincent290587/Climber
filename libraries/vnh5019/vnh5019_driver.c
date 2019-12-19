@@ -28,7 +28,7 @@ static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
 static int16_t m_adc_value = 0;
 
 static eVNH5019State m_state = eVNH5019StateCoasting;
-static int16_t m_speed_mm_s = 0;
+static int16_t m_duty_cycle = 0;
 
 static volatile bool ready_flag;            // A flag indicating PWM status.
 
@@ -174,27 +174,27 @@ void vnh5019_driver__init(void) {
 	_pwm_configure();
 }
 
-int16_t vnh5019_driver__getM1Speed(void) {
+int16_t vnh5019_driver__getM1_duty(void) {
 
-	return m_speed_mm_s;
+	return m_duty_cycle;
 }
 
-void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
+void vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 {
 	unsigned char reverse = 0;
 	uint16_t duty_cycle = 0;
 
-	if (speed_mm_s < 0)
+	if (s_duty_cycle < 0)
 	{
-		speed_mm_s = -speed_mm_s;
+		s_duty_cycle = -s_duty_cycle;
 		reverse = 1;  // Preserve the direction
 	}
 
-	if (speed_mm_s < 16)
+	if (s_duty_cycle > 100)
 	{
-		duty_cycle = (speed_mm_s * VNH_FULL_SCALE) / 16;
+		duty_cycle = 100;
 	} else {
-		duty_cycle = VNH_FULL_SCALE;
+		duty_cycle = s_duty_cycle;
 	}
 
 	m_state = eVNH5019StateDriving;
@@ -217,7 +217,7 @@ void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 		digitalWrite(VNH_INB1, LOW);   // matter which direction it is spinning.
 
 		// save speed
-		m_speed_mm_s = 0;
+		m_duty_cycle = 0;
 
 		gpio_clear(LED_2);
 	}
@@ -227,7 +227,7 @@ void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 		digitalWrite(VNH_INB1, HIGH);
 
 		// save speed
-		m_speed_mm_s = -speed_mm_s;
+		m_duty_cycle = -duty_cycle;
 
 		gpio_clear(LED_3);
 	}
@@ -237,7 +237,7 @@ void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
 		digitalWrite(VNH_INB1, LOW);
 
 		// save speed
-		m_speed_mm_s =  speed_mm_s;
+		m_duty_cycle =  duty_cycle;
 
 		gpio_clear(LED_4);
 	}

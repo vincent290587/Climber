@@ -14,12 +14,16 @@
 #include "vnh5019_driver.h"
 
 
-int16_t m_vnh_speed_mm_s = 0;
+int16_t m_vnh_duty_cycle = 0;
 uint32_t m_calc_last_time = 0;
+float m_vnh_speed_mm_s = 0.0f;
 
 static float m_sim_length = 25;
 
 int16_t tdd_vnh5019_driver__get_length(void) {
+
+	// map actuator speed to command
+	m_vnh_speed_mm_s = regFenLim(m_vnh_duty_cycle, -100.0f, 100.0f, -16.0f, 16.0f);
 
 	float delta = (float)m_vnh_speed_mm_s * (float)(millis() - m_calc_last_time) / 1000.0f;
 
@@ -42,14 +46,14 @@ void vnh5019_driver__init(void) {
 	w_task_delay(40);
 }
 
-void vnh5019_driver__setM1Speed(int16_t speed_mm_s)
+void vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 {
-	m_vnh_speed_mm_s = speed_mm_s;
+	m_vnh_duty_cycle = s_duty_cycle;
 }
 
-int16_t vnh5019_driver__getM1Speed(void)
+int16_t vnh5019_driver__getM1_duty(void)
 {
-	return m_vnh_speed_mm_s;
+	return m_vnh_duty_cycle;
 }
 
 void vnh5019_driver__setM1Brake(uint16_t brake)
