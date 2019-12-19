@@ -321,12 +321,20 @@ void data_dispatcher__feed_target_slope(float slope) {
 
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-	// BLE disabling for maxing ANT+ antenna time
-	static int is_scanning = 1;
-	if (is_scanning) {
-		is_scanning = 0;
-		ble_uninit();
-	}
+//	// BLE disabling for maxing ANT+ antenna time
+//	static int is_scanning = 1;
+//	if (is_scanning) {
+//		is_scanning = 0;
+//		ble_uninit();
+//	}
+	static char s_buffer[50];
+
+	snprintf(s_buffer, sizeof(s_buffer), "RECV slope: 10 * %ld \r\n",
+			(int32_t)(slope * 10.0f));
+
+	// log through BLE every second
+	ble_nus_log_text(s_buffer);
+
 #endif
 }
 
@@ -429,7 +437,7 @@ void data_dispatcher__run(void) {
 #if defined (BLE_STACK_SUPPORT_REQD)
 	static char s_buffer[80];
 
-	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %ld dist: %ld tgt: %ld \r\n",
+	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %ld -- dist: %ld -- tgt: %ld \r\n",
 			i_duty_delta,
 			(int32_t)(f_dist_mm),
 			(int32_t)(m_d_target));
