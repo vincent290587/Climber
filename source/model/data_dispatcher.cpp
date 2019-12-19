@@ -300,7 +300,7 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 	sUserParameters *params = user_settings_get();
 	params->calibration = m_distance_cal;
 
-	LOG_DEBUG("New cal: %d (mm) ", m_distance_cal);
+	LOG_INFO("New cal: %d (mm) ", m_distance_cal);
 
 	if (u_settings.writeConfig()) {
 
