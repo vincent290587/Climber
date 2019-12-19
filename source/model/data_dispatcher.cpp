@@ -200,14 +200,13 @@ static float _kalman_erg_run(void) {
 	static uint32_t _nb_runs = 0;
 
 	// calculate net power
-	float vp1 = 10.0f / 69.0f;
 	if (m_speed > KAL_ERG_SPD_LIMIT) {
 		float speed28 = powf(m_speed, 2.8f);
 		m_power -= (0.0102f * speed28) + 9.428f;
-		vp1 = 1 / (69.0f * m_speed);
 	} else {
 		m_speed = KAL_ERG_SPD_LIMIT;
 	}
+	float vp1 = 1 / (69.0f * m_speed);
 
 	feed.dt = 0.001f * (float)(millis() - _update_time); // in seconds
 	_update_time = millis();
@@ -368,31 +367,6 @@ void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps
 
 }
 
-static float _perform_motor_control(float f_dist_mm) {
-
-	static float errorlast = 0, integral = 0, derivative = 0;
-
-	static float Kp = 20, Ki = 0, Kd = 0;
-
-	float dt = 0.080f;
-
-	float error = m_d_target - f_dist_mm;
-	float duty_target = (Kp * error) + (Ki * integral) + (Kd * derivative);
-
-	if (duty_target > 100)
-		duty_target = 100;
-	else if (duty_target < -100)
-		duty_target = -100;
-	else
-	     integral += (error * dt);
-
-	derivative = (error - errorlast) / dt;
-
-	errorlast = error;
-
-	return duty_target;
-}
-
 void data_dispatcher__run(void) {
 
 	if (m_updated.erg) {
@@ -427,9 +401,9 @@ void data_dispatcher__run(void) {
 		intergrator /= 10;
 		m_d_target_prev = m_d_target;
 		// limit integration
-		intergrator = regFenLim((float)intergrator, -50.0f, 50.0f, -50.0f, 50.0f);
+		intergrator = regFenLim((float)intergrator, -20.0f, 20.0f, -20.0f, 20.0f);
 
-		duty_target += regFenLim((float)intergrator, -5.0f, 5.0f, -40.0f, 40.0f);
+		duty_target += regFenLim((float)intergrator, -3.0f, 3.0f, -35.0f, 35.0f);
 
 //		float duty_target = _perform_motor_control(f_dist_mm);
 
