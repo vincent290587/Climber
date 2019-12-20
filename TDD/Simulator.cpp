@@ -76,7 +76,7 @@ void _init(void) {
 
 void simulator_test(void) {
 
-	const char * zpm_data = "V40000000P340H1567";
+	const char * zpm_data = "V40000000P340H1567.1234";
 	zpm_decoder__handle((uint8_t*)zpm_data, strlen(zpm_data));
 
 	_init();

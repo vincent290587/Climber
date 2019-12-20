@@ -20,6 +20,15 @@ try {
 	var port = new SerialPort('COM21', {
 		baudRate: 115200
 	})
+	
+	port.on('close', () => {
+        setTimeout(this.reconnect.bind(this), 5000);
+    });
+	
+	port.on('error', () => {
+        setTimeout(this.reconnect.bind(this), 5000);
+    });
+	
 } catch(e) {
     console.log(e)
 }
@@ -37,9 +46,15 @@ if (ZwiftPacketMonitor && Cap) {
 		
         console.log(serverWorldTime, playerState)
 		
-		let ser_msg = '>V' + playerState.speed + 'P' + playerState.power + 'H' + playerState.climbing + '\n'
-		port.write(ser_msg)
+		let ser_msg = '>V' + playerState.speed + 'P' + playerState.power + 'H' + playerState.altitude.toFixed(4) + '\n'
 		
+		try {
+		
+			port.write(ser_msg)
+			console.log(ser_msg)
+		} catch(e) {
+			console.log(e)
+		}
     })
     
     
