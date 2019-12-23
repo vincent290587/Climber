@@ -13,10 +13,19 @@ try {
     console.log(e)
 }
 
-const ip = require('internal-ip').v4.sync();
-var distance_prev=0; 
-var altitude_prev=0; 
-var nb_runs=0; 
+const winston = require('winston')
+const myWinstonOptions = {
+    transports: [
+        new winston.transports.File({ filename: 'Climber.log' })
+    ],
+    exitOnError: false
+}
+const logger = new winston.createLogger(myWinstonOptions)
+
+const ip = require('internal-ip').v4.sync()
+var distance_prev=0
+var altitude_prev=0
+var nb_runs=0
 
 try {
 	const SerialPort = require('serialport')
@@ -25,11 +34,13 @@ try {
     })
     
     port.on('data', function(data) {
-        console.log('< ' + data);
+        console.log('< ' + data)
+        logger.info('< ' + data)
     });
 	
 	port.on('close', () => {
         try {
+            logger.error('Port reconnect')
             setTimeout(this.reconnect.bind(this), 5000);
         } catch(e) {
             console.log(e)
@@ -38,6 +49,7 @@ try {
 	
 	port.on('error', () => {
         try {
+            logger.error('Port reconnect')
             setTimeout(this.reconnect.bind(this), 5000);
         } catch(e) {
             console.log(e)
@@ -63,15 +75,19 @@ if (ZwiftPacketMonitor && Cap) {
         if (playerState.distance > distance_prev + 5 && nb_runs > 0) {
 		
 			console.log(serverWorldTime, playerState)
+            logger.info(playerState)
             
             var angle = Math.asin((playerState.altitude - altitude_prev) / (200 * (playerState.distance - distance_prev)))
-            var slope = ((100 * Math.tan(angle)) + 200) * 100
+            var slope_pc = 100 * Math.tan(angle)
+            var slope = (Math.round(slope_pc) + 200) * 100
+
 
             let ser_msg = '>S' + slope.toFixed(0) + '\n'
             console.log(ser_msg)
         
             try {
                 port.write(ser_msg)
+                logger.info(ser_msg)
             } catch(e) {
                 console.log(e)
             }
