@@ -14,19 +14,34 @@ try {
 }
 
 const ip = require('internal-ip').v4.sync();
+var distance_prev=0; 
+var altitude_prev=0; 
+var nb_runs=0; 
 
 try {
 	const SerialPort = require('serialport')
-	var port = new SerialPort('COM21', {
-		baudRate: 115200
-	})
+	var port = new SerialPort('COM22', {
+        baudRate: 115200
+    })
+    
+    port.on('data', function(data) {
+        console.log('< ' + data);
+    });
 	
 	port.on('close', () => {
-        setTimeout(this.reconnect.bind(this), 5000);
+        try {
+            setTimeout(this.reconnect.bind(this), 5000);
+        } catch(e) {
+            console.log(e)
+        }
     });
 	
 	port.on('error', () => {
-        setTimeout(this.reconnect.bind(this), 5000);
+        try {
+            setTimeout(this.reconnect.bind(this), 5000);
+        } catch(e) {
+            console.log(e)
+        }
     });
 	
 } catch(e) {
@@ -39,24 +54,47 @@ if (ZwiftPacketMonitor && Cap) {
     
     // determine network interface associated with external IP address
     interface = Cap.findDevice(ip);
+
     // ... and setup monitor on that interface:
     const monitor = new ZwiftPacketMonitor(interface)
     
     monitor.on('outgoingPlayerState', (playerState, serverWorldTime) => {
 		
-        console.log(serverWorldTime, playerState)
+        if (playerState.distance > distance_prev + 5 && nb_runs > 0) {
 		
-		let ser_msg = '>V' + playerState.speed + 'P' + playerState.power + 'H' + playerState.altitude.toFixed(4) + '\n'
-		
-		try {
-		
-			port.write(ser_msg)
-			console.log(ser_msg)
-		} catch(e) {
-			console.log(e)
-		}
+			console.log(serverWorldTime, playerState)
+            
+            var angle = Math.asin((playerState.altitude - altitude_prev) / (200 * (playerState.distance - distance_prev)))
+            var slope = ((100 * Math.tan(angle)) + 200) * 100
+
+            let ser_msg = '>S' + slope.toFixed(0) + '\n'
+            console.log(ser_msg)
+        
+            try {
+                port.write(ser_msg)
+            } catch(e) {
+                console.log(e)
+            }
+
+            distance_prev = playerState.distance
+            altitude_prev = playerState.altitude
+
+        } else if (nb_runs == 0) {
+            
+            distance_prev = playerState.distance
+            altitude_prev = playerState.altitude
+            console.log('Init done')
+        }
+
+        nb_runs = nb_runs + 1
+
     })
     
-    
     monitor.start()
+	
+    try {
+        port.write('>S20000\n')
+    } catch(e) {
+        console.log(e)
+    }
 }

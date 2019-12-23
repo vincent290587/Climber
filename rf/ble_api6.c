@@ -173,9 +173,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 		// Reset DB discovery structure.
 		memset(&m_db_disc, 0 , sizeof (m_db_disc));
 
-		if (millis() < SCAN_STOP_TIME_MS) {
-			scan_start();
-		}
+		scan_start();
 
 	} break;
 
@@ -405,9 +403,7 @@ static void scan_evt_handler(scan_evt_t const * p_scan_evt)
 	case NRF_BLE_SCAN_EVT_SCAN_TIMEOUT:
 	{
 		NRF_LOG_INFO("Scan timed out.");
-		if (millis() < SCAN_STOP_TIME_MS) {
-			scan_start();
-		}
+		scan_start();
 	} break;
 
 	default:

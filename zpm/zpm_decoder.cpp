@@ -17,19 +17,17 @@
 
 void zpm_decoder__handle(uint8_t *data, uint16_t length) {
 
-	int32_t data1, data2, data3, data4;
+	int data0 = 0;
 
-	int res = sscanf((char*)data, "V%ldP%ldH%ld.%ld", &data1, &data2, &data3, &data4);
+	int res = sscanf((char*)data, "S%d", &data0);
 
-	float speed_ms = data1 / 3600000.0f;
-	float power    = data2;
-	float alti     = (float)data3 / 100.0f + (float)data4 / 1000000.0f;
-
-	if (res == 4) {
+	if (res == 1) {
 
 		LOG_INFO("ZPM decoded ! (%d)", res);
 
-		data_dispatcher__feed_erg(speed_ms, alti, power);
+		float slope = (float)data0 / 100.0f - 200.0f;
+
+		data_dispatcher__feed_target_slope(slope);
 	} else {
 
 		LOG_ERROR("ZPM data decoding error (%d)", res);
@@ -38,7 +36,7 @@ void zpm_decoder__handle(uint8_t *data, uint16_t length) {
 #if defined (BLE_STACK_SUPPORT_REQD)
 	static char s_buffer[80];
 
-	snprintf(s_buffer, sizeof(s_buffer), "Received ZPM data: %ld %ld %ld \r\n", data1, data2, data3);
+	snprintf(s_buffer, sizeof(s_buffer), "Received ZPM data: %d \r\n", data0);
 
 	// log through BLE every second
 	ble_nus_log_text(s_buffer);

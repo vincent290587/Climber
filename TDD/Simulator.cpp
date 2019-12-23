@@ -76,7 +76,7 @@ void _init(void) {
 
 void simulator_test(void) {
 
-	const char * zpm_data = "V40000000P340H1567.1234";
+	const char * zpm_data = "S21034";
 	zpm_decoder__handle((uint8_t*)zpm_data, strlen(zpm_data));
 
 	_init();
@@ -244,9 +244,16 @@ void simulator_task(void * p_context) {
 		const float m_speed = sqrtf( - 2.0f * 9.81f * (alti - 110.0f) + 12.0f * 12.0f);
 #endif
 
-		data_dispatcher__feed_target_slope(tgt_slope);
-//		data_dispatcher__feed_erg(m_speed, alti, power);
-//		data_dispatcher__feed_erg(0, 0, 0);
+
+		static uint32_t millis_prev = 0;
+
+		if (millis() > millis_prev + 1000) {
+			data_dispatcher__feed_target_slope(tgt_slope);
+			//		data_dispatcher__feed_erg(m_speed, alti, power);
+			//		data_dispatcher__feed_erg(0, 0, 0);
+
+			millis_prev = millis();
+		}
 
 		// logging
 		extern int16_t 	m_vnh_duty_cycle;
