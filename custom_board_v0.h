@@ -63,7 +63,7 @@ extern "C" {
 #define VNH_INA1         NRF_GPIO_PIN_MAP(0, 4)
 #define VNH_INB1         NRF_GPIO_PIN_MAP(0, 28)
 #define VNH_PWM1         NRF_GPIO_PIN_MAP(0, 29)
-#define VNH_CS1          NRF_GPIO_PIN_MAP(0, 30)
+#define VNH_CS1          NRF_SAADC_INPUT_AIN6        /*NRF_GPIO_PIN_MAP(0, 30)*/
 #define VNH_DIAG1        NRF_GPIO_PIN_MAP(0, 31)
 
 #define HWFC           true

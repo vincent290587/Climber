@@ -311,6 +311,8 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 	}
 }
 
+static float k_deriv = 0;
+
 void data_dispatcher__feed_target_slope(float slope) {
 
 	if (std::isnan(slope) ||
@@ -323,6 +325,12 @@ void data_dispatcher__feed_target_slope(float slope) {
 
 	// calculate distance from desired slope
 	m_d_target = front_el + (float)m_distance_cal;
+
+	static float m_d_target_prev = 0;
+	k_deriv = 0.4f * k_deriv + 0.6f * ((m_d_target - m_d_target_prev) * 10.0f);
+	m_d_target_prev = m_d_target;
+	// limit integration
+	k_deriv = regFenLim(k_deriv, -20.0f, 20.0f, -20.0f, 20.0f);
 
 	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", (int)m_d_target, (int)(slope*10.0f));
 
@@ -415,14 +423,11 @@ void data_dispatcher__run(void) {
 			duty_target = 0;
 		}
 
-		static float m_d_target_prev = 0;
-		static float k_deriv = 0;
-		k_deriv = 0.5f * k_deriv + 0.5f * ((m_d_target - m_d_target_prev) * 10.0f);
-		m_d_target_prev = m_d_target;
-		// limit integration
-		k_deriv = regFenLim(k_deriv, -20.0f, 20.0f, -20.0f, 20.0f);
-
 		duty_target += regFenLim(k_deriv, -3.0f, 3.0f, -35.0f, 35.0f);
+		// nullify derivate if wrong direction
+		if (error * k_deriv < 0) {
+			k_deriv = 0;
+		}
 
 		int16_t i_duty_delta = (int16_t)duty_target;
 
@@ -430,20 +435,19 @@ void data_dispatcher__run(void) {
 			vnh5019_driver__setM1_duty(i_duty_delta);
 		}
 
-		if (vnh5019_driver__getM1Fault()) {
-
-		}
+		int32_t current = vnh5019_driver__getM1CurrentMilliamps();
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-	static char s_buffer[80];
+	static char s_buffer[200];
 
-	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %d (%ld mm) -- est spd %ld -- dist: %ld -- tgt: %ld (%ld) \r\n",
+	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %d (%ld mm) -- est spd %ld -- dist: %ld -- tgt: %ld (%ld) -- cur %ld \r\n",
 			i_duty_delta,
 			(int32_t)m_distance,
 			(int32_t)m_k_lin.ker.matX.get(1,0),
 			(int32_t)(f_dist_mm),
 			(int32_t)(m_d_target),
-			(int32_t)(error * 10.0f));
+			(int32_t)(error * 10.0f),
+			current);
 
 	// log through BLE every second
 	ble_nus_log_text(s_buffer);
