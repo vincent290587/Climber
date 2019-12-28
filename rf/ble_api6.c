@@ -14,6 +14,7 @@
 #include "ble_srv_common.h"
 #include "ble_radio_notification.h"
 #include "nrf_sdh.h"
+#include "nrf_queue.h"
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
 #include "nrf_pwr_mgmt.h"
@@ -102,6 +103,8 @@ typedef struct {
 	uint8_t p_xfer_str[200];
 	uint16_t length;
 } sNusXfer;
+
+NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
 
 static sNusXfer m_nus_xfer_tx_array;
 static sNusXfer m_nus_xfer_rx_array;
@@ -561,11 +564,18 @@ void ble_uninit(void) {
 
 void ble_nus_log_text(const char * text) {
 
-	// create log
 	if (!text) return;
 
-	m_nus_xfer_tx_array.length = snprintf((char*)m_nus_xfer_tx_array.p_xfer_str, sizeof(m_nus_xfer_tx_array.p_xfer_str),
+	sNusXfer _nus_xfer_array;
+
+	// create log
+	_nus_xfer_array.length = snprintf(
+			(char*)_nus_xfer_array.p_xfer_str,
+			sizeof(_nus_xfer_array.p_xfer_str),
 			text);
+
+	ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
+	APP_ERROR_CHECK(err_code);
 
 	if (m_periph_id != TASK_ID_INVALID) {
 		w_task_delay_cancel(m_periph_id);
@@ -616,6 +626,11 @@ void ble_nus_tasks(void) {
 		memset(&m_nus_xfer_rx_array, 0, sizeof(m_nus_xfer_rx_array));
 	}
 
+	if (!m_nus_xfer_tx_array.length && !nrf_queue_is_empty(&m_tx_queue)) {
+		ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
+		APP_ERROR_CHECK(err_code);
+	}
+
 	while (m_connected &&
 			m_nus_xfer_tx_array.length &&
 			m_nus_cts) {
@@ -644,6 +659,11 @@ void ble_nus_tasks(void) {
 
 			m_nus_packet_nb++;
 			m_nus_xfer_tx_array.length = 0;
+
+			if (!nrf_queue_is_empty(&m_tx_queue)) {
+				ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
+				APP_ERROR_CHECK(err_code);
+			}
 		} break;
 
 		default:
