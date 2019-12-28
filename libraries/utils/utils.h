@@ -11,8 +11,9 @@
 #include <stdint.h>
 #include "math_wrapper.h"
 
-
-#define M_TWOPI         (M_PI * 2.0)
+#ifndef M_TWOPI
+#define M_TWOPI         (M_PI * 2.0f)
+#endif
 
 #ifdef	__cplusplus
 extern "C" {
@@ -23,30 +24,34 @@ float regFen(float val_, float b1_i, float b1_f, float b2_i, float b2_f) __attri
 
 float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) __attribute__ ((pure));
 
-static volatile float toRadians(float angle) __attribute__ ((pure));
-static volatile float toRadians(float angle) {
-  return M_PI * angle / 180.0;
+static inline float toRadians(float angle) __attribute__ ((pure));
+static inline float toRadians(float angle) {
+  return M_PI * angle / 180.0f;
 }
-	
-/**
- * distance_between5: 24ms
- * distance_between2: 24ms
- * distance_between3: 21ms
- * distance_between4: 40ms
- * distance_between: ?
- */
-static inline float distance_between(float lat1, float lon1, float lat2, float lon2) __attribute__ ((pure));
-static inline float distance_between(float lat1, float lon1, float lat2, float lon2) {
-    const float two_r = 2. * 6371008.; // meters
-//    const float sdlat = my_sin(toRadians(lat2 - lat1) / 2);
-//    const float sdlon = my_sin(toRadians(lon2 - lon1) / 2);
-    const float sdlat = (toRadians(lat2 - lat1) / 2);
-    const float sdlon = (toRadians(lon2 - lon1) / 2);
-//    const float q = sdlat * sdlat + my_cos(toRadians(lat1)) * my_cos(toRadians(lat2)) * sdlon * sdlon;
-    const float q = sdlat * sdlat + 0.5 * (1 + my_cos(toRadians(lat1 + lat2))) * sdlon * sdlon;
-    const float d = two_r * my_sqrtf(q);
 
-    return d;
+static inline float toDegrees(float angle) __attribute__ ((pure));
+static inline float toDegrees(float angle) {
+  return 180.0f * angle / M_PI;
+}
+
+static inline float map_duty_to_speed(int16_t duty) __attribute__ ((pure));
+static inline float map_duty_to_speed(int16_t duty) {
+	if (duty < -1) {
+		return regFenLim((float)duty, -100, 0, -10, -2);
+	} else if (duty > 1) {
+		return regFenLim((float)duty, 0, 100, 0, 10);
+	}
+	return 0;
+}
+
+static inline int16_t map_speed_to_duty(float speed) __attribute__ ((pure));
+static inline int16_t map_speed_to_duty(float speed) {
+	if (speed < 0.0f) {
+		return (int16_t)regFenLim(speed, -10, -2, -100, 0);
+	} else {
+		return (int16_t)regFenLim(speed, 0, 10, 0, 100);
+	}
+	return 0;
 }
 
 void calculePos (const char *nom, float *lat, float *lon);

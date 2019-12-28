@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 #include "utils.h"
 #include "segger_wrapper.h"
 
@@ -16,9 +17,6 @@
 #define BATT_INT_RES                   0.155
 
 #define FACTOR 100000.
-
-static const float R1 = 6356752.;
-static const float R2 = 6378137.;
 
 
 float min(float val1, float val2) {
@@ -71,132 +69,6 @@ float regFenLim(float val_, float b1_i, float b1_f, float b2_i, float b2_f) {
   return res;
 }
 
-/**
- *
- * @param lat1 En degres
- * @param long1 En degres
- * @param lat2 En degres
- * @param long2 En degres
- * @return
- */
-float distance_between2(float lat1, float long1, float lat2, float long2) {
-  float delta = 3.141592 * (long1 - long2) / 180.;
-  float sdlong = sinf(delta);
-  float cdlong = cosf(delta);
-  lat1 = 3.141592 * (lat1) / 180.;
-  lat2 = 3.141592 * (lat2) / 180.;
-  float slat1 = sinf(lat1);
-  float clat1 = cosf(lat1);
-  float slat2 = sinf(lat2);
-  float clat2 = cosf(lat2);
-  delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
-  delta = delta*delta;
-  delta += clat2 * sdlong * clat2 * sdlong;
-  delta = sqrtf(delta);
-  float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
-  delta = atan2f(delta, denom);
-  return delta * 6369933.;
-}
-
-/**
- *
- * @param lat1 En degres
- * @param long1 En degres
- * @param lat2 En degres
- * @param long2 En degres
- * @return
- */
-float distance_between5(float lat1, float long1, float lat2, float long2) {
-  float delta = 3.141592 * (long1 - long2) / 180.;
-  float sdlong = my_sin(delta);
-  float cdlong = my_cos(delta);
-  lat1 = 3.141592 * (lat1) / 180.;
-  lat2 = 3.141592 * (lat2) / 180.;
-  float slat1 = my_sin(lat1);
-  float clat1 = my_cos(lat1);
-  float slat2 = my_sin(lat2);
-  float clat2 = my_cos(lat2);
-  delta = (clat1 * slat2) - (slat1 * clat2 * cdlong);
-  delta = delta*delta;
-  delta += clat2 * sdlong * clat2 * sdlong;
-  delta = my_sqrtf(delta);
-  float denom = (slat1 * slat2) + (clat1 * clat2 * cdlong);
-  delta = atan2f(delta, denom);
-  return delta * 6369933.;
-}
-
-/**
- * Approximation petits angles sur une Terre ellipsoidale
- *
- * @param lat1 En degres
- * @param long1 En degres
- * @param lat2 En degres
- * @param long2 En degres
- * @return
- */
-float distance_between3(float lat1, float long1, float lat2, float long2) {
-
-  static float Rm = 6356752.;
-  static float latRm = 0.;
-
-  float lat1rad = M_PI * lat1 / 180.;
-
-  float cos2lat1 = my_cos(lat1rad);
-  cos2lat1 *= cos2lat1;
-
-  if (fabsf(latRm - lat1rad) > 0.008) {
-	  latRm = lat1rad;
-	  Rm = my_sqrtf(R1*R1*(1-cos2lat1) + R2*R2*cos2lat1);
-  }
-
-  // petits angles: tan = Id
-  float deltalat = M_PI * (lat2 -lat1) / 180.;
-  float deltalon = M_PI * (long2-long1) / 180.;
-
-  float dhori  = deltalon * R2 * my_cos(lat1rad);
-  float dverti = deltalat * Rm;
-
-  // projection plane et pythagore
-  float res = dhori*dhori + dverti*dverti;
-
-  res = my_sqrtf(res);
-
-  return res;
-}
-
-/**
- * Approximation petits angles sur une Terre ellipsoidale
- *
- * @param lat1 En degres
- * @param long1 En degres
- * @param lat2 En degres
- * @param long2 En degres
- * @return
- */
-float distance_between4(float lat1, float long1, float lat2, float long2) {
-
-  static float Rm = 6356752.;
-  static float latRm = 0.;
-
-  float lat1rad = 3.141592 * lat1 / 180.;
-
-  float cos2lat1 = powf(cosf(lat1rad), 2.);
-
-  if (fabsf(latRm - lat1rad) > 0.008) {
-	  latRm = lat1rad;
-	  Rm = sqrtf(powf(R1,2.)*(1-cos2lat1) + powf(R2,2.)*cos2lat1);
-  }
-
-  // petits angles: tan = Id
-  float deltalat = 3.141592 * (lat2 -lat1) / 180.;
-  float deltalon = 3.141592 * (long2-long1) / 180.;
-
-  float dhori  = deltalon * R2 * cosf(lat1rad);
-  float dverti = deltalat * Rm;
-
-  // projection plane et pythagore
-  return sqrtf(dhori*dhori + dverti*dverti);
-}
 
 void calculePos (const char *nom, float *lat, float *lon) {
 
@@ -289,23 +161,23 @@ float compute2Complement(uint8_t msb, uint8_t lsb) {
  */
 float percentageBatt(float tensionValue, float current) {
 
-    float fp_ = 0.;
+    float fp_ = 0.f;
 
     tensionValue += current * BATT_INT_RES / 1000.;
 
-    if (tensionValue > 4.2) {
-			fp_ = 100.;
-    } else if (tensionValue > 3.78) {
-        fp_ = 536.24 * tensionValue * tensionValue * tensionValue;
-		fp_ -= 6723.8 * tensionValue * tensionValue;
-        fp_ += 28186 * tensionValue - 39402;
+    if (tensionValue > 4.2f) {
+			fp_ = 100.f;
+    } else if (tensionValue > 3.78f) {
+        fp_ = 536.24f * tensionValue * tensionValue * tensionValue;
+		fp_ -= 6723.8f * tensionValue * tensionValue;
+        fp_ += 28186.f * tensionValue - 39402.f;
 
-		if (fp_ > 100.) fp_ = 100.;
+		if (fp_ > 100.f) fp_ = 100.f;
 
-    } else if (tensionValue > 3.2) {
-        fp_ = powf(10, -11.4) * powf(tensionValue, 22.315);
+    } else if (tensionValue > 3.2f) {
+        fp_ = powf(10.f, -11.4f) * powf(tensionValue, 22.315f);
     } else {
-        fp_ = -1;
+        fp_ = -1.f;
     }
 
     return fp_;

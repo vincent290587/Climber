@@ -183,7 +183,7 @@ int16_t vnh5019_driver__getM1_duty(void) {
 	return m_duty_cycle;
 }
 
-void vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
+uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 {
 	unsigned char reverse = 0;
 	uint16_t duty_cycle = 0;
