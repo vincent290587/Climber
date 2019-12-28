@@ -15,10 +15,12 @@ try {
 
 const winston = require('winston')
 const myWinstonOptions = {
+    format: winston.format.simple(),
     transports: [
-        new winston.transports.File({ filename: 'Climber.log' })
+        new winston.transports.File({ filename: 'Climber.log' }),
     ],
-    exitOnError: false
+    exitOnError: false,
+    handleExceptions: true,
 }
 const logger = new winston.createLogger(myWinstonOptions)
 
@@ -75,15 +77,13 @@ if (ZwiftPacketMonitor && Cap) {
         if (playerState.distance > distance_prev + 5 && nb_runs > 0) {
 		
 			console.log(serverWorldTime, playerState)
-            logger.info(playerState)
+            logger.info('New state')
             
             var angle = Math.asin((playerState.altitude - altitude_prev) / (200 * (playerState.distance - distance_prev)))
-            var slope_pc = 100 * Math.tan(angle)
-            var slope = (Math.round(slope_pc) + 200) * 100
-
+            var slope_pc = 200 * Math.tan(angle)
+            var slope = (Math.round(slope_pc) / 2 + 200) * 100
 
             let ser_msg = '>S' + slope.toFixed(0) + '\n'
-            console.log(ser_msg)
         
             try {
                 port.write(ser_msg)
