@@ -76,7 +76,7 @@ bool task_begin(size_t stackSize)
 static int _task_init(tasked_func_t loop, const char *name, size_t stackSize, uint8_t *stack_top, void *_p_context)
 {
 	// Add task last in run queue (main task)
-	uint8_t task_id = m_tasks_nb++;
+	uint8_t task_id = ++m_tasks_nb;
 
 	uint8_t frame[1];
 
@@ -146,7 +146,7 @@ int task_create(tasked_func_t taskLoop, const char *name, size_t stackSize, void
 		_task_init(taskLoop, name, stackSize, &stack[stackSize-1], p_context);
 	}
 
-	return 0;
+	return m_tasks_nb;
 }
 
 void task_start(tasked_func_t idle_task, void *p_context)
@@ -214,7 +214,7 @@ void task_yield()
 	// Next task in run queue will continue
 	do {
 		s_running = s_running->next;
-	} while (s_running->timeout > 1);
+	} while (s_running->timeout > 1 || s_running->events_mask);
 
 //	if (s_running != &s_main) {
 //		LOG_INFO("Starting task %s 0x%02X", s_running->name, *p_stack);
