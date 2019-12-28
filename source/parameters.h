@@ -30,4 +30,6 @@
 
 #define ZWIFT_SLOPE_FACTOR        2.0f
 
+#define DEADZONE_HALF_WIDTH       2.5f
+
 #endif /* SOURCE_PARAMETERS_H_ */

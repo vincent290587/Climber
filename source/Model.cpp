@@ -65,6 +65,7 @@ void sensing_task(void * p_context)
 		vl53l1_wrapper__measure();
 #else
 		w_task_delay(50);
+		data_dispatcher__feed_distance(240);
 #endif
 
 	}

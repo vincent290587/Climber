@@ -18,14 +18,14 @@
 #include "vnh5019_driver.h"
 #include "app_pwm.h"
 
-#define SAMPLES_IN_BUFFER 1
+#define SAMPLES_IN_BUFFER 2
 
 #define PWM_FREQUENCY_HZ     10000UL
 
 APP_PWM_INSTANCE(PWM1, 2);                   // Create the instance "PWM1" using TIMER1.
 
 static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
-static int16_t m_adc_value = 0;
+static nrf_saadc_value_t m_adc_value = 0;
 
 static eVNH5019State m_state = eVNH5019StateCoasting;
 static int16_t m_duty_cycle = 0;
@@ -245,6 +245,8 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 
 		gpio_clear(LED_4);
 	}
+
+	return duty_cycle;
 }
 
 void vnh5019_driver__setM1Brake(uint16_t brake)

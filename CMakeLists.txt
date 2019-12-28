@@ -38,6 +38,7 @@ include_directories(
 	libraries/utils
     libraries/kalman
     libraries/filters
+    libraries/pid
     libraries/vnh5019
 	rf
     source
@@ -67,6 +68,7 @@ set(SRCS
 	libraries/kalman/kalman_ext.cpp
 	libraries/kalman/UDMatrix.cpp
     libraries/kalman/sine_fitter.cpp
+    libraries/pid/arm_pid.c
     libraries/utils/WString.cpp
 	libraries/utils/utils.c
 	source/Model.cpp

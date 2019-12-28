@@ -24,7 +24,7 @@ void vnh5019_driver__init(void);
 
 int16_t vnh5019_driver__getM1Speed(void);
 
-void vnh5019_driver__setM1_duty(int16_t s_duty_cycle);
+uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle);
 
 int16_t vnh5019_driver__getM1_duty(void);
 

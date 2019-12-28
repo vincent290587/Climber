@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 #include "gpio.h"
+#include "utils.h"
 #include "boards.h"
 #include "millis.h"
 #include "helper.h"
@@ -23,7 +24,7 @@ static float m_sim_length = 25;
 int16_t tdd_vnh5019_driver__get_length(void) {
 
 	// map actuator speed to command
-	m_vnh_speed_mm_s = regFenLim(m_vnh_duty_cycle, -50.0f, 50.0f, -16.0f, 16.0f);
+	m_vnh_speed_mm_s = map_duty_to_speed(m_vnh_duty_cycle);
 
 	float delta = (float)m_vnh_speed_mm_s * (float)(millis() - m_calc_last_time) / 1000.0f;
 
@@ -46,9 +47,26 @@ void vnh5019_driver__init(void) {
 	w_task_delay(40);
 }
 
-void vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
+uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 {
+	if (s_duty_cycle > 4 || s_duty_cycle < -4) {
+//		s_duty_cycle &= ~0b111;
+//		s_duty_cycle |= 0b1000;
+	} else {
+		s_duty_cycle = 0;
+	}
+
 	m_vnh_duty_cycle = s_duty_cycle;
+
+	uint16_t res = 0;
+	if (s_duty_cycle < 0)
+	{
+		res = -s_duty_cycle;
+	} else {
+		res = s_duty_cycle;
+	}
+
+	return res;
 }
 
 int16_t vnh5019_driver__getM1_duty(void)

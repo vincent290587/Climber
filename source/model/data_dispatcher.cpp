@@ -10,6 +10,7 @@
 #include "gpio.h"
 #include "utils.h"
 #include "millis.h"
+#include "arm_pid.h"
 #include "kalman_ext.h"
 #include "Model.h"
 #include "data_dispatcher.h"
@@ -49,6 +50,12 @@ static int32_t m_distance_cal = DEFAULT_TARGET_DISTANCE;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
 static float m_speed, m_alti, m_power;
+
+static s_pid_config_f32   m_pid_config;
+static s_pid_instance_f32 m_cmsis_pid;
+
+static int32_t m_deadzone_center = DEFAULT_TARGET_DISTANCE;
+static uint8_t m_deadzone_activ = 1;
 
 #ifdef TDD
 float m_last_est_dist = 0;
@@ -109,10 +116,10 @@ static float _kalman_run(void) {
 	m_k_lin.ker.matB.set(0, 1, feed.dt);
 
 	// set command: U
-	int16_t speed_mm_s = (int16_t)regFenLim(vnh5019_driver__getM1_duty(), -VNH_FULL_SCALE, VNH_FULL_SCALE, -16.0f, 16.0f);
+	float speed_mm_s = map_duty_to_speed(vnh5019_driver__getM1_duty());
 	feed.matU.resize(m_k_lin.ker.ker_dim, 1);
 	feed.matU.zeros();
-	feed.matU.set(1, 0, (float)speed_mm_s);
+	feed.matU.set(1, 0, speed_mm_s);
 
 	// set core
 	m_k_lin.ker.matA.set(0, 1, feed.dt);
@@ -290,6 +297,15 @@ void data_dispatcher__init(task_id_t _task_id) {
 
 		LOG_ERROR("FRAM config not valid ");
 	}
+
+	//Initialize the PID instance structure
+	m_pid_config.use_limits = 1;
+	m_pid_config.lim_low  = -100.0f;
+	m_pid_config.lim_high =  100.0f;
+	m_cmsis_pid.Kp = 2.0f * 12.5f;
+	m_cmsis_pid.Ki = 0.2;
+	m_cmsis_pid.Kd = 0.3;
+	pid_init_f32(&m_cmsis_pid, 1);
 }
 
 void data_dispatcher__offset_calibration(int32_t cal) {
@@ -325,6 +341,12 @@ void data_dispatcher__feed_target_slope(float slope) {
 
 	// calculate distance from desired slope
 	m_d_target = front_el + (float)m_distance_cal;
+
+	if (m_deadzone_center != (int32_t)m_d_target) {
+
+		m_deadzone_center = (int32_t)m_d_target;
+		m_deadzone_activ = 0;
+	}
 
 	static float m_d_target_prev = 0;
 	k_deriv = 0.4f * k_deriv + 0.6f * ((m_d_target - m_d_target_prev) * 10.0f);
@@ -416,41 +438,52 @@ void data_dispatcher__run(void) {
 
 		// calculate target speed
 		float error = m_d_target - f_dist_mm;
-		float duty_target = 0.0f;
-		duty_target = regFenLim(error, -12.0f, 12.0f, -VNH_FULL_SCALE, VNH_FULL_SCALE);
 
-		if (fabsf(error) < 3.0f) {
-			duty_target = 0;
+		//Process the PID controller
+		float out = pid_f32(&m_cmsis_pid, &m_pid_config, error);
+		int16_t i_duty_delta = (int16_t)out;
+		//i_duty_delta = map_speed_to_duty(error * 2.0f);
+
+		if (m_deadzone_activ) {
+			i_duty_delta = 0;
 		}
 
-		duty_target += regFenLim(k_deriv, -3.0f, 3.0f, -35.0f, 35.0f);
-		// nullify derivate if wrong direction
-		if (error * k_deriv < 0) {
-			k_deriv = 0;
-		}
-
-		int16_t i_duty_delta = (int16_t)duty_target;
-
+		uint16_t real_duty = 0;
 		if (m_nb_runs > KALMAN_FREERUN_NB) {
-			vnh5019_driver__setM1_duty(i_duty_delta);
+
+			real_duty = vnh5019_driver__setM1_duty(i_duty_delta);
+
+			if (!m_deadzone_activ && !real_duty) {
+				m_deadzone_activ = 1;
+			}
 		}
 
 		int32_t current = vnh5019_driver__getM1CurrentMilliamps();
 
+		static char s_buffer[200];
+
+#ifdef TDD
+		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u \r\n";
+#else
+		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu \r\n";
+#endif
+
+		snprintf(s_buffer, sizeof(s_buffer), format,
+				i_duty_delta,
+				real_duty,
+				(int32_t)(m_k_lin.ker.matX.get(1,0) * 10.0f),
+				(int32_t)(m_distance),
+				(int32_t)(f_dist_mm),
+				(int32_t)(m_d_target),
+				(int32_t)(error * 10.0f),
+				current,
+				millis());
+
 #if defined (BLE_STACK_SUPPORT_REQD)
-	static char s_buffer[200];
-
-	snprintf(s_buffer, sizeof(s_buffer), "Commanded duty: %d (%ld mm) -- est spd %ld -- dist: %ld -- tgt: %ld (%ld) -- cur %ld \r\n",
-			i_duty_delta,
-			(int32_t)m_distance,
-			(int32_t)m_k_lin.ker.matX.get(1,0),
-			(int32_t)(f_dist_mm),
-			(int32_t)(m_d_target),
-			(int32_t)(error * 10.0f),
-			current);
-
 	// log through BLE every second
 	ble_nus_log_text(s_buffer);
+#else
+	LOG_INFO(s_buffer);
 #endif
 
 	}
