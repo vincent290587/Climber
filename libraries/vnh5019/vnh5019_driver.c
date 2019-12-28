@@ -65,8 +65,12 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
 	// start sampling SAADC
 	nrf_drv_saadc_sample();
 
-	if (duty_cycle > 4 &&
+	if (duty_cycle > 6 &&
 			duty_cycle != duty_cycle_prev) {
+
+		duty_cycle &= ~0b1111;
+		duty_cycle |= 0b10000;
+		if (duty_cycle > 100) duty_cycle = 100;
 
 		uint32_t div = 100 - duty_cycle;
 
@@ -78,7 +82,7 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
         	w_task_yield();
         }
 
-	} else if (duty_cycle <= 4) {
+	} else if (duty_cycle <= 6) {
 
 		LOG_INFO("PWM signal frequency: %u OFF", duty_cycle);
 

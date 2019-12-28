@@ -49,9 +49,9 @@ void vnh5019_driver__init(void) {
 
 uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 {
-	if (s_duty_cycle > 4 || s_duty_cycle < -4) {
-//		s_duty_cycle &= ~0b111;
-//		s_duty_cycle |= 0b1000;
+	if (s_duty_cycle > 6 || s_duty_cycle < -6) {
+		s_duty_cycle &= ~0b111;
+		s_duty_cycle |= 0b1000;
 	} else {
 		s_duty_cycle = 0;
 	}

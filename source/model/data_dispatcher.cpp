@@ -57,6 +57,8 @@ static s_pid_instance_f32 m_cmsis_pid;
 static int32_t m_deadzone_center = DEFAULT_TARGET_DISTANCE;
 static uint8_t m_deadzone_activ = 1;
 
+static int16_t i_duty_delta_prev = 0;
+
 #ifdef TDD
 float m_last_est_dist = 0;
 float m_last_innov = 0;
@@ -303,8 +305,8 @@ void data_dispatcher__init(task_id_t _task_id) {
 	m_pid_config.lim_low  = -100.0f;
 	m_pid_config.lim_high =  100.0f;
 	m_cmsis_pid.Kp = 2.0f * 12.5f;
-	m_cmsis_pid.Ki = 0.2;
-	m_cmsis_pid.Kd = 0.3;
+	m_cmsis_pid.Ki = 0.0f;
+	m_cmsis_pid.Kd = 0.3f;
 	pid_init_f32(&m_cmsis_pid, 1);
 }
 
@@ -346,6 +348,7 @@ void data_dispatcher__feed_target_slope(float slope) {
 
 		m_deadzone_center = (int32_t)m_d_target;
 		m_deadzone_activ = 0;
+		i_duty_delta_prev = 0;
 	}
 
 	static float m_d_target_prev = 0;
@@ -444,7 +447,9 @@ void data_dispatcher__run(void) {
 		int16_t i_duty_delta = (int16_t)out;
 		//i_duty_delta = map_speed_to_duty(error * 2.0f);
 
-		if (m_deadzone_activ) {
+		uint32_t fault = vnh5019_driver__getM1Fault();
+
+		if (fault || m_deadzone_activ) {
 			i_duty_delta = 0;
 		}
 
@@ -453,21 +458,33 @@ void data_dispatcher__run(void) {
 
 			real_duty = vnh5019_driver__setM1_duty(i_duty_delta);
 
-			if (!m_deadzone_activ && !real_duty) {
-				m_deadzone_activ = 1;
+			// prep next loop
+			if (!m_deadzone_activ) {
+
+				// check for overshoot or end of motion
+				if (!real_duty ||
+						(i_duty_delta * i_duty_delta_prev <= 0 && i_duty_delta_prev)) {
+
+					m_deadzone_activ = 1;
+					i_duty_delta_prev = 0;
+				} else {
+
+					i_duty_delta_prev = i_duty_delta;
+				}
+
 			}
+
 		}
 
 		int32_t current = vnh5019_driver__getM1CurrentMilliamps();
 
-		static char s_buffer[200];
-
 #ifdef TDD
-		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u \r\n";
+		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u \r\n";
 #else
-		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu \r\n";
+		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu %u \r\n";
 #endif
 
+		static char s_buffer[200];
 		snprintf(s_buffer, sizeof(s_buffer), format,
 				i_duty_delta,
 				real_duty,
@@ -477,7 +494,8 @@ void data_dispatcher__run(void) {
 				(int32_t)(m_d_target),
 				(int32_t)(error * 10.0f),
 				current,
-				millis());
+				millis(),
+				(uint8_t)fault);
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 	// log through BLE every second

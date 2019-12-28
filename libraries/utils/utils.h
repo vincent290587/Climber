@@ -36,10 +36,10 @@ static inline float toDegrees(float angle) {
 
 static inline float map_duty_to_speed(int16_t duty) __attribute__ ((pure));
 static inline float map_duty_to_speed(int16_t duty) {
-	if (duty < -1) {
-		return regFenLim((float)duty, -100, 0, -10, -2);
-	} else if (duty > 1) {
-		return regFenLim((float)duty, 0, 100, 0, 10);
+	if (duty <= -1) {
+		return regFenLim((float)duty, -100, 0, -14.2, 0);
+	} else if (duty >= 1) {
+		return regFenLim((float)duty, 0, 100, 0, 12.8);
 	}
 	return 0;
 }
@@ -47,9 +47,9 @@ static inline float map_duty_to_speed(int16_t duty) {
 static inline int16_t map_speed_to_duty(float speed) __attribute__ ((pure));
 static inline int16_t map_speed_to_duty(float speed) {
 	if (speed < 0.0f) {
-		return (int16_t)regFenLim(speed, -10, -2, -100, 0);
+		return (int16_t)regFenLim(speed, -14.2, 0, -100, 0);
 	} else {
-		return (int16_t)regFenLim(speed, 0, 10, 0, 100);
+		return (int16_t)regFenLim(speed, 0, 12.8, 0, 100);
 	}
 	return 0;
 }
