@@ -331,8 +331,6 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 	}
 }
 
-static float k_deriv = 0;
-
 void data_dispatcher__feed_target_slope(float slope) {
 
 	if (std::isnan(slope) ||
@@ -353,31 +351,8 @@ void data_dispatcher__feed_target_slope(float slope) {
 		i_duty_delta_prev = 0;
 	}
 
-	static float m_d_target_prev = 0;
-	k_deriv = 0.4f * k_deriv + 0.6f * ((m_d_target - m_d_target_prev) * 10.0f);
-	m_d_target_prev = m_d_target;
-	// limit integration
-	k_deriv = regFenLim(k_deriv, -20.0f, 20.0f, -20.0f, 20.0f);
-
 	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", (int)m_d_target, (int)(slope*10.0f));
 
-
-#if defined (BLE_STACK_SUPPORT_REQD)
-//	// BLE disabling for maxing ANT+ antenna time
-//	static int is_scanning = 1;
-//	if (is_scanning) {
-//		is_scanning = 0;
-//		ble_uninit();
-//	}
-	static char s_buffer[50];
-
-	snprintf(s_buffer, sizeof(s_buffer), "RECV slope: 10 * %ld \r\n",
-			(int32_t)(slope * 10.0f));
-
-	// log through BLE every second
-	ble_nus_log_text(s_buffer);
-
-#endif
 }
 
 void data_dispatcher__feed_distance(float distance) {
@@ -500,10 +475,10 @@ void data_dispatcher__run(void) {
 				(uint8_t)fault);
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-	// log through BLE every second
-	ble_nus_log_text(s_buffer);
+		// log through BLE every second
+		ble_nus_log_text(s_buffer);
 #else
-	LOG_INFO(s_buffer);
+		LOG_INFO(s_buffer);
 #endif
 
 	}
