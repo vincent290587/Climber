@@ -317,6 +317,8 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 	sUserParameters *params = user_settings_get();
 	params->calibration = m_distance_cal;
+	m_deadzone_activ = 0;
+	i_duty_delta_prev = 0;
 
 	LOG_INFO("New cal: %d (mm) ", m_distance_cal);
 
