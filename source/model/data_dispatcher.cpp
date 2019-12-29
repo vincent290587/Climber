@@ -56,6 +56,7 @@ static s_pid_instance_f32 m_cmsis_pid;
 
 static int32_t m_deadzone_center = DEFAULT_TARGET_DISTANCE;
 static uint8_t m_deadzone_activ = 1;
+static int8_t  m_limit_reached = 0;
 
 static int16_t i_duty_delta_prev = 0;
 
@@ -342,7 +343,22 @@ void data_dispatcher__feed_target_slope(float slope) {
 	float front_el = slope * BIKE_REACH_MM / 100.0f;
 
 	// calculate distance from desired slope
-	m_d_target = front_el + (float)m_distance_cal;
+	// account for end of course
+	if (m_limit_reached == 0) {
+
+		m_d_target = front_el + (float)m_distance_cal;
+	} else if (m_limit_reached > 0 && front_el + (float)m_distance_cal + 2.5f < m_distance) {
+
+		m_limit_reached = 0;
+		m_d_target = front_el + (float)m_distance_cal;
+	} else if (m_limit_reached < 0 && front_el + (float)m_distance_cal > m_distance + 2.5f) {
+
+		m_limit_reached = 0;
+		m_d_target = front_el + (float)m_distance_cal;
+	} else {
+		return;
+	}
+
 
 	if (m_deadzone_center != (int32_t)m_d_target) {
 
@@ -351,7 +367,7 @@ void data_dispatcher__feed_target_slope(float slope) {
 		i_duty_delta_prev = 0;
 	}
 
-	LOG_WARNING("Target el. dispatched: %d (mm) from %d / 1000", (int)m_d_target, (int)(slope*10.0f));
+	LOG_DEBUG("Target el. dispatched: %d (mm) from %d / 1000", (int)m_d_target, (int)(slope*10.0f));
 
 }
 
@@ -455,6 +471,28 @@ void data_dispatcher__run(void) {
 
 		int32_t current = vnh5019_driver__getM1CurrentMilliamps();
 
+		// actuator stop detection
+		static uint16_t error_nb = 0;
+		if (real_duty > 30 &&
+				current < 600) {
+
+			if (++error_nb >= 8) {
+				LOG_ERROR("!! ERROR motor stop !!");
+				error_nb = 0;
+				m_deadzone_activ = 1;
+				(void)vnh5019_driver__setM1_duty(0);
+				m_k_lin.ker.matX.set(1, 0, 0);
+
+				if (i_duty_delta > 0) {
+					m_limit_reached = 1;
+				} else {
+					m_limit_reached = -1;
+				}
+			}
+		} else {
+			error_nb = 0;
+		}
+
 #ifdef TDD
 		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u \r\n";
 #else
@@ -478,7 +516,7 @@ void data_dispatcher__run(void) {
 		// log through BLE every second
 		ble_nus_log_text(s_buffer);
 #else
-		LOG_INFO(s_buffer);
+		LOG_INFO("%s", s_buffer);
 #endif
 
 	}

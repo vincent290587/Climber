@@ -119,7 +119,7 @@ void simulator_test(void) {
 }
 
 #define SIM_DT_MS                      50
-#define SIM_SLOPE_PERIOD_MS            20000
+#define SIM_SLOPE_PERIOD_MS            25000
 #define BIKE_HUB_DIST_MM               340
 #define VNH_HUB_OFFSET                 80.0f
 
@@ -174,9 +174,9 @@ void simulator_task(void * p_context) {
 				tdd_logger_start();
 			}
 
-		} else if (millis() < 15000) {
+		} else if (millis() < 25000) {
 
-			tgt_slope = 4.5f * sinf(sim_phase);
+			tgt_slope = 5.5f * sinf(sim_phase);
 
 		} else if (millis() < 30000) {
 
