@@ -74,14 +74,14 @@ if (ZwiftPacketMonitor && Cap) {
     
     monitor.on('outgoingPlayerState', (playerState, serverWorldTime) => {
 		
-        if (playerState.distance > distance_prev + 5 && nb_runs > 0) {
+        if (playerState.distance > distance_prev + 15 && nb_runs > 0) {
 		
 			console.log(serverWorldTime, playerState)
             logger.info('New state')
             
             var angle = Math.asin((playerState.altitude - altitude_prev) / (200 * (playerState.distance - distance_prev)))
-            var slope_pc = 200 * Math.tan(angle)
-            var slope = (Math.round(slope_pc) / 2 + 200) * 100
+            var slope_pc = 1000 * Math.tan(angle)
+            var slope = (Math.round(slope_pc) / 10 + 200) * 100
 
             let ser_msg = '>S' + slope.toFixed(0) + '\n'
         
