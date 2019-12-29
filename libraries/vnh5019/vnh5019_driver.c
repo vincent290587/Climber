@@ -18,14 +18,14 @@
 #include "vnh5019_driver.h"
 #include "app_pwm.h"
 
-#define SAMPLES_IN_BUFFER 2
+#define SAMPLES_IN_BUFFER 1
 
 #define PWM_FREQUENCY_HZ     10000UL
 
 APP_PWM_INSTANCE(PWM1, 2);                   // Create the instance "PWM1" using TIMER1.
 
 static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
-static nrf_saadc_value_t m_adc_value = 0;
+static int16_t m_adc_value = 0;
 
 static eVNH5019State m_state = eVNH5019StateCoasting;
 static int16_t m_duty_cycle = 0;
@@ -119,7 +119,7 @@ static void _saadc_callback(nrf_drv_saadc_evt_t const * p_event)
 		m_adc_value = 0;
 		for (int i = 0; i < SAMPLES_IN_BUFFER; i++)
 		{
-			m_adc_value += p_event->data.done.p_buffer[i];
+			m_adc_value += (int16_t)p_event->data.done.p_buffer[i];
 		}
 
 		m_adc_value /= SAMPLES_IN_BUFFER;
@@ -267,13 +267,11 @@ void vnh5019_driver__setM1Brake(uint16_t brake)
 // Return motor 1 current value in milliamps.
 int32_t vnh5019_driver__getM1CurrentMilliamps(void)
 {
-	if (m_state == eVNH5019StateDriving) {
-		// 5V / 1024 ADC counts / 144 mV per A = 34 mA per count
-		// Here 1024 counts is 0.6 instead of 0.5: scale
-		return m_adc_value * 34 * 6 / 5; // analogRead(VNH_CS1) * 34;
-	}
+	// 144 mV per 1000mA
+	// for 10 bit SAADC with gain 1/6
+	int32_t voltage_mv = ((int32_t)m_adc_value * 6 * 1000) / (1 << 10);
+	return (voltage_mv * 1000) / 144;
 
-	return 0;
 }
 
 // Return error status for motor 1
