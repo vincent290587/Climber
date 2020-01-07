@@ -56,7 +56,7 @@ static void _pwm_configure(void) {
 /**
  * Returns the true PWM frequency applied
  */
-static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
+static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 
 	static uint16_t duty_cycle_prev = 0;
 
@@ -66,7 +66,7 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle) {
 	nrf_drv_saadc_sample();
 
 	if (duty_cycle > 6 &&
-			duty_cycle != duty_cycle_prev) {
+			(duty_cycle != duty_cycle_prev || force)) {
 
 		duty_cycle &= ~0b1111;
 		duty_cycle |= 0b10000;
@@ -190,6 +190,7 @@ int16_t vnh5019_driver__getM1_duty(void) {
 uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 {
 	unsigned char reverse = 0;
+	static unsigned char reverse_prev = 0;
 	uint16_t duty_cycle = 0;
 
 	if (s_duty_cycle < 0)
@@ -208,7 +209,7 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 	m_state = eVNH5019StateDriving;
 
 	// set PWM signal
-	duty_cycle = _pwm_signal_set(duty_cycle);
+	duty_cycle = _pwm_signal_set(duty_cycle, reverse == reverse_prev ? 0 : 1);
 	if (!duty_cycle) {
 
 		// forced coastin
@@ -218,6 +219,8 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 	gpio_set(LED_2);
 	gpio_set(LED_3);
 	gpio_set(LED_4);
+
+	reverse_prev = reverse;
 
 	if (duty_cycle == 0)
 	{
@@ -261,7 +264,7 @@ void vnh5019_driver__setM1Brake(uint16_t brake)
 	m_state = eVNH5019StateBraking;
 
 	// set PWM signal
-	_pwm_signal_set(brake);
+	_pwm_signal_set(brake, 1);
 }
 
 // Return motor 1 current value in milliamps.
