@@ -474,7 +474,7 @@ void data_dispatcher__run(void) {
 		// actuator stop detection
 		static uint16_t error_nb = 0;
 		if (real_duty > 30 &&
-				current < 600) {
+				current < 100) {
 
 			if (++error_nb >= 8) {
 				LOG_ERROR("!! ERROR motor stop !!");
@@ -494,9 +494,9 @@ void data_dispatcher__run(void) {
 		}
 
 #ifdef TDD
-		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u \r\n";
+		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u %u \r\n";
 #else
-		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu %u \r\n";
+		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu %u %u \r\n";
 #endif
 
 		static char s_buffer[200];
@@ -510,7 +510,8 @@ void data_dispatcher__run(void) {
 				(int32_t)(error * 10.0f),
 				current,
 				millis(),
-				(uint8_t)fault);
+				(uint8_t)fault,
+				error_nb);
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 		// log through BLE every second
