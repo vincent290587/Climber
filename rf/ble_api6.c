@@ -574,11 +574,13 @@ void ble_nus_log_text(const char * text) {
 			sizeof(_nus_xfer_array.p_xfer_str),
 			text);
 
-	ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
-	APP_ERROR_CHECK(err_code);
+	if (!nrf_queue_is_full(&m_tx_queue)) {
+		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
+		APP_ERROR_CHECK(err_code);
 
-	if (m_periph_id != TASK_ID_INVALID) {
-		w_task_delay_cancel(m_periph_id);
+		if (m_periph_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_periph_id);
+		}
 	}
 
 }

@@ -378,7 +378,7 @@ int main(void)
 {
 	ret_code_t err_code;
 
-#if CONFIG_JLINK_MONITOR_ENABLED
+#ifdef CONFIG_JLINK_MONITOR_ENABLED
 	NVIC_SetPriority(DebugMonitor_IRQn, APP_IRQ_PRIORITY_LOW);
 #warning "!! MONITORING active !!"
 #endif
