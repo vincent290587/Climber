@@ -27,6 +27,7 @@ const logger = new winston.createLogger(myWinstonOptions)
 const ip = require('internal-ip').v4.sync()
 var distance_prev=0
 var altitude_prev=0
+var slope_prev=0
 var nb_runs=0
 
 try {
@@ -62,6 +63,25 @@ try {
     console.log(e)
 }
 
+function simple_moving_averager(period) {
+    var nums = [];
+    return function(num) {
+        nums.push(num);
+        if (nums.length > period)
+            nums.splice(0,1);  // remove the first element of the array
+        var sum = 0;
+        for (var i in nums)
+            sum += nums[i];
+        var n = period;
+        if (nums.length < period)
+            n = nums.length;
+        return(sum/n);
+    }
+}
+
+// moving average class
+var m_sma = simple_moving_averager(3);
+
 if (ZwiftPacketMonitor && Cap) {
 
     console.log('Listening on: ', ip, JSON.stringify(Cap.findDevice(ip),null,4));
@@ -74,26 +94,34 @@ if (ZwiftPacketMonitor && Cap) {
     
     monitor.on('outgoingPlayerState', (playerState, serverWorldTime) => {
 		
-        if (playerState.distance > distance_prev + 15 && nb_runs > 0) {
+        if (playerState.distance > distance_prev + 6 && nb_runs > 0) {
 		
 			console.log(serverWorldTime, playerState)
             logger.info('New state')
             
             var angle = Math.asin((playerState.altitude - altitude_prev) / (200 * (playerState.distance - distance_prev)))
-            var slope_pc = 1000 * Math.tan(angle)
-            var slope = (Math.round(slope_pc) / 10 + 200) * 100
+            // calculate moving average
+            var slope_pc = m_sma(100 * Math.tan(angle))
 
-            let ser_msg = '>S' + slope.toFixed(0) + '\n'
-        
-            try {
-                port.write(ser_msg)
-                logger.info(ser_msg)
-            } catch(e) {
-                console.log(e)
-            }
+			if (Math.abs(slope_pc - slope_prev) > 0.9) {
+				try {
+                    // convert it
+                    var slope = (slope_pc + 200) * 100
+                    let ser_msg = '>S' + slope.toFixed(0) + '\n'
+
+					port.write(ser_msg)
+					logger.info(ser_msg)
+				} catch(e) {
+					console.log(e)
+				}
+				
+				slope_prev = slope_pc
+			}
 
             distance_prev = playerState.distance
             altitude_prev = playerState.altitude
+
+            nb_runs = 1;
 
         } else if (nb_runs == 0) {
             

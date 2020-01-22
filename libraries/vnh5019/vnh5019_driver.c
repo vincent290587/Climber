@@ -93,6 +93,10 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
         }
 
         duty_cycle = 0;
+	} else if (duty_cycle == duty_cycle_prev) {
+
+
+
 	}
 
 	duty_cycle_prev = duty_cycle;

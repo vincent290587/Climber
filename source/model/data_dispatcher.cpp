@@ -323,13 +323,13 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 	LOG_INFO("New cal: %d (mm) ", m_distance_cal);
 
-	if (u_settings.writeConfig()) {
-
-		LOG_INFO("FRAM cal saved ");
-	} else {
-
-		LOG_ERROR("FRAM cal NOT saved ");
-	}
+//	if (u_settings.writeConfig()) {
+//
+//		LOG_INFO("FRAM cal saved ");
+//	} else {
+//
+//		LOG_ERROR("FRAM cal NOT saved ");
+//	}
 }
 
 void data_dispatcher__feed_target_slope(float slope) {
@@ -483,11 +483,11 @@ void data_dispatcher__run(void) {
 				(void)vnh5019_driver__setM1_duty(0);
 				m_k_lin.ker.matX.set(1, 0, 0);
 
-				if (i_duty_delta > 0) {
-					m_limit_reached = 1;
-				} else {
-					m_limit_reached = -1;
-				}
+//				if (i_duty_delta > 0) {
+//					m_limit_reached = 1;
+//				} else {
+//					m_limit_reached = -1;
+//				}
 			}
 		} else {
 			error_nb = 0;
