@@ -16,6 +16,7 @@
 #include "data_dispatcher.h"
 #include "vnh5019_driver.h"
 #include "math_wrapper.h"
+#include "SMA.h"
 
 #ifdef BLE_STACK_SUPPORT_REQD
 #include "ble_api_base.h"
@@ -59,6 +60,8 @@ static uint8_t m_deadzone_activ = 1;
 static int8_t  m_limit_reached = 0;
 
 static int16_t i_duty_delta_prev = 0;
+
+static SMA m_average(3, 2);
 
 #ifdef TDD
 float m_last_est_dist = 0;
@@ -437,13 +440,20 @@ void data_dispatcher__run(void) {
 
 		//Process the PID controller
 		float out = pid_f32(&m_cmsis_pid, &m_pid_config, error);
+
 		int16_t i_duty_delta = (int16_t)out;
-		//i_duty_delta = map_speed_to_duty(error * 2.0f);
 
 		uint32_t fault = vnh5019_driver__getM1Fault();
 
 		if (fault || m_deadzone_activ) {
 			i_duty_delta = 0;
+		}
+
+		float av_val = 0.f;
+		m_average.addSample((float)i_duty_delta);
+		if (i_duty_delta != 0 && m_average.getValue(av_val)) {
+
+			i_duty_delta = (int16_t)av_val;
 		}
 
 		uint16_t real_duty = 0;
@@ -456,10 +466,11 @@ void data_dispatcher__run(void) {
 
 				// check for overshoot or end of motion
 				if (!real_duty ||
-						(i_duty_delta * i_duty_delta_prev <= 0 && i_duty_delta_prev)) {
+						(i_duty_delta * i_duty_delta_prev <= 0 && i_duty_delta_prev && fabsf(error) < 4.f)) {
 
 					m_deadzone_activ = 1;
 					i_duty_delta_prev = 0;
+					(void)vnh5019_driver__setM1_duty(0);
 				} else {
 
 					i_duty_delta_prev = i_duty_delta;
@@ -473,10 +484,12 @@ void data_dispatcher__run(void) {
 
 		// actuator stop detection
 		static uint16_t error_nb = 0;
-		if (real_duty > 30 &&
+		if (real_duty > 60 &&
 				current < 100) {
 
-			if (++error_nb >= 8) {
+			error_nb++;
+
+			if (error_nb >= 16) {
 				LOG_ERROR("!! ERROR motor stop !!");
 				error_nb = 0;
 				m_deadzone_activ = 1;
@@ -488,6 +501,9 @@ void data_dispatcher__run(void) {
 //				} else {
 //					m_limit_reached = -1;
 //				}
+			} else if (error_nb >= 8) {
+
+				(void)vnh5019_driver__setM1_duty(i_duty_delta / 2);
 			}
 		} else {
 			error_nb = 0;

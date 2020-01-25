@@ -60,7 +60,9 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 
 	static uint16_t duty_cycle_prev = 0;
 
-	if (duty_cycle > 100) duty_cycle = 100;
+	if (duty_cycle > 100) {
+		duty_cycle = 100;
+	}
 
 	// start sampling SAADC
 	nrf_drv_saadc_sample();
