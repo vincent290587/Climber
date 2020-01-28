@@ -62,9 +62,17 @@
 
 #define SVIEW_INIT(...)                      EMPTY_MACRO
 #define LOG_WARNING_SVIEW(...)               EMPTY_MACRO
-#define LOG_ERROR_SVIEW(...)               EMPTY_MACRO
+#define LOG_ERROR_SVIEW(...)                 EMPTY_MACRO
 
 #endif
+
+#if defined ( BLE_STACK_SUPPORT_REQD )
+#include "ble_api_base.h"
+
+#define LOG_INFO_NUS(...)                  EMPTY_MACRO
+#define LOG_WARNING_NUS(...)               EMPTY_MACRO
+#define LOG_ERROR_NUS(...)                 ble_nus_log(__VA_ARGS__)
+
 
 #if NRF_LOG_ENABLED
 
@@ -84,7 +92,7 @@
 #define LOG_RAW_INFO(X)                USB_PRINTC(X)
 #define LOG_WARNING(...)               LOG_WARNING_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
+#define LOG_ERROR(...)                 LOG_ERROR_NUS(__VA_ARGS__);LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_PROCESS(...)               false

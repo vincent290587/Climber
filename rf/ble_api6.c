@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include "gpio.h"
 #include "nordic_common.h"
@@ -566,15 +567,16 @@ void ble_nus_log_text(const char * text) {
 
 	if (!text) return;
 
-	sNusXfer _nus_xfer_array;
+	if (!nrf_queue_is_full(&m_tx_queue)) {
 
-	// create log
-	_nus_xfer_array.length = snprintf(
+		sNusXfer _nus_xfer_array;
+
+		// create log
+		_nus_xfer_array.length = snprintf(
 			(char*)_nus_xfer_array.p_xfer_str,
 			sizeof(_nus_xfer_array.p_xfer_str),
 			text);
 
-	if (!nrf_queue_is_full(&m_tx_queue)) {
 		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
 		APP_ERROR_CHECK(err_code);
 
@@ -585,7 +587,24 @@ void ble_nus_log_text(const char * text) {
 
 }
 
+void ble_nus_log(const char* format, ...)
+{
+	if (!nrf_queue_is_full(&m_tx_queue)) {
 
+		va_list va;
+		va_start(va, format);
+		sNusXfer _nus_xfer_array;
+		const int ret = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
+		va_end(va);
+
+		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
+		APP_ERROR_CHECK(err_code);
+
+		if (m_periph_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_periph_id);
+		}
+	}
+}
 
 /**
  * Send the log file to a remote computer

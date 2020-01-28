@@ -145,6 +145,7 @@ static float _kalman_run(void) {
 	return m_k_lin.ker.matX.get(0,0);
 }
 
+#if 0
 void _kalman_erg_init(void) {
 
 	// init kalman
@@ -274,6 +275,7 @@ static float _kalman_erg_run(void) {
 
 	return res;
 }
+#endif
 
 void data_dispatcher__init(task_id_t _task_id) {
 
@@ -285,7 +287,7 @@ void data_dispatcher__init(task_id_t _task_id) {
 
 	_kalman_init();
 
-	_kalman_erg_init();
+	//_kalman_erg_init();
 
 	vnh5019_driver__init();
 
@@ -413,6 +415,7 @@ void data_dispatcher__feed_acc(float acceleration_mg[3], float angular_rate_mdps
 
 void data_dispatcher__run(void) {
 
+#if 0
 	if (m_updated.erg) {
 
 		m_updated.erg = 0;
@@ -425,6 +428,7 @@ void data_dispatcher__run(void) {
 		data_dispatcher__feed_target_slope(f_slope_pc);
 
 	}
+#endif
 
 	if (m_updated.dist) {
 

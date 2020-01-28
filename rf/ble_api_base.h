@@ -34,6 +34,8 @@ void ble_start_evt(eBleEventType evt);
 
 void ble_nus_log_text(const char * text);
 
+void ble_nus_log(const char* format, ...);
+
 
 #ifdef __cplusplus
 }
