@@ -73,6 +73,7 @@
 #define LOG_WARNING_NUS(...)               EMPTY_MACRO
 #define LOG_ERROR_NUS(...)                 ble_nus_log(__VA_ARGS__)
 
+#endif
 
 #if NRF_LOG_ENABLED
 
