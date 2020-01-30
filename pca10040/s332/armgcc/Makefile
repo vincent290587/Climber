@@ -43,6 +43,16 @@ include $(PROJ_DIR)/Makefile.files
 
 include $(PROJ_DIR)/ble.files
 
+ifeq ($(MMD), 1)
+CFLAGS += -DMMD
+CFLAGS += -DCONFIG_JLINK_MONITOR_ENABLED
+CFLAGS += -DCONFIG_WATCHDOG_ENABLED
+SRC_FILES += $(PROJ_DIR)/MMD/JLINK_MONITOR.c
+SRC_FILES += $(PROJ_DIR)/MMD/JLINK_MONITOR_ISR_SES.s
+INC_FOLDERS += $(PROJ_DIR)/MMD
+$(info Building for monitor debug mode.)
+endif
+
 # Libraries common to all targets
 LIB_FILES += -lm -lstdc++
 
@@ -81,16 +91,6 @@ CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # keep every function in separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
 CFLAGS += -fno-builtin -fshort-enums -nostdlib -fno-exceptions
-
-ifeq ($(MMD), 1)
-CFLAGS += -DMMD
-CFLAGS += -DCONFIG_JLINK_MONITOR_ENABLED
-CFLAGS += -DCONFIG_WATCHDOG_ENABLED
-SRC_FILES += $(PROJ_DIR)/MMD/JLINK_MONITOR.c
-SRC_FILES += $(PROJ_DIR)/MMD/JLINK_MONITOR_ISR_SES.s
-INC_FOLDERS += $(PROJ_DIR)/MMD
-$(info Building for monitor debug mode.)
-endif
 
 # C++ flags common to all targets
 CXXFLAGS += $(OPT) -std=gnu++0x -felide-constructors -fno-exceptions -fno-rtti
