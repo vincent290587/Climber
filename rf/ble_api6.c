@@ -142,9 +142,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 	{
-		LOG_INFO("Connected.");
-		m_connected = true;
-		m_nus_cts = true;
+		LOG_INFO("GAP Connected.");
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
@@ -262,12 +260,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 }
 
-void ble_radio_callback_handler(bool radio_active)
-{
-
-
-}
-
 
 /**@brief Function for initializing the BLE stack.
  *
@@ -321,6 +313,8 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
 		APP_ERROR_CHECK(err_code);
 		LOG_INFO("Connected to stravaAP");
+		m_connected = true;
+		m_nus_cts = true;
 		break;
 
 	case BLE_NUS_C_EVT_NUS_TX_EVT:
@@ -571,6 +565,8 @@ void ble_nus_log_text(const char * text) {
 
 		sNusXfer _nus_xfer_array;
 
+		memset(_nus_xfer_array.p_xfer_str, 0, sizeof(_nus_xfer_array.p_xfer_str));
+
 		// create log
 		_nus_xfer_array.length = snprintf(
 			(char*)_nus_xfer_array.p_xfer_str,
@@ -592,10 +588,18 @@ void ble_nus_log(const char* format, ...)
 	if (!nrf_queue_is_full(&m_tx_queue)) {
 
 		va_list va;
-		va_start(va, format);
 		sNusXfer _nus_xfer_array;
-		const int ret = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
+
+		memset(_nus_xfer_array.p_xfer_str, 0, sizeof(_nus_xfer_array.p_xfer_str));
+
+		va_start(va, format);
+		m_nus_xfer_tx_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
 		va_end(va);
+
+		if (m_nus_xfer_tx_array.length + 3 < sizeof(_nus_xfer_array.p_xfer_str)) {
+			_nus_xfer_array.p_xfer_str[m_nus_xfer_tx_array.length++] = '\r';
+			_nus_xfer_array.p_xfer_str[m_nus_xfer_tx_array.length++] = '\n';
+		}
 
 		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
 		APP_ERROR_CHECK(err_code);
