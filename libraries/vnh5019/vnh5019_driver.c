@@ -72,7 +72,14 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 
 		duty_cycle &= ~0b1111;
 		duty_cycle |= 0b10000;
-		if (duty_cycle > 100) duty_cycle = 100;
+
+		if (duty_cycle > 100) {
+			duty_cycle = 100;
+		}
+
+		if (duty_cycle == 100 && duty_cycle_prev == 0) {
+			duty_cycle = 70;
+		}
 
 		uint32_t div = 100 - duty_cycle;
 
@@ -193,7 +200,7 @@ int16_t vnh5019_driver__getM1_duty(void) {
 	return m_duty_cycle;
 }
 
-uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
+uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle, uint8_t force)
 {
 	unsigned char reverse = 0;
 	static unsigned char reverse_prev = 0;
@@ -215,7 +222,7 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 	m_state = eVNH5019StateDriving;
 
 	// set PWM signal
-	duty_cycle = _pwm_signal_set(duty_cycle, reverse == reverse_prev ? 0 : 1);
+	duty_cycle = _pwm_signal_set(duty_cycle, reverse == reverse_prev ? force : 1);
 	if (!duty_cycle) {
 
 		// forced coastin

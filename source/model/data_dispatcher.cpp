@@ -47,6 +47,7 @@ static uint32_t m_update_time = 0;
 static uint32_t m_nb_runs = 0;
 static float m_distance = 0;
 static float m_d_target = 0;
+static float m_error_inv = 0;
 static int32_t m_distance_cal = DEFAULT_TARGET_DISTANCE;
 static float m_acceleration_mg[3];
 static float m_angular_rate_mdps[3];
@@ -58,10 +59,7 @@ static s_pid_instance_f32 m_cmsis_pid;
 static int32_t m_deadzone_center = DEFAULT_TARGET_DISTANCE;
 static uint8_t m_deadzone_activ = 1;
 static int8_t  m_limit_reached = 0;
-
-static int16_t i_duty_delta_prev = 0;
-
-static SMA m_average(3, 2);
+static uint8_t  m_new_command = 0;
 
 #ifdef TDD
 float m_last_est_dist = 0;
@@ -324,7 +322,7 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 	sUserParameters *params = user_settings_get();
 	params->calibration = m_distance_cal;
 	m_deadzone_activ = 0;
-	i_duty_delta_prev = 0;
+	m_new_command = 1;
 
 	LOG_INFO("New cal: %d (mm) ", m_distance_cal);
 
@@ -369,7 +367,7 @@ void data_dispatcher__feed_target_slope(float slope) {
 
 		m_deadzone_center = (int32_t)m_d_target;
 		m_deadzone_activ = 0;
-		i_duty_delta_prev = 0;
+		m_new_command = 1;
 	}
 
 	LOG_DEBUG("Target el. dispatched: %d (mm) from %d / 1000", (int)m_d_target, (int)(slope*10.0f));
@@ -442,6 +440,12 @@ void data_dispatcher__run(void) {
 		// calculate target speed
 		float error = m_d_target - f_dist_mm;
 
+		// new command was received, save that for future calculation
+		if (m_new_command) {
+
+			m_error_inv = - error;
+		}
+
 		//Process the PID controller
 		float out = pid_f32(&m_cmsis_pid, &m_pid_config, error);
 
@@ -453,70 +457,71 @@ void data_dispatcher__run(void) {
 			i_duty_delta = 0;
 		}
 
+#if 0
 		float av_val = 0.f;
+		static SMA m_average(2, 2);
 		m_average.addSample((float)i_duty_delta);
 		if (i_duty_delta != 0 && m_average.getValue(av_val)) {
 
 			i_duty_delta = (int16_t)av_val;
 		}
+#endif
 
-		uint16_t real_duty = 0;
-		if (m_nb_runs > KALMAN_FREERUN_NB) {
-
-			real_duty = vnh5019_driver__setM1_duty(i_duty_delta);
-
-			// prep next loop
-			if (!m_deadzone_activ) {
-
-				// check for overshoot or end of motion
-				if (!real_duty ||
-						(i_duty_delta * i_duty_delta_prev <= 0 && i_duty_delta_prev && fabsf(error) < 4.f)) {
-
-					m_deadzone_activ = 1;
-					i_duty_delta_prev = 0;
-					(void)vnh5019_driver__setM1_duty(0);
-				} else {
-
-					i_duty_delta_prev = i_duty_delta;
-				}
-
-			}
-
-		}
-
+		static uint16_t real_duty = 0;
 		int32_t current = vnh5019_driver__getM1CurrentMilliamps();
 
+		// check if we are at the target already
+		if (!m_deadzone_activ) {
+
+			// check for target crossing and end of motion
+			if ((m_error_inv * error >= 0.f && fabsf(error) < 4.f)) {
+
+				m_deadzone_activ = 1;
+				i_duty_delta = 0;
+			}
+		}
+
 		// actuator stop detection
+		uint8_t force_pwm = 0;
 		static uint16_t error_nb = 0;
-		if (real_duty > 60 &&
-				current < 100) {
+		if ((i_duty_delta > 30 || i_duty_delta < -30) &&
+				current < 100 &&
+				m_nb_runs > KALMAN_FREERUN_NB) {
 
 			error_nb++;
 
-			if (error_nb >= 16) {
-				LOG_ERROR("!! ERROR motor stop !!");
+			if (error_nb >= 10) {
+				LOG_WARNING("!! ERROR motor stop !!");
 				error_nb = 0;
+				force_pwm = 1;
 				m_deadzone_activ = 1;
-				(void)vnh5019_driver__setM1_duty(0);
+				i_duty_delta = 0;
 				m_k_lin.ker.matX.set(1, 0, 0);
 
-//				if (i_duty_delta > 0) {
-//					m_limit_reached = 1;
-//				} else {
-//					m_limit_reached = -1;
-//				}
-			} else if (error_nb >= 8) {
+			} else if (error_nb >= 6) {
 
-				(void)vnh5019_driver__setM1_duty(i_duty_delta / 2);
+				force_pwm = 1;
+				i_duty_delta = i_duty_delta / 2;
+			} else if (error_nb >= 3) {
+
+				force_pwm = 1;
 			}
 		} else {
+
 			error_nb = 0;
 		}
 
+		if (m_nb_runs > KALMAN_FREERUN_NB) {
+
+			real_duty = vnh5019_driver__setM1_duty(i_duty_delta, force_pwm);
+		}
+
+		m_new_command = 0;
+
 #ifdef TDD
-		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u %u \r\n";
+		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u %u %u \r\n";
 #else
-		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu %u %u \r\n";
+		const char *format = "Cmd DTY: %d (%u) / e.spd %ld / dist %ld f=%ld / tgt %ld (%ld) / curr %ld / %lu %u %u %u \r\n";
 #endif
 
 		static char s_buffer[200];
@@ -531,10 +536,11 @@ void data_dispatcher__run(void) {
 				current,
 				millis(),
 				(uint8_t)fault,
-				error_nb);
+				error_nb,
+				m_new_command);
 
 #if defined (BLE_STACK_SUPPORT_REQD)
-		// log through BLE every second
+		// log through BLE every loop
 		ble_nus_log_text(s_buffer);
 #else
 		LOG_INFO("%s", s_buffer);
