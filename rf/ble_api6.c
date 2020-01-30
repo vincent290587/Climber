@@ -109,7 +109,7 @@ typedef struct {
 	uint16_t length;
 } sNusXfer;
 
-NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
+NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 30, NRF_QUEUE_MODE_NO_OVERFLOW);
 
 static sNusXfer m_nus_xfer_tx_array;
 static sNusXfer m_nus_xfer_rx_array;
@@ -296,10 +296,6 @@ static void ble_stack_init(void)
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 
-	// radio callback to write to the neopixels right ;-)
-	//err_code = ble_radio_notification_init(2, NRF_RADIO_NOTIFICATION_DISTANCE_800US, ble_radio_callback_handler);
-	//APP_ERROR_CHECK(err_code);
-
 	// set name
 	ble_gap_conn_sec_mode_t sec_mode; // Struct to store security parameters
 	BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
@@ -382,6 +378,7 @@ static void db_discovery_init(void)
 	db_init.p_gatt_queue = &m_ble_gatt_queue;
 
 	ret_code_t err_code = ble_db_discovery_init(&db_init);
+	APP_ERROR_CHECK(err_code);
 }
 
 
@@ -615,12 +612,12 @@ void ble_nus_log(const char* format, ...)
 		memset(_nus_xfer_array.p_xfer_str, 0, sizeof(_nus_xfer_array.p_xfer_str));
 
 		va_start(va, format);
-		m_nus_xfer_tx_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
+		_nus_xfer_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
 		va_end(va);
 
 		if (m_nus_xfer_tx_array.length + 3 < sizeof(_nus_xfer_array.p_xfer_str)) {
-			_nus_xfer_array.p_xfer_str[m_nus_xfer_tx_array.length++] = '\r';
-			_nus_xfer_array.p_xfer_str[m_nus_xfer_tx_array.length++] = '\n';
+			_nus_xfer_array.p_xfer_str[_nus_xfer_array.length++] = '\r';
+			_nus_xfer_array.p_xfer_str[_nus_xfer_array.length++] = '\n';
 		}
 
 		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
@@ -679,6 +676,7 @@ void ble_nus_tasks(void) {
 	}
 
 	while (m_connected &&
+			m_ble_nus_c.conn_handle != BLE_CONN_HANDLE_INVALID &&
 			m_nus_xfer_tx_array.length &&
 			m_nus_cts) {
 
