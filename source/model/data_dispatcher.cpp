@@ -308,7 +308,7 @@ void data_dispatcher__init(task_id_t _task_id) {
 	m_pid_config.use_limits = 1;
 	m_pid_config.lim_low  = -100.0f;
 	m_pid_config.lim_high =  100.0f;
-	m_cmsis_pid.Kp = 6.0f * 12.5f;
+	m_cmsis_pid.Kp = 100.f / 3.f; // PWM = 100 @ error = 4 mm
 	m_cmsis_pid.Ki = 0.0f;
 	m_cmsis_pid.Kd = 0.3f;
 	pid_init_f32(&m_cmsis_pid, 1);
