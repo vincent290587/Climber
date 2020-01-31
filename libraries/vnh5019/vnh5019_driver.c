@@ -43,8 +43,6 @@ static void _on_pwm_event(nrf_drv_pwm_evt_type_t event_type)
 
 static void _pwm_configure(void) {
 
-	ret_code_t err_code;
-
 	nrf_gpio_pin_clear(VNH_PWM1);
 
 	nrf_drv_pwm_config_t const config0 =
@@ -323,15 +321,17 @@ void vnh5019_driver__tasks(void) {
 			.end_delay       = 0,
 		};
 
-		seq1_values = m_duty_cycle;
+		seq1_values[0] = m_duty_cycle;
 
 		APP_ERROR_CHECK(nrf_drv_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP));
 
 		// clear flags
 		m_new_pwm_data = 0;
 		last_up = millis();
+	} else {
+
+		// start sampling SAADC
+		nrf_drv_saadc_sample();
 	}
 
-	// start sampling SAADC
-	nrf_drv_saadc_sample();
 }
