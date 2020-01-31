@@ -29,6 +29,7 @@ static int16_t m_adc_value = 0;
 
 static eVNH5019State m_state = eVNH5019StateCoasting;
 static int16_t m_duty_cycle = 0;
+static int16_t m_new_pwm_data = 0;
 
 static volatile bool ready_flag;            // A flag indicating PWM status.
 
@@ -64,9 +65,6 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 		duty_cycle = 100;
 	}
 
-	// start sampling SAADC
-	nrf_drv_saadc_sample();
-
 	if (duty_cycle > 6 &&
 			(duty_cycle != duty_cycle_prev || force)) {
 
@@ -81,29 +79,19 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 			duty_cycle = 70;
 		}
 
-		uint32_t div = 100 - duty_cycle;
+		m_new_pwm_data = 1;
 
 		LOG_INFO("PWM signal duty cycle: %lu (freq = %u)", div, duty_cycle);
 
-        ready_flag = false;
-        /* Set the duty cycle - keep trying until PWM is ready... */
-        while (app_pwm_channel_duty_set(&PWM1, 0, div) == NRF_ERROR_BUSY) {
-        	w_task_yield();
-        }
-
 	} else if (duty_cycle <= 6) {
+
+		m_new_pwm_data = 1;
 
 		LOG_INFO("PWM signal frequency: %u OFF", duty_cycle);
 
-        ready_flag = false;
-        /* Set the duty cycle - keep trying until PWM is ready... */
-        while (app_pwm_channel_duty_set(&PWM1, 0, 0) == NRF_ERROR_BUSY) {
-        	w_task_yield();
-        }
-
         duty_cycle = 0;
-	} else if (duty_cycle == duty_cycle_prev) {
 
+	} else if (duty_cycle == duty_cycle_prev) {
 
 
 	}
@@ -124,10 +112,6 @@ static void _saadc_callback(nrf_drv_saadc_evt_t const * p_event)
 
 		err_code = nrf_drv_saadc_buffer_convert(p_event->data.done.p_buffer, SAMPLES_IN_BUFFER);
 		APP_ERROR_CHECK(err_code);
-
-//		static uint32_t m_adc_evt_counter = 0;
-//		LOG_DEBUG("SAADC event number: %d %lu", (int)m_adc_evt_counter, millis());
-//		m_adc_evt_counter++;
 
 		m_adc_value = 0;
 		for (int i = 0; i < SAMPLES_IN_BUFFER; i++)
@@ -294,4 +278,33 @@ int32_t vnh5019_driver__getM1CurrentMilliamps(void)
 uint32_t vnh5019_driver__getM1Fault(void)
 {
 	return !digitalRead(VNH_DIAG1);
+}
+
+void vnh5019_driver__tasks(void) {
+
+	static uint32_t last_up = 0;
+
+	// handle timeout
+	if (m_new_pwm_data &&
+		!ready_flag &&
+		millis() - last_up > 700) {
+
+		ready_flag = true;
+	}
+
+	// handle APP_PWM driver
+	if (ready_flag &&
+		m_new_pwm_data) {
+
+        ready_flag = false;
+
+		uint32_t ret = app_pwm_channel_duty_set(&PWM1, 0, 100 - m_duty_cycle);
+		APP_ERROR_CHECK(ret);
+
+		m_new_pwm_data = 0;
+		last_up = millis();
+	}
+
+	// start sampling SAADC
+	nrf_drv_saadc_sample();
 }

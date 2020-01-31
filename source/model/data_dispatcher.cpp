@@ -557,4 +557,7 @@ void data_dispatcher__run(void) {
 	jscope.inputData(m_distance, 4);
 	jscope.flush();
 #endif
+
+	// handle the PWM tasking there
+	vnh5019_driver__tasks();
 }

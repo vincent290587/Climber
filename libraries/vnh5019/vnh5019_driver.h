@@ -34,6 +34,8 @@ int32_t vnh5019_driver__getM1CurrentMilliamps(void);
 
 uint32_t vnh5019_driver__getM1Fault(void);
 
+void vnh5019_driver__tasks(void);
+
 #ifdef	__cplusplus
 }
 #endif

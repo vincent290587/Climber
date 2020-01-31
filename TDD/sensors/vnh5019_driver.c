@@ -95,3 +95,8 @@ uint32_t vnh5019_driver__getM1Fault(void)
 {
 	return !gpio_get(VNH_DIAG1);
 }
+
+void vnh5019_driver__tasks(void) {
+
+
+}
