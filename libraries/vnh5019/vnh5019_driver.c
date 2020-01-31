@@ -14,15 +14,15 @@
 #include "nrf_drv_timer.h"
 #include "nrf_drv_ppi.h"
 #include "nrf_drv_saadc.h"
+#include "nrf_drv_pwm.h"
 #include "segger_wrapper.h"
 #include "vnh5019_driver.h"
-#include "app_pwm.h"
 
 #define SAMPLES_IN_BUFFER 1
 
 #define PWM_FREQUENCY_HZ     10000UL
 
-APP_PWM_INSTANCE(PWM1, 2);                   // Create the instance "PWM1" using TIMER1.
+static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
 
 static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
 static int16_t m_adc_value = 0;
@@ -33,9 +33,12 @@ static int16_t m_new_pwm_data = 0;
 
 static volatile bool ready_flag;            // A flag indicating PWM status.
 
-void pwm_ready_callback(uint32_t pwm_id)    // PWM callback function
+static void _on_pwm_event(nrf_drv_pwm_evt_type_t event_type)
 {
-    ready_flag = true;
+    if (event_type == NRF_DRV_PWM_EVT_FINISHED)
+    {
+		ready_flag = true;
+    }
 }
 
 static void _pwm_configure(void) {
@@ -44,14 +47,21 @@ static void _pwm_configure(void) {
 
 	nrf_gpio_pin_clear(VNH_PWM1);
 
-    /* 2-channel PWM, 200Hz, output on DK LED pins. */
-    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(10UL * PWM_FREQUENCY_HZ, VNH_PWM1);
+	nrf_drv_pwm_config_t const config0 =
+    {
+        .output_pins =
+        {
+            VNH_PWM1, //  | NRF_DRV_PWM_PIN_INVERTED
+        },
+        .irq_priority = APP_IRQ_PRIORITY_LOWEST,
+        .base_clock   = NRF_PWM_CLK_1MHz,
+        .count_mode   = NRF_PWM_MODE_UP,
+        .top_value    = 100,
+        .load_mode    = NRF_PWM_LOAD_INDIVIDUAL,
+        .step_mode    = NRF_PWM_STEP_AUTO,
+    };
 
-    /* Initialize and enable PWM. */
-    err_code = app_pwm_init(&PWM1, &pwm1_cfg, pwm_ready_callback);
-    APP_ERROR_CHECK(err_code);
-
-    app_pwm_enable(&PWM1);
+    APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm1, &config0, _on_pwm_event));
 }
 
 /**
@@ -289,6 +299,7 @@ void vnh5019_driver__tasks(void) {
 		!ready_flag &&
 		millis() - last_up > 700) {
 
+		LOG_WARNING("PWM timeout");
 		ready_flag = true;
 	}
 
@@ -298,9 +309,25 @@ void vnh5019_driver__tasks(void) {
 
         ready_flag = false;
 
-		uint32_t ret = app_pwm_channel_duty_set(&PWM1, 0, 100 - m_duty_cycle);
-		APP_ERROR_CHECK(ret);
+		// This array cannot be allocated on stack (hence "static") and it must
+		// be in RAM (hence no "const", though its content is not changed).
+		static nrf_pwm_values_common_t /*const*/ seq1_values[] =
+		{
+			0,
+		};
+		nrf_pwm_sequence_t const seq1 =
+		{
+			.values.p_common = seq1_values,
+			.length          = NRF_PWM_VALUES_LENGTH(seq1_values),
+			.repeats         = 0,
+			.end_delay       = 0,
+		};
 
+		seq1_values = m_duty_cycle;
+
+		APP_ERROR_CHECK(nrf_drv_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP));
+
+		// clear flags
 		m_new_pwm_data = 0;
 		last_up = millis();
 	}
