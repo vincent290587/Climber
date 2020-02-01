@@ -39,7 +39,7 @@ static inline float map_duty_to_speed(int16_t duty) {
 	if (duty <= -1) {
 		return regFenLim((float)duty, -100, 0, -14.2, 0);
 	} else if (duty >= 1) {
-		return regFenLim((float)duty, 0, 100, 0, 12.8);
+		return regFenLim((float)duty, 30, 100, 0, 12.8);
 	}
 	return 0;
 }
@@ -49,7 +49,7 @@ static inline int16_t map_speed_to_duty(float speed) {
 	if (speed < 0.0f) {
 		return (int16_t)regFenLim(speed, -14.2, 0, -100, 0);
 	} else {
-		return (int16_t)regFenLim(speed, 0, 12.8, 0, 100);
+		return (int16_t)regFenLim(speed, 0, 12.8, 30, 100);
 	}
 	return 0;
 }

@@ -73,25 +73,18 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 		duty_cycle = 100;
 	}
 
-	if (duty_cycle > 6 &&
-			(duty_cycle != duty_cycle_prev || force)) {
+	if (force) {
+		m_new_pwm_data = 1;
+	}
 
-		duty_cycle &= ~0b1111;
-		duty_cycle |= 0b10000;
-
-		if (duty_cycle > 100) {
-			duty_cycle = 100;
-		}
-
-		if (duty_cycle == 100 && duty_cycle_prev == 0) {
-			duty_cycle = 70;
-		}
+	if (duty_cycle > 0 &&
+			duty_cycle != duty_cycle_prev) {
 
 		m_new_pwm_data = 1;
 
 		LOG_INFO("PWM signal duty cycle: %lu", duty_cycle);
 
-	} else if (duty_cycle <= 6) {
+	} else if (duty_cycle == 0) {
 
 		m_new_pwm_data = 1;
 
@@ -258,6 +251,8 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle, uint8_t force)
 		gpio_clear(LED_4);
 	}
 
+	vnh5019_driver__tasks();
+
 	return duty_cycle;
 }
 
@@ -322,6 +317,8 @@ void vnh5019_driver__tasks(void) {
 
 		uint32_t error = nrf_drv_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP);
 		APP_ERROR_CHECK(error);
+
+		if (error) return;
 
 		LOG_WARNING("PWM set");
 
