@@ -55,7 +55,7 @@ static void _pwm_configure(void) {
         .base_clock   = NRF_PWM_CLK_1MHz,
         .count_mode   = NRF_PWM_MODE_UP,
         .top_value    = 100,
-        .load_mode    = NRF_PWM_LOAD_INDIVIDUAL,
+        .load_mode    = NRF_PWM_LOAD_COMMON,
         .step_mode    = NRF_PWM_STEP_AUTO,
     };
 
@@ -89,7 +89,7 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 
 		m_new_pwm_data = 1;
 
-		LOG_INFO("PWM signal duty cycle: %lu (freq = %u)", div, duty_cycle);
+		LOG_INFO("PWM signal duty cycle: %lu", duty_cycle);
 
 	} else if (duty_cycle <= 6) {
 
@@ -309,21 +309,21 @@ void vnh5019_driver__tasks(void) {
 
 		// This array cannot be allocated on stack (hence "static") and it must
 		// be in RAM (hence no "const", though its content is not changed).
-		static nrf_pwm_values_common_t /*const*/ seq1_values[] =
-		{
-			0,
-		};
+		static nrf_pwm_values_common_t /*const*/ seq1_values[1] = { 0 };
 		nrf_pwm_sequence_t const seq1 =
 		{
 			.values.p_common = seq1_values,
-			.length          = NRF_PWM_VALUES_LENGTH(seq1_values),
+			.length          = 1,
 			.repeats         = 0,
 			.end_delay       = 0,
 		};
 
-		seq1_values[0] = m_duty_cycle;
+		seq1_values[0] = m_duty_cycle | 0x8000;
 
-		APP_ERROR_CHECK(nrf_drv_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP));
+		uint32_t error = nrf_drv_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP);
+		APP_ERROR_CHECK(error);
+
+		LOG_WARNING("PWM set");
 
 		// clear flags
 		m_new_pwm_data = 0;
