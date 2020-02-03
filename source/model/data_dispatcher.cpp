@@ -58,8 +58,7 @@ static s_pid_instance_f32 m_cmsis_pid;
 
 static int32_t m_deadzone_center = DEFAULT_TARGET_DISTANCE;
 static uint8_t m_deadzone_activ = 1;
-static int8_t  m_limit_reached = 0;
-static uint8_t  m_new_command = 0;
+static uint8_t m_new_command = 0;
 
 #ifdef TDD
 float m_last_est_dist = 0;
@@ -346,22 +345,13 @@ void data_dispatcher__feed_target_slope(float slope) {
 	float front_el = slope * BIKE_REACH_MM / 100.0f;
 
 	// calculate distance from desired slope
+	m_d_target = front_el + (float)m_distance_cal;
+
 	// account for end of course
-	if (m_limit_reached == 0) {
+	if (m_d_target < ACTUATOR_MIN_LENGTH) {
 
-		m_d_target = front_el + (float)m_distance_cal;
-	} else if (m_limit_reached > 0 && front_el + (float)m_distance_cal + 2.5f < m_distance) {
-
-		m_limit_reached = 0;
-		m_d_target = front_el + (float)m_distance_cal;
-	} else if (m_limit_reached < 0 && front_el + (float)m_distance_cal > m_distance + 2.5f) {
-
-		m_limit_reached = 0;
-		m_d_target = front_el + (float)m_distance_cal;
-	} else {
-		return;
+		m_d_target = ACTUATOR_MIN_LENGTH;
 	}
-
 
 	if (m_deadzone_center != (int32_t)m_d_target) {
 
@@ -503,7 +493,7 @@ void data_dispatcher__run(void) {
 				LOG_WARNING("!! ERROR motor stop !!");
 				error_nb = 0;
 				force_pwm = 1;
-				m_deadzone_activ = 1;
+				m_deadzone_activ = 2;
 				i_duty_delta = 0;
 				m_k_lin.ker.matX.set(1, 0, 0);
 
@@ -529,8 +519,6 @@ void data_dispatcher__run(void) {
 			real_duty = vnh5019_driver__setM1_duty(i_duty_delta, force_pwm);
 		}
 
-		m_new_command = 0;
-
 #ifdef TDD
 		const char *format = "Cmd DTY: %d (%u) / e.spd %d / dist %d f=%d / tgt %d (%d) / curr %d / %u %u %u %u \r\n";
 #else
@@ -550,7 +538,9 @@ void data_dispatcher__run(void) {
 				millis(),
 				(uint8_t)fault,
 				error_nb,
-				m_new_command);
+				m_deadzone_activ);
+
+		m_new_command = 0;
 
 #if defined (BLE_STACK_SUPPORT_REQD)
 		// log through BLE every loop
