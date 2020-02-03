@@ -32,4 +32,6 @@
 
 #define DEADZONE_HALF_WIDTH       2.5f
 
+#define ACTUATOR_MIN_LENGTH       200.f
+
 #endif /* SOURCE_PARAMETERS_H_ */
