@@ -96,7 +96,7 @@ if (ZwiftPacketMonitor && Cap) {
 		
         logger.info('New state')
 		
-        if (playerState.distance > distance_prev + 5 && nb_runs > 1 + 1) {
+        if (playerState.distance > distance_prev + 4 && nb_runs > 1 + 1) {
 		
 			console.log(serverWorldTime, playerState)
             
