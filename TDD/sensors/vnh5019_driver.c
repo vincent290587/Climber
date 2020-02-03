@@ -53,13 +53,6 @@ void vnh5019_driver__init(void) {
 
 uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle, uint8_t force)
 {
-	if (s_duty_cycle > 6 || s_duty_cycle < -6) {
-		s_duty_cycle &= ~0b111;
-		s_duty_cycle |= 0b1000;
-	} else {
-		s_duty_cycle = 0;
-	}
-
 	m_vnh_duty_cycle = s_duty_cycle;
 
 	uint16_t res = 0;
@@ -86,7 +79,7 @@ void vnh5019_driver__setM1Brake(uint16_t brake)
 // Return motor 1 current value in milliamps.
 int32_t vnh5019_driver__getM1CurrentMilliamps(void)
 {
-	if (!m_is_blocked && (m_vnh_duty_cycle < -7 || m_vnh_duty_cycle > 7)) return 2500;
+	if (!m_is_blocked && (m_vnh_duty_cycle <= -1 || m_vnh_duty_cycle > 7)) return 2500;
 	return -200;
 }
 
