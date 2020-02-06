@@ -48,12 +48,9 @@ The pinout that is used is defined in the file named `custom_board_v1.h`.
 
 ## Pre-requisites
 
-### To edit the softwae
-
-You need a Nordic SDK V15.3 with an equally installed S340 (findable at thisisant.com, and to be put in components/softdevice).
-You also need to place the correct ANT / ANT+ keys in your freshly installed SDK ;-)
-
 ### To use the BLE mode
+
+#### Getting the slope from Zwift
 
 - First, you will need a working Node.js install. So go to https://nodejs.org/en/download/ and install it,
 - Then you need Win10Pcap (if you are under windows), go to http://www.win10pcap.org/download/,
@@ -64,30 +61,21 @@ The node modules should be downloaded and installed automatically.
 You can test your device by using the Tester.js script (`node Tester.js`), which will make your device go up an down every 30 seconds for a few minutes.  
 You can use your device with Zwift by typing `node Climber.js` and then starting Zwift as usual.
 
-### Software tuning
+#### Preparing the nrf52 PC dongle (AP dongle)
 
-There are a few parameters you will have to tune to your own setup, although the default values might be ok.  
-These are located in the file named `parameters.h`
-- `DEFAULT_TARGET_DISTANCE` is the distance measured by the laser sensor when your bike is completely flat (0.0% slope),
-- `ACTUATOR_MIN_LENGTH` is the height under which your actuator will never be commanded: aka the low stop,
-- `ZWIFT_SLOPE_FACTOR` must be the inverse of Zwift's trainer difficulty.
+You will find the software for this dongle in the following repo:
+https://github.com/vincent290587/stravaV10/tree/develop/AP
 
-You will also have to fill in your actuator upward and downward speed in the file `libraries/utils/utils.h` in the function called `map_duty_to_speed`. This is used by the Kalman filter.  
-You can use the `Tester.js` script to measure what your actuator can really achieve in terms of speeds, or decide to rely on the theretical speed given by the manufacturer of your actuator.
+You can use nRF-Connect to upload the correct softdevice / firmware to the device, or just use the makefile with the following commands:  
+`make dfu_softdevice`  
+`make dfu_send`
 
-## Full simulation
+This dongle basically acts as a USB-BLE NUS bridge.  
+The softdevice used is specified at the beginning of the makefile.
 
-Yes, the complete system has its own simulator where you can modify settings and look at amazing plots !
-
-!! You need to be using Linux (or WSL on Windows) !!
-
-### Building the simulator
-
-- Go to the TDD folder, and type `cmake ..`
-- Then build using `make`
-- Run the program `./Climber`
-
-The results are output in a file called `simu.txt`, which you can easily use in a plotting software. (KST plot is warmly recommended, or JSynoptic)
+The LED color codes for the AP dongle are the following:
+- blinking green: waiting for USB COM port connection (terminal)
+- toggling red: BLE packet received !
 
 ## Building the software
 
@@ -102,14 +90,42 @@ The results are output in a file called `simu.txt`, which you can easily use in 
 
 The dongle will reboot automagically and it should be running !
 
+### Software editing / tuning
+
+You need a Nordic SDK V15.3 with an equally installed S340 (findable at thisisant.com, and to be put in components/softdevice).
+You also need to place the correct ANT / ANT+ keys in your freshly installed SDK ;-)
+
+There are a few parameters you will have to tune to your own setup, although the default values might be ok.  
+These are located in the file named `parameters.h`
+- `DEFAULT_TARGET_DISTANCE` is the distance measured by the laser sensor when your bike is completely flat (0.0% slope),
+- `ACTUATOR_MIN_LENGTH` is the height under which your actuator will never be commanded: aka the low stop,
+- `ZWIFT_SLOPE_FACTOR` must be the inverse of Zwift's trainer difficulty.
+
+You will also have to fill in your actuator upward and downward speed in the file `libraries/utils/utils.h` in the function called `map_duty_to_speed`. This is used by the Kalman filter.  
+You can use the `Tester.js` script to measure what your actuator can really achieve in terms of speeds, or decide to rely on the datasheet speed of your actuator.
+
+## Full simulation / mock
+
+Yes, the complete system has its own simulator where you can modify settings and look at amazing plots !
+
+!! You need to be using Linux (or WSL on Windows) !!
+
+### Building the simulator
+
+- Go to the TDD folder, and type `cmake ..`
+- Then build using `make`
+- Run the program `./Climber`
+
+The results are output in a file called `simu.txt`, which you can easily use in a plotting software. (KST plot is warmly recommended, or JSynoptic)
+
 ## Using it with Zwift
 
 ### If you chose to use ANT+ packets
 
-Congrats ! You are compatible with any training software ! Provided you are using an ANT+ key to connect your trainer...  
-Just power everything and you should be fine, but one thing in mind: for example in Zwift there is a setting called 'trainer difficulty', and it will also reflect on the slope siulated b this device !
+Congrats ! You are compatible with any training software ! Provided you are using an ANT+ key to connect to your trainer...  
+Just power everything up and you should be fine, but one thing to keep in mind: for in Zwift there is a setting called 'trainer difficulty', and it will also reflect on the slope simulated by this device !
 
-For example, if your trainer difficulty is set to 40%, and the current slope in Zwift is 10%, then the device will simulate a 4% incline, unless you manually modify the software to account for it. Yep.  
+For example, if your trainer difficulty is set to 40%, and the current slope in Zwift is 10%, then the device will simulate a 4% incline. Yep.  
 To account for this you will have to edit the define `ZWIFT_SLOPE_FACTOR` in `parameters.h`.
 
 ### If you chose Zwift TCP packets sniffing (BLE)
@@ -118,7 +134,13 @@ Congrats ! You will have the smoothest experience and realistic slope simulation
 
 To be up and running execute the following steps:  
 - Follow the pre-requisites to have a working Node.js,
-- Plug your second dongle on your computer, its lights should start blinking,
+- Plug your second dongle on your computer, its green lights should start blinking,
 - Go to the `zpm` folder and open the `Climber.js` file, and change the COM port written in there by the actual COM port of the dongle you just plugged,
+- Power the actuator dongle, its light should be solid red,
+- The AP dongle red light should start blinking,
 - Type in `node Climber.js` in a terminal and press enter,
 - You should see logs filling your terminal, which means it is working !
+
+The LED color codes for the actuator dongle are the following:
+- red: position stop
+- blue / green: going up / down !
