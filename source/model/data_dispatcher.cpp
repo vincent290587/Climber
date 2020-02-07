@@ -82,8 +82,8 @@ void _kalman_init(void) {
 	m_k_lin.ker.matB.print();
 
 	// set Q: kernel noise
-	m_k_lin.ker.matQ.unity(1 / 20.);
-	m_k_lin.ker.matQ.set(1, 1, 1 / 5.);
+	m_k_lin.ker.matQ.unity(1 / 20.f);
+	m_k_lin.ker.matQ.set(1, 1, 1 / 1.5f);
 
 	// set P
 	m_k_lin.ker.matP.ones(900);
