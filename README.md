@@ -13,10 +13,14 @@ The concept was inspired by the Wahoo Kickr Climb, but with different strategy /
 - [x] User params flash saving
 - [x] Zwift TCP packets sniffing for ERG (or any) mode slope sniffing.
 
+<p align="center">
+<img src="cad/Assembly.png" alt="Assembly" width="300"/>
+</p>
+
 # Concept
 
 The ANT+ target incline is sniffed using the ANT+ protocol, it is then compared to the filtered measured front wheel hub height.  
-Two 3D printed parts allow to mount securely the actuator to the bike's fork, and to the ground.  
+Two 3D printed parts (in the CAD folder) allow to mount securely the actuator to the bike's fork, and to the ground.  
 You know the rest ;-)
 
 ## Slope detection
