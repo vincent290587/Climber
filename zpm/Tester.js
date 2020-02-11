@@ -13,18 +13,26 @@ const myWinstonOptions = {
 const logger = new winston.createLogger(myWinstonOptions)
 
 
+    var usb = require('usb');
+    const UsbCdcAcm = require('usb-cdc-acm');
+
+    var device = usb.findByIds( 0x1915, 0x521a ); // VID/PID for the AP
+
+    // The device MUST be open before instantiating the UsbCdcAcm stream!
+    device.open();
+
 try {
-	const SerialPort = require('serialport')
-	var port = new SerialPort('COM22', {
+    // An options object with the baud rate is optional.
+    let stream = UsbCdcAcm.fromUsbDevice(device, {
         baudRate: 115200
-    })
-    
-    port.on('data', function(data) {
+    });
+
+    stream.on('data', function(data) {
         console.log('< ' + data)
         logger.info('< ' + data)
     });
-	
-	port.on('close', () => {
+
+	stream.on('close', () => {
         try {
             logger.error('Port reconnect')
             setTimeout(this.reconnect.bind(this), 5000);
@@ -32,8 +40,8 @@ try {
             console.log(e)
         }
     });
-	
-	port.on('error', () => {
+
+	stream.on('error', () => {
         try {
             logger.error('Port reconnect')
             setTimeout(this.reconnect.bind(this), 5000);
@@ -41,7 +49,6 @@ try {
             console.log(e)
         }
     });
-	
 } catch(e) {
     console.log(e)
 }
@@ -61,14 +68,14 @@ for (var i = 0; i <=200; i++) {
 
         let ser_msg = '>S' + slope.toFixed(0) + '\n'
         console.log(ser_msg)
-                
+
         try {
-            port.write(ser_msg)
+            stream.write(ser_msg)
             logger.info(ser_msg)
         } catch(e) {
             console.log(e)
         }
     }, interval * i, i);
 }
-            
+
 
