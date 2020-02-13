@@ -1,19 +1,18 @@
 {
   "name": "zpm",
-  "version": "1.1.1",
+  "version": "1.0.0",
   "description": "Zwift slope TCP sniffer",
   "main": "Climber.js",
   "dependencies": {
     "@zwfthcks/zwift-packet-monitor": "^0.3.3",
     "cap": "^0.2.1",
     "internal-ip": "^5.0.0",
-    "usb": "^1.6.2",
-    "usb-cdc-acm": "^0.1.1",
+    "serialport": "^8.0.5",
     "winston": "^3.2.1"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \\\"No test specified\\\" && exit 0"
   },
   "author": "Vincent Gollé",
   "license": "ISC"
