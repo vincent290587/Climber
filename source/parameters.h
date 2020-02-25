@@ -30,8 +30,6 @@
 
 #define ZWIFT_SLOPE_FACTOR        2.0f
 
-#define DEADZONE_HALF_WIDTH       2.5f
-
 #define ACTUATOR_MIN_LENGTH       210.f
 
 #endif /* SOURCE_PARAMETERS_H_ */
