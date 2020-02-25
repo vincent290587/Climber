@@ -16,7 +16,7 @@
 
 
 
-#define FDS_PRESENT
+//#define FDS_PRESENT
 
 #define KALMAN_FREERUN_NB         20
 
@@ -26,12 +26,12 @@
 
 #define VNH_FULL_SCALE            60
 
-#define DEFAULT_TARGET_DISTANCE   240
+#define DEFAULT_TARGET_DISTANCE   230
 
 #define ZWIFT_SLOPE_FACTOR        2.0f
 
 #define DEADZONE_HALF_WIDTH       2.5f
 
-#define ACTUATOR_MIN_LENGTH       200.f
+#define ACTUATOR_MIN_LENGTH       210.f
 
 #endif /* SOURCE_PARAMETERS_H_ */

@@ -295,7 +295,8 @@ void data_dispatcher__init(task_id_t _task_id) {
 		m_d_target = m_distance_cal;
 
 		LOG_INFO("FRAM cal: %d (mm) ", m_distance_cal);
-	} else {
+	} else
+	{
 
 		m_distance_cal = DEFAULT_TARGET_DISTANCE;
 		m_d_target = DEFAULT_TARGET_DISTANCE;
@@ -325,13 +326,13 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 	LOG_INFO("New cal: %d (mm) ", m_distance_cal);
 
-//	if (u_settings.writeConfig()) {
-//
-//		LOG_INFO("FRAM cal saved ");
-//	} else {
-//
-//		LOG_ERROR("FRAM cal NOT saved ");
-//	}
+	if (u_settings.writeConfig()) {
+
+		LOG_INFO("FRAM cal saved ");
+	} else {
+
+		LOG_ERROR("FRAM cal NOT saved ");
+	}
 }
 
 void data_dispatcher__feed_target_slope(float slope) {
