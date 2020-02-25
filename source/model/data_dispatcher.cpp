@@ -292,16 +292,19 @@ void data_dispatcher__init(task_id_t _task_id) {
 		sUserParameters *params = user_settings_get();
 
 		m_distance_cal = params->calibration;
-		m_d_target = m_distance_cal;
 
-		LOG_INFO("FRAM cal: %d (mm) ", m_distance_cal);
+		LOG_ERROR("FRAM cal: %d (mm) ", m_distance_cal);
 	} else {
 
 		m_distance_cal = DEFAULT_TARGET_DISTANCE;
-		m_d_target = DEFAULT_TARGET_DISTANCE;
 
-		LOG_ERROR("FRAM config not valid ");
+		LOG_ERROR("FRAM config not valid: overwriting ");
+
+		u_settings.resetConfig();
 	}
+
+	// go to default slope (0%)
+	m_d_target = m_distance_cal;
 
 	//Initialize the PID instance structure
 	m_pid_config.use_limits = 1;
@@ -320,18 +323,19 @@ void data_dispatcher__offset_calibration(int32_t cal) {
 
 	sUserParameters *params = user_settings_get();
 	params->calibration = m_distance_cal;
+
 	m_deadzone_activ = 0;
 	m_new_command = 1;
 
 	LOG_INFO("New cal: %d (mm) ", m_distance_cal);
 
-//	if (u_settings.writeConfig()) {
-//
-//		LOG_INFO("FRAM cal saved ");
-//	} else {
-//
-//		LOG_ERROR("FRAM cal NOT saved ");
-//	}
+	if (u_settings.writeConfig()) {
+
+		LOG_INFO("FRAM cal saved ");
+	} else {
+
+		LOG_ERROR("FRAM cal NOT saved ");
+	}
 }
 
 void data_dispatcher__feed_target_slope(float slope) {

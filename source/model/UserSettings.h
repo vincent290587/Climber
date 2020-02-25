@@ -14,7 +14,7 @@
 
 
 #define FRAM_SETTINGS_ADDRESS        0x0000
-#define FRAM_SETTINGS_VERSION        0x0001
+#define FRAM_SETTINGS_VERSION        0x0002
 
 #if defined(__cplusplus)
 extern "C" {

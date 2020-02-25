@@ -44,13 +44,13 @@ typedef struct {
 } sFecInfo;
 
 
-typedef union {
-	struct {
+typedef union __attribute__((__packed__)) {
+	struct __attribute__((__packed__)) {
 		int32_t  calibration;
 		uint16_t version;
-		uint16_t crc;
+		uint8_t crc;
 	};
-	uint8_t flat_user_params;
+	uint8_t flat_user_params[7];
 } sUserParameters;
 
 
