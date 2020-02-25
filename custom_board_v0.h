@@ -50,7 +50,7 @@ extern "C" {
 
 #define BSP_BUTTON_0   BUTTON_1
 
-#define HAS_LSM6
+//#define HAS_LSM6
 
 #define SDA_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 25)
 #define SCL_PIN_NUMBER   NRF_GPIO_PIN_MAP(0, 24)

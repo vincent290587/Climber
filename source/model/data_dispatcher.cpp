@@ -294,7 +294,8 @@ void data_dispatcher__init(task_id_t _task_id) {
 		m_distance_cal = params->calibration;
 
 		LOG_ERROR("FRAM cal: %d (mm) ", m_distance_cal);
-	} else {
+	} else
+	{
 
 		m_distance_cal = DEFAULT_TARGET_DISTANCE;
 
