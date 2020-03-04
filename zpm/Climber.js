@@ -35,12 +35,12 @@ try {
 	var port = new SerialPort('COM22', {
         baudRate: 115200
     })
-    
+
     port.on('data', function(data) {
         console.log('< ' + data)
         logger.info('< ' + data)
     });
-	
+
 	port.on('close', () => {
         try {
             logger.error('Port reconnect')
@@ -49,7 +49,7 @@ try {
             console.log(e)
         }
     });
-	
+
 	port.on('error', () => {
         try {
             logger.error('Port reconnect')
@@ -58,7 +58,7 @@ try {
             console.log(e)
         }
     });
-	
+
 } catch(e) {
     console.log(e)
 }
@@ -79,32 +79,84 @@ function simple_moving_averager(period) {
     }
 }
 
+function xor_checksum(byteArray) {
+    let checksum = 0x00
+    for(let i = 1; i < byteArray.length - 1; i++)
+      checksum ^= byteArray[i]
+    return checksum
+  }
+
 // moving average class
 var m_sma = simple_moving_averager(3);
+
+var m_sec_j = 0;
+var m_x = 0;
+var m_y = 0;
+var m_alt = 0;
+var m_speed = 0;
 
 if (ZwiftPacketMonitor && Cap) {
 
     console.log('Listening on: ', ip, JSON.stringify(Cap.findDevice(ip),null,4));
-    
+
     // determine network interface associated with external IP address
     interface = Cap.findDevice(ip);
 
     // ... and setup monitor on that interface:
-    const monitor = new ZwiftPacketMonitor(interface)
-    
+    const monitor = new ZwiftPacketMonitor(interface);
+
+    monitor.on('WorldAttributes', (world_attr, serverWorldTime) => {
+
+        console.log(world_attr);
+
+        var date = new Date();
+        var sec_j = date.getSeconds() + 60*date.getMinutes + 3600*date.getUTCHours;
+
+        if (world_attr.world_id == 1 && sec_j > m_sec_j) {
+            // world is watopia
+
+            //update time
+            m_sec_j = sec_j;
+
+            // x: Math.round((lat - 348.35518) * 11050000),
+            // y: Math.round((long - 166.95292) * 10920000)
+            var lat = 10000000 * ((m_x / 11050000) + 348.35518 - 360);
+            var lon = 10000000 * ((m_y / 10920000) + 166.95292);
+            var ele = 100 * m_alt;
+            var spd = 100 *m_speed;
+
+            let ser_msg = '$LOC,' + sec_j.toFixed(0)
+            ser_msg += ',' + lat.toFixed(0)
+            ser_msg += ',' + lon.toFixed(0)
+            ser_msg += ',' + ele.toFixed(0)
+            ser_msg += ',' + spd.toFixed(0)
+
+            let chk = xor_checksum(ser_msg);
+
+            ser_msg += '*' + chk.toString(16)
+
+			port.write(ser_msg)
+        }
+    })
+
     monitor.on('outgoingPlayerState', (playerState, serverWorldTime) => {
-		
+
         logger.info('New state')
-		
+
+        m_x = playerState.x;
+        m_y = playerState.y;
+        m_alt = playerState.altitude / 200;
+        m_speed = playerState.speed / 1000000;
+
         if (playerState.distance > distance_prev + 3 && nb_runs > 4) {
-		
-			console.log(serverWorldTime, playerState)
-            
+
+			console.log(playerState)
+
             var angle = Math.asin((playerState.altitude - altitude_prev) / (200 * (playerState.distance - distance_prev)))
             // calculate moving average
 			var slp_pc = 100 * Math.tan(angle)
             var slope_pc = m_sma(slp_pc)
-			
+
 			logger.info('Simulating ' + slp_pc + '% incline pckt ' + nb_runs)
 
 			if (Math.abs(slope_pc - slope_prev) > 0.9) {
@@ -118,7 +170,7 @@ if (ZwiftPacketMonitor && Cap) {
 				} catch(e) {
 					console.log(e)
 				}
-				
+
 				slope_prev = slope_pc
 			}
 
@@ -137,9 +189,9 @@ if (ZwiftPacketMonitor && Cap) {
         nb_runs = nb_runs + 1
 
     })
-    
+
     monitor.start()
-	
+
     try {
         port.write('>S20000\n')
     } catch(e) {
