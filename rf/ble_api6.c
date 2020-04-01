@@ -71,7 +71,7 @@
 #define SUPERVISION_TIMEOUT         MSEC_TO_UNITS(4000, UNIT_10_MS)     /**< Determines supervision time-out in units of 10 millisecond. */
 
 
-#define TARGET_NAME                 "stravaAP"
+#define TARGET_NAME                 "climberAP"
 
 
 typedef enum {
@@ -103,6 +103,7 @@ static task_id_t m_periph_id = TASK_ID_INVALID;
 typedef struct {
 	uint8_t p_xfer_str[200];
 	uint16_t length;
+	uint16_t p_xfer_idx;
 } sNusXfer;
 
 NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
@@ -590,7 +591,7 @@ void ble_nus_log(const char* format, ...)
 		va_list va;
 		sNusXfer _nus_xfer_array;
 
-		memset(_nus_xfer_array.p_xfer_str, 0, sizeof(_nus_xfer_array.p_xfer_str));
+		memset(&_nus_xfer_array, 0, sizeof(_nus_xfer_array));
 
 		va_start(va, format);
 		m_nus_xfer_tx_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
@@ -660,7 +661,28 @@ void ble_nus_tasks(void) {
 			m_nus_xfer_tx_array.length &&
 			m_nus_cts) {
 
-		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_tx_array.p_xfer_str, m_nus_xfer_tx_array.length);
+		uint32_t err_code = 0;
+
+		if (m_nus_xfer_tx_array.length > m_mtu_length + m_nus_xfer_tx_array.p_xfer_idx) {
+
+			err_code = ble_nus_c_string_send(&m_ble_nus_c, &m_nus_xfer_tx_array.p_xfer_str[m_nus_xfer_tx_array.p_xfer_idx], m_mtu_length);
+
+			m_nus_xfer_tx_array.p_xfer_idx += m_mtu_length;
+
+		} else {
+
+			if (m_nus_xfer_tx_array.p_xfer_idx > 0) {
+
+				// need to finish sending
+				err_code = ble_nus_c_string_send(&m_ble_nus_c,
+						&m_nus_xfer_tx_array.p_xfer_str[m_nus_xfer_tx_array.p_xfer_idx],
+						m_nus_xfer_tx_array.length - m_nus_xfer_tx_array.p_xfer_idx);
+				m_nus_xfer_tx_array.p_xfer_idx = 0;
+			} else {
+
+				err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_xfer_tx_array.p_xfer_str, m_nus_xfer_tx_array.length);
+			}
+		}
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
@@ -682,18 +704,23 @@ void ble_nus_tasks(void) {
 		{
 			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
 
-			m_nus_packet_nb++;
-			m_nus_xfer_tx_array.length = 0;
+			if (!m_nus_xfer_tx_array.p_xfer_idx) {
 
-			if (!nrf_queue_is_empty(&m_tx_queue)) {
-				ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
-				APP_ERROR_CHECK(err_code);
+				m_nus_packet_nb++;
+				m_nus_xfer_tx_array.length = 0;
+				m_nus_xfer_tx_array.p_xfer_idx = 0;
+
+				if (!nrf_queue_is_empty(&m_tx_queue)) {
+					ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
+					APP_ERROR_CHECK(err_code);
+				}
 			}
+
 		} break;
 
 		default:
 		{
-			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_tx_array.length, BLE_NUS_MAX_DATA_LEN);
+			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_tx_array.length, m_mtu_length);
 			return;
 		} break;
 		}
