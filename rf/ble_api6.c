@@ -137,6 +137,12 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
  */
 static void _service_c_error_handler(uint32_t nrf_error)
 {
+	if (nrf_error == NRF_ERROR_RESOURCES) {
+
+		LOG_DEBUG("NUS RESSSS %u", m_nus_packet_nb);
+		m_nus_cts = false;
+		return;
+	}
 	APP_ERROR_HANDLER(nrf_error);
 }
 
@@ -700,14 +706,16 @@ void ble_nus_tasks(void) {
 
 		case NRF_SUCCESS:
 		{
-			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
+			if (m_nus_cts) {
+				LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
 
-			m_nus_packet_nb++;
-			m_nus_xfer_tx_array.length = 0;
+				m_nus_packet_nb++;
+				m_nus_xfer_tx_array.length = 0;
 
-			if (!nrf_queue_is_empty(&m_tx_queue)) {
-				ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
-				APP_ERROR_CHECK(err_code);
+				if (!nrf_queue_is_empty(&m_tx_queue)) {
+					ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
+					APP_ERROR_CHECK(err_code);
+				}
 			}
 		} break;
 
