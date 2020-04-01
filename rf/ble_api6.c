@@ -112,7 +112,6 @@ typedef struct {
 
 NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
 
-static sNusXfer m_nus_xfer_tx_array;
 static sNusXfer m_nus_xfer_rx_array;
 
 static void scan_start(void);
@@ -641,6 +640,7 @@ void ble_nus_log(const char* format, ...)
  */
 void ble_nus_tasks(void) {
 
+	static sNusXfer m_nus_xfer_tx_array;
 	m_periph_id = w_task_id_get();
 
 	if (m_nus_xfer_rx_array.length) {
