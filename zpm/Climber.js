@@ -33,7 +33,8 @@ var nb_runs=0
 try {
 	const SerialPort = require('serialport')
 	var port = new SerialPort('COM22', {
-        baudRate: 115200
+        baudRate: 115200,
+        rtscts: true,
     })
     
     port.on('data', function(data) {
