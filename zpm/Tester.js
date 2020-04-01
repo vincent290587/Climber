@@ -16,7 +16,8 @@ const logger = new winston.createLogger(myWinstonOptions)
 try {
 	const SerialPort = require('serialport')
 	var port = new SerialPort('COM22', {
-        baudRate: 115200
+        baudRate: 115200,
+        rtscts: true,
     })
     
     port.on('data', function(data) {
