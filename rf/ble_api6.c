@@ -594,12 +594,12 @@ void ble_nus_log(const char* format, ...)
 		memset(&_nus_xfer_array, 0, sizeof(_nus_xfer_array));
 
 		va_start(va, format);
-		_nus_xfer_tx_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
+		_nus_xfer_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
 		va_end(va);
 
-		if (_nus_xfer_tx_array.length + 3 < sizeof(_nus_xfer_array.p_xfer_str)) {
-			_nus_xfer_array.p_xfer_str[_nus_xfer_tx_array.length++] = '\r';
-			_nus_xfer_array.p_xfer_str[_nus_xfer_tx_array.length++] = '\n';
+		if (_nus_xfer_array.length + 3 < sizeof(_nus_xfer_array.p_xfer_str)) {
+			_nus_xfer_array.p_xfer_str[_nus_xfer_array.length++] = '\r';
+			_nus_xfer_array.p_xfer_str[_nus_xfer_array.length++] = '\n';
 		}
 
 		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
