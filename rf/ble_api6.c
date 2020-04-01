@@ -693,7 +693,12 @@ void ble_nus_tasks(void) {
 
 			err_code = ble_nus_c_string_send(&m_ble_nus_c, &m_nus_xfer_tx_array.p_xfer_str[m_nus_xfer_tx_array.p_xfer_idx], m_mtu_length);
 
-			m_nus_xfer_tx_array.p_xfer_idx += m_mtu_length;
+			if (err_code == 0 &&
+					m_nus_cts) {
+
+				// in this case the transfer is a success: prepare for next
+				m_nus_xfer_tx_array.p_xfer_idx += m_mtu_length;
+			}
 
 		} else {
 
@@ -703,7 +708,13 @@ void ble_nus_tasks(void) {
 				err_code = ble_nus_c_string_send(&m_ble_nus_c,
 						&m_nus_xfer_tx_array.p_xfer_str[m_nus_xfer_tx_array.p_xfer_idx],
 						m_nus_xfer_tx_array.length - m_nus_xfer_tx_array.p_xfer_idx);
-				m_nus_xfer_tx_array.p_xfer_idx = 0;
+
+				if (err_code == 0 &&
+						m_nus_cts) {
+
+					// in this case the transfer is a success
+					m_nus_xfer_tx_array.p_xfer_idx = 0;
+				}
 			} else {
 
 				err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_xfer_tx_array.p_xfer_str, m_nus_xfer_tx_array.length);
