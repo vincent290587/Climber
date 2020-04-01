@@ -51,7 +51,7 @@ void vnh5019_driver__init(void) {
 	w_task_delay(40);
 }
 
-uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
+uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle, uint8_t force)
 {
 	if (s_duty_cycle > 6 || s_duty_cycle < -6) {
 		s_duty_cycle &= ~0b111;
@@ -94,4 +94,9 @@ int32_t vnh5019_driver__getM1CurrentMilliamps(void)
 uint32_t vnh5019_driver__getM1Fault(void)
 {
 	return !gpio_get(VNH_DIAG1);
+}
+
+void vnh5019_driver__tasks(void) {
+
+
 }

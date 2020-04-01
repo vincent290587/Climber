@@ -14,43 +14,52 @@
 #include "nrf_drv_timer.h"
 #include "nrf_drv_ppi.h"
 #include "nrf_drv_saadc.h"
+#include "nrf_drv_pwm.h"
 #include "segger_wrapper.h"
 #include "vnh5019_driver.h"
-#include "app_pwm.h"
 
 #define SAMPLES_IN_BUFFER 1
 
 #define PWM_FREQUENCY_HZ     10000UL
 
-APP_PWM_INSTANCE(PWM1, 2);                   // Create the instance "PWM1" using TIMER1.
+static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
 
 static nrf_saadc_value_t m_buffer_pool[2][SAMPLES_IN_BUFFER];
 static int16_t m_adc_value = 0;
 
 static eVNH5019State m_state = eVNH5019StateCoasting;
 static int16_t m_duty_cycle = 0;
+static int16_t m_new_pwm_data = 0;
 
 static volatile bool ready_flag;            // A flag indicating PWM status.
 
-void pwm_ready_callback(uint32_t pwm_id)    // PWM callback function
+static void _on_pwm_event(nrf_drv_pwm_evt_type_t event_type)
 {
-    ready_flag = true;
+    if (event_type == NRF_DRV_PWM_EVT_FINISHED)
+    {
+		ready_flag = true;
+    }
 }
 
 static void _pwm_configure(void) {
 
-	ret_code_t err_code;
-
 	nrf_gpio_pin_clear(VNH_PWM1);
 
-    /* 2-channel PWM, 200Hz, output on DK LED pins. */
-    app_pwm_config_t pwm1_cfg = APP_PWM_DEFAULT_CONFIG_1CH(10UL * PWM_FREQUENCY_HZ, VNH_PWM1);
+	nrf_drv_pwm_config_t const config0 =
+    {
+        .output_pins =
+        {
+            VNH_PWM1, //  | NRF_DRV_PWM_PIN_INVERTED
+        },
+        .irq_priority = APP_IRQ_PRIORITY_LOWEST,
+        .base_clock   = NRF_PWM_CLK_1MHz,
+        .count_mode   = NRF_PWM_MODE_UP,
+        .top_value    = 100,
+        .load_mode    = NRF_PWM_LOAD_COMMON,
+        .step_mode    = NRF_PWM_STEP_AUTO,
+    };
 
-    /* Initialize and enable PWM. */
-    err_code = app_pwm_init(&PWM1, &pwm1_cfg, pwm_ready_callback);
-    APP_ERROR_CHECK(err_code);
-
-    app_pwm_enable(&PWM1);
+    APP_ERROR_CHECK(nrf_drv_pwm_init(&m_pwm1, &config0, _on_pwm_event));
 }
 
 /**
@@ -64,39 +73,26 @@ static uint16_t _pwm_signal_set(uint16_t duty_cycle, uint8_t force) {
 		duty_cycle = 100;
 	}
 
-	// start sampling SAADC
-	nrf_drv_saadc_sample();
+	if (force) {
+		m_new_pwm_data = 1;
+	}
 
-	if (duty_cycle > 6 &&
-			(duty_cycle != duty_cycle_prev || force)) {
+	if (duty_cycle > 0 &&
+			duty_cycle != duty_cycle_prev) {
 
-		duty_cycle &= ~0b1111;
-		duty_cycle |= 0b10000;
-		if (duty_cycle > 100) duty_cycle = 100;
+		m_new_pwm_data = 1;
 
-		uint32_t div = 100 - duty_cycle;
+		LOG_INFO("PWM signal duty cycle: %lu", duty_cycle);
 
-		LOG_INFO("PWM signal duty cycle: %lu (freq = %u)", div, duty_cycle);
+	} else if (duty_cycle == 0) {
 
-        ready_flag = false;
-        /* Set the duty cycle - keep trying until PWM is ready... */
-        while (app_pwm_channel_duty_set(&PWM1, 0, div) == NRF_ERROR_BUSY) {
-        	w_task_yield();
-        }
-
-	} else if (duty_cycle <= 6) {
+		m_new_pwm_data = 1;
 
 		LOG_INFO("PWM signal frequency: %u OFF", duty_cycle);
 
-        ready_flag = false;
-        /* Set the duty cycle - keep trying until PWM is ready... */
-        while (app_pwm_channel_duty_set(&PWM1, 0, 0) == NRF_ERROR_BUSY) {
-        	w_task_yield();
-        }
-
         duty_cycle = 0;
-	} else if (duty_cycle == duty_cycle_prev) {
 
+	} else if (duty_cycle == duty_cycle_prev) {
 
 
 	}
@@ -117,10 +113,6 @@ static void _saadc_callback(nrf_drv_saadc_evt_t const * p_event)
 
 		err_code = nrf_drv_saadc_buffer_convert(p_event->data.done.p_buffer, SAMPLES_IN_BUFFER);
 		APP_ERROR_CHECK(err_code);
-
-//		static uint32_t m_adc_evt_counter = 0;
-//		LOG_DEBUG("SAADC event number: %d %lu", (int)m_adc_evt_counter, millis());
-//		m_adc_evt_counter++;
 
 		m_adc_value = 0;
 		for (int i = 0; i < SAMPLES_IN_BUFFER; i++)
@@ -193,7 +185,7 @@ int16_t vnh5019_driver__getM1_duty(void) {
 	return m_duty_cycle;
 }
 
-uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
+uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle, uint8_t force)
 {
 	unsigned char reverse = 0;
 	static unsigned char reverse_prev = 0;
@@ -215,7 +207,7 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 	m_state = eVNH5019StateDriving;
 
 	// set PWM signal
-	duty_cycle = _pwm_signal_set(duty_cycle, reverse == reverse_prev ? 0 : 1);
+	duty_cycle = _pwm_signal_set(duty_cycle, reverse == reverse_prev ? force : 1);
 	if (!duty_cycle) {
 
 		// forced coastin
@@ -259,6 +251,8 @@ uint16_t vnh5019_driver__setM1_duty(int16_t s_duty_cycle)
 		gpio_clear(LED_4);
 	}
 
+	vnh5019_driver__tasks();
+
 	return duty_cycle;
 }
 
@@ -287,4 +281,54 @@ int32_t vnh5019_driver__getM1CurrentMilliamps(void)
 uint32_t vnh5019_driver__getM1Fault(void)
 {
 	return !digitalRead(VNH_DIAG1);
+}
+
+void vnh5019_driver__tasks(void) {
+
+	static uint32_t last_up = 0;
+
+	// handle timeout
+	if (m_new_pwm_data &&
+		!ready_flag &&
+		millis() - last_up > 700) {
+
+		LOG_WARNING("PWM timeout");
+		ready_flag = true;
+	}
+
+	// handle APP_PWM driver
+	if (ready_flag &&
+		m_new_pwm_data) {
+
+        ready_flag = false;
+
+		// This array cannot be allocated on stack (hence "static") and it must
+		// be in RAM (hence no "const", though its content is not changed).
+		static nrf_pwm_values_common_t /*const*/ seq1_values[1] = { 0 };
+		nrf_pwm_sequence_t const seq1 =
+		{
+			.values.p_common = seq1_values,
+			.length          = 1,
+			.repeats         = 0,
+			.end_delay       = 0,
+		};
+
+		seq1_values[0] = m_duty_cycle | 0x8000;
+
+		uint32_t error = nrf_drv_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP);
+		APP_ERROR_CHECK(error);
+
+		if (error) return;
+
+		LOG_WARNING("PWM set");
+
+		// clear flags
+		m_new_pwm_data = 0;
+		last_up = millis();
+	} else {
+
+		// start sampling SAADC
+		nrf_drv_saadc_sample();
+	}
+
 }
