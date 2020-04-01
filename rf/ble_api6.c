@@ -565,7 +565,7 @@ void ble_nus_log_text(const char * text) {
 
 		sNusXfer _nus_xfer_array;
 
-		memset(_nus_xfer_array.p_xfer_str, 0, sizeof(_nus_xfer_array.p_xfer_str));
+		memset(&_nus_xfer_array, 0, sizeof(_nus_xfer_array));
 
 		// create log
 		_nus_xfer_array.length = snprintf(
