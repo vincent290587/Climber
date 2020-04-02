@@ -138,8 +138,8 @@ if (ZwiftPacketMonitor && Cap) {
 
         m_x = playerState.x;
         m_y = playerState.y;
-        m_alt = playerState.altitude / 40000;
-        m_speed = playerState.speed / 1000000;
+        m_alt = playerState.altitude / 4000; // m_alt in m
+        m_speed = playerState.speed / 1000000; // m_speed in km/h
 
         send_lns(playerState.time);
 
