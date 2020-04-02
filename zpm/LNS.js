@@ -90,10 +90,10 @@ function send_lns(sec_j) {
 
 	var date = new Date();
 
-	console.log('Send LNS');
-
-	if (1) {
+	if (m_sec_j != sec_j) {
 		// world is watopia
+
+	    console.log('Send LOC');
 
 		//update time
 		m_sec_j = sec_j;
@@ -102,8 +102,8 @@ function send_lns(sec_j) {
 		// y: Math.round((long - 166.95292) * 10920000)
 		var lat = 10000000 * ((m_x / 11050000) + 348.35518 - 360);
 		var lon = 10000000 * ((m_y / 10920000) + 166.95292);
-		var ele = 100 * m_alt;
-		var spd = 100 *m_speed;
+		var ele = m_alt * 100; // ele in cm
+		var spd = m_speed * 100 / 3.6; // speed in cm / s
 
 		let ser_msg = '$LOC,' + sec_j.toFixed(0)
 		ser_msg += ',' + lat.toFixed(0)
@@ -113,7 +113,8 @@ function send_lns(sec_j) {
 
 		let chk = xor_checksum(ser_msg);
 
-		ser_msg += '*' + decimalToHexString(chk)
+        ser_msg += '*' + decimalToHexString(chk)
+        ser_msg += '\r\n'
 
 		port.write(ser_msg)
 		console.log(ser_msg);
@@ -132,14 +133,28 @@ if (ZwiftPacketMonitor && Cap) {
 
     monitor.on('outgoingPlayerState', (playerState, serverWorldTime) => {
 
-        logger.info('New state')
+        //logger.info('New state')
+        //console.log(playerState)
 
         m_x = playerState.x;
         m_y = playerState.y;
-        m_alt = playerState.altitude / 200;
+        m_alt = playerState.altitude / 40000;
         m_speed = playerState.speed / 1000000;
 
         send_lns(playerState.time);
+
+    })
+
+    monitor.on('incomingPlayerState', (playerState, serverWorldTime) => {
+
+        //console.log(playerState)
+
+        //m_x = playerState.x;
+        //m_y = playerState.y;
+        //m_alt = playerState.altitude / 200;
+        //m_speed = playerState.speed / 1000000;
+
+        //send_lns(playerState.time);
 
     })
 
