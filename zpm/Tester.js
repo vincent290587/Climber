@@ -16,7 +16,8 @@ const logger = new winston.createLogger(myWinstonOptions)
 try {
 	const SerialPort = require('serialport')
 	var port = new SerialPort('COM22', {
-        baudRate: 115200
+        baudRate: 115200,
+        rtscts: true,
     })
     
     port.on('data', function(data) {
@@ -46,7 +47,7 @@ try {
     console.log(e)
 }
 
-var master_angle_rad = 0
+var slope_pc = 0
 
 var interval = 1 * 1000; // 1 second;
 
@@ -54,11 +55,10 @@ for (var i = 0; i <=200; i++) {
     setTimeout( function (i) {
 
         if (i % 15 == 0) {
-            if ((i / 15) % 2 == 0) master_angle_rad = 0
-            else master_angle_rad = 5 / 60
+            if ((i / 15) % 2 == 0) slope_pc = 10
+            else slope_pc = 0
         }
-        var slope_pc = 200 * Math.tan(master_angle_rad)
-        var slope = (Math.round(slope_pc) / 2 + 200) * 100
+        var slope = (slope_pc + 200) * 100
 
         let ser_msg = '>S' + slope.toFixed(0) + '\n'
         console.log(ser_msg)

@@ -4604,7 +4604,7 @@
 // <e> PWM_ENABLED - nrf_drv_pwm - PWM peripheral driver - legacy layer
 //==========================================================
 #ifndef PWM_ENABLED
-#define PWM_ENABLED 0
+#define PWM_ENABLED 1
 #endif
 // <o> PWM_DEFAULT_CONFIG_OUT0_PIN - Out0 pin  <0-31>
 
@@ -4711,7 +4711,7 @@
 
 
 #ifndef PWM1_ENABLED
-#define PWM1_ENABLED 0
+#define PWM1_ENABLED 1
 #endif
 
 // <q> PWM2_ENABLED  - Enable PWM2 instance
@@ -11357,7 +11357,7 @@
 // <2=> NRF_SDH_DISPATCH_MODEL_POLLING
 
 #ifndef NRF_SDH_DISPATCH_MODEL
-#ifdef CONFIG_JLINK_MONITOR_ENABLED
+#if CONFIG_JLINK_MONITOR_ENABLED
 #define NRF_SDH_DISPATCH_MODEL 0
 #else
 #define NRF_SDH_DISPATCH_MODEL 1

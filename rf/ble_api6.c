@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include "gpio.h"
 #include "nordic_common.h"
@@ -70,7 +71,7 @@
 #define SUPERVISION_TIMEOUT         MSEC_TO_UNITS(4000, UNIT_10_MS)     /**< Determines supervision time-out in units of 10 millisecond. */
 
 
-#define TARGET_NAME                 "stravaAP"
+#define TARGET_NAME                 "climberAP"
 
 
 typedef enum {
@@ -102,6 +103,7 @@ static task_id_t m_periph_id = TASK_ID_INVALID;
 typedef struct {
 	uint8_t p_xfer_str[200];
 	uint16_t length;
+	uint16_t p_xfer_idx;
 } sNusXfer;
 
 NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
@@ -141,9 +143,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 	{
 	case BLE_GAP_EVT_CONNECTED:
 	{
-		LOG_INFO("Connected.");
-		m_connected = true;
-		m_nus_cts = true;
+		LOG_INFO("GAP Connected.");
 		m_pending_db_disc_conn = p_ble_evt->evt.gap_evt.conn_handle;
 		m_retry_db_disc = false;
 		// Discover peer's services.
@@ -261,12 +261,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
 }
 
-void ble_radio_callback_handler(bool radio_active)
-{
-
-
-}
-
 
 /**@brief Function for initializing the BLE stack.
  *
@@ -320,6 +314,8 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 		err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
 		APP_ERROR_CHECK(err_code);
 		LOG_INFO("Connected to stravaAP");
+		m_connected = true;
+		m_nus_cts = true;
 		break;
 
 	case BLE_NUS_C_EVT_NUS_TX_EVT:
@@ -566,15 +562,18 @@ void ble_nus_log_text(const char * text) {
 
 	if (!text) return;
 
-	sNusXfer _nus_xfer_array;
+	if (!nrf_queue_is_full(&m_tx_queue)) {
 
-	// create log
-	_nus_xfer_array.length = snprintf(
+		sNusXfer _nus_xfer_array;
+
+		memset(&_nus_xfer_array, 0, sizeof(_nus_xfer_array));
+
+		// create log
+		_nus_xfer_array.length = snprintf(
 			(char*)_nus_xfer_array.p_xfer_str,
 			sizeof(_nus_xfer_array.p_xfer_str),
 			text);
 
-	if (!nrf_queue_is_full(&m_tx_queue)) {
 		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
 		APP_ERROR_CHECK(err_code);
 
@@ -585,7 +584,32 @@ void ble_nus_log_text(const char * text) {
 
 }
 
+void ble_nus_log(const char* format, ...)
+{
+	if (!nrf_queue_is_full(&m_tx_queue)) {
 
+		va_list va;
+		sNusXfer _nus_xfer_array;
+
+		memset(&_nus_xfer_array, 0, sizeof(_nus_xfer_array));
+
+		va_start(va, format);
+		_nus_xfer_array.length = vsnprintf((char*)_nus_xfer_array.p_xfer_str, sizeof(_nus_xfer_array.p_xfer_str), format, va);
+		va_end(va);
+
+		if (_nus_xfer_array.length + 3 < sizeof(_nus_xfer_array.p_xfer_str)) {
+			_nus_xfer_array.p_xfer_str[_nus_xfer_array.length++] = '\r';
+			_nus_xfer_array.p_xfer_str[_nus_xfer_array.length++] = '\n';
+		}
+
+		ret_code_t err_code = nrf_queue_push(&m_tx_queue, &_nus_xfer_array);
+		APP_ERROR_CHECK(err_code);
+
+		if (m_periph_id != TASK_ID_INVALID) {
+			w_task_delay_cancel(m_periph_id);
+		}
+	}
+}
 
 /**
  * Send the log file to a remote computer
@@ -637,7 +661,39 @@ void ble_nus_tasks(void) {
 			m_nus_xfer_tx_array.length &&
 			m_nus_cts) {
 
-		uint32_t err_code = ble_nus_c_string_send(&m_ble_nus_c, (uint8_t *)m_nus_xfer_tx_array.p_xfer_str, m_nus_xfer_tx_array.length);
+		uint32_t err_code = 0;
+
+		if (m_nus_xfer_tx_array.length > m_mtu_length + m_nus_xfer_tx_array.p_xfer_idx) {
+
+			err_code = ble_nus_c_string_send(&m_ble_nus_c, &m_nus_xfer_tx_array.p_xfer_str[m_nus_xfer_tx_array.p_xfer_idx], m_mtu_length);
+
+			if (err_code == 0 &&
+					m_nus_cts) {
+
+				// in this case the transfer is a success: prepare for next
+				m_nus_xfer_tx_array.p_xfer_idx += m_mtu_length;
+			}
+
+		} else {
+
+			if (m_nus_xfer_tx_array.p_xfer_idx > 0) {
+
+				// need to finish sending
+				err_code = ble_nus_c_string_send(&m_ble_nus_c,
+						&m_nus_xfer_tx_array.p_xfer_str[m_nus_xfer_tx_array.p_xfer_idx],
+						m_nus_xfer_tx_array.length - m_nus_xfer_tx_array.p_xfer_idx);
+
+				if (err_code == 0 &&
+						m_nus_cts) {
+
+					// in this case the transfer is a success
+					m_nus_xfer_tx_array.p_xfer_idx = 0;
+				}
+			} else {
+
+				err_code = ble_nus_c_string_send(&m_ble_nus_c, m_nus_xfer_tx_array.p_xfer_str, m_nus_xfer_tx_array.length);
+			}
+		}
 
 		switch (err_code) {
 		case NRF_ERROR_BUSY:
@@ -659,18 +715,23 @@ void ble_nus_tasks(void) {
 		{
 			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
 
-			m_nus_packet_nb++;
-			m_nus_xfer_tx_array.length = 0;
+			if (!m_nus_xfer_tx_array.p_xfer_idx) {
 
-			if (!nrf_queue_is_empty(&m_tx_queue)) {
-				ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
-				APP_ERROR_CHECK(err_code);
+				m_nus_packet_nb++;
+				m_nus_xfer_tx_array.length = 0;
+				m_nus_xfer_tx_array.p_xfer_idx = 0;
+
+				if (!nrf_queue_is_empty(&m_tx_queue)) {
+					ret_code_t err_code = nrf_queue_pop(&m_tx_queue, &m_nus_xfer_tx_array);
+					APP_ERROR_CHECK(err_code);
+				}
 			}
+
 		} break;
 
 		default:
 		{
-			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_tx_array.length, BLE_NUS_MAX_DATA_LEN);
+			LOG_WARNING("NUS unknown error: 0x%X MTU %u / %u", err_code, m_nus_xfer_tx_array.length, m_mtu_length);
 			return;
 		} break;
 		}

@@ -279,7 +279,7 @@ float simpLinReg(float* x, float* y, float* lrCoef, int n) {
 }
 
 /**
- * Calculates the CRC of an array
+ * Calculates the XOR checksum of an array
  */
 uint8_t calculate_crc(uint8_t input_a[], uint16_t length) {
 	int sum = 0;

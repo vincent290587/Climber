@@ -151,7 +151,7 @@ void simulator_init(void) {
 	tdd_logger_log_name(TDD_LOGGING_ACT_POS		, "cur_dist");
 	tdd_logger_log_name(TDD_LOGGING_SIM_SLOPE	, "sim_slope");
 
-	data_dispatcher__offset_calibration(15);
+	data_dispatcher__offset_calibration(12);
 }
 
 void simulator_task(void * p_context) {

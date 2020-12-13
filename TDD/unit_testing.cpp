@@ -183,9 +183,6 @@ bool test_fram(void) {
 
 	fram_init_sensor();
 
-	if (!u_settings.isConfigValid())
-		return false;
-
 	u_settings.resetConfig();
 
 	if (!u_settings.writeConfig())

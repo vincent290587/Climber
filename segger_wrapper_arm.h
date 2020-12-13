@@ -62,7 +62,16 @@
 
 #define SVIEW_INIT(...)                      EMPTY_MACRO
 #define LOG_WARNING_SVIEW(...)               EMPTY_MACRO
-#define LOG_ERROR_SVIEW(...)               EMPTY_MACRO
+#define LOG_ERROR_SVIEW(...)                 EMPTY_MACRO
+
+#endif
+
+#if defined ( BLE_STACK_SUPPORT_REQD )
+#include "ble_api_base.h"
+
+#define LOG_INFO_NUS(...)                  EMPTY_MACRO
+#define LOG_WARNING_NUS(...)               EMPTY_MACRO
+#define LOG_ERROR_NUS(...)                 ble_nus_log(__VA_ARGS__)
 
 #endif
 
@@ -73,7 +82,7 @@
 #define LOG_RAW_INFO(X)                EMPTY_MACRO
 #define LOG_WARNING(...)               SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
+#define LOG_ERROR(...)                 LOG_ERROR_NUS(__VA_ARGS__);SEGGER_RTT_printf(RTT_LOG_CHANNEL, __VA_ARGS__);SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\r');SEGGER_RTT_PutChar(RTT_LOG_CHANNEL, '\n')
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_PROCESS(...)               NRF_LOG_PROCESS()
@@ -84,7 +93,7 @@
 #define LOG_RAW_INFO(X)                USB_PRINTC(X)
 #define LOG_WARNING(...)               LOG_WARNING_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_DEBUG(...)                 EMPTY_MACRO
-#define LOG_ERROR(...)                 LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
+#define LOG_ERROR(...)                 LOG_ERROR_NUS(__VA_ARGS__);LOG_ERROR_SVIEW(__VA_ARGS__);USB_PRINTF(__VA_ARGS__)
 #define LOG_GRAPH(...)                 EMPTY_MACRO
 #define LOG_FLUSH(...)                 EMPTY_MACRO
 #define LOG_PROCESS(...)               false

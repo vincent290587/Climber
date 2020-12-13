@@ -117,8 +117,6 @@ void pwr_mgmt_run(void) {
 	 */
 #ifdef DEBUG
 	ASSERT((original_fpscr & 0x7) == 0);
-#else
-	APP_ERROR_CHECK(0x1);
 #endif
 #endif
 
