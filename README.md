@@ -48,7 +48,15 @@ A VNH5019 is then PWMed to drive the linear actuator.
 
 ## Hardware connections
 
-The pinout that is used is defined in the file named `custom_board_v1.h`.
+The pinout that is used is defined in the file named `custom_board_v1.h`.  
+
+Eagle PCB files:
+
+https://github.com/vincent290587/EAGLE/tree/master/Projects/Climber
+
+## Pre-compiled files
+
+See folder /hex.
 
 ## Pre-requisites
 
