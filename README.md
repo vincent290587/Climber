@@ -60,6 +60,13 @@ See folder /hex.
 
 ## Pre-requisites
 
+Download the nRF52 SDK from Nordic:  
+https://www.nordicsemi.com/Products/Development-software/nRF5-SDK/Download?lang=en#infotabs  
+
+Decompress it somewhere and write down that location (needed to go in the compil/s340/Makefile.local).
+
+If you choose to use the ANT+ mode you'll have to install the ANT+ keys in that SDK. (follow Nordic's guidelines or take inspiration from https://devzone.nordicsemi.com/f/nordic-q-a/63928/ant-softdevice-integration-into-ant-example-projects-for-nrf5-sdk-17-0-0) 
+
 ### To use the BLE mode
 
 #### Getting the slope from Zwift
@@ -93,7 +100,7 @@ The LED color codes for the AP dongle are the following:
 
 - Go to the compil/s340 folder
 - Create a `Makefile.local` file with the path to your SDK and the port used for uploading software to the dongle (You can get inspiration from Makefile.local.sample)
-- By default the software will get slope information from a second dongle using BLE, but you can also choose to use the ANT+ packets, and to do so you will have to uncomment the line `#CFLAGS += -DANT_STACK_SUPPORT_REQD`. If you are not interested in getting the logs, you might even as well no use BLE at all, and to do so, comment `CFLAGS += -DBLE_STACK_SUPPORT_REQD`.
+- By default the software will get slope information from a second dongle using BLE, but you can also choose to use the ANT+ packets, and to do so you will have to uncomment the line `#CFLAGS += -DANT_STACK_SUPPORT_REQD` in compil/s340/Makefile. If you are not interested in getting the logs, you might even as well no use BLE at all, and to do so, comment `CFLAGS += -DBLE_STACK_SUPPORT_REQD`.
 - Run your favorite `make` command
 - Plug your dongle in, and press the little side button to put it in bootloader mode
 - Find the name of the dongle port, and make sure it matches the port name given in your `Makefile.local`
