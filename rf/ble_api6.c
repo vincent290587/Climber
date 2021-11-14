@@ -29,6 +29,7 @@
 #include "ble_conn_state.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_scan.h"
+#include "nrf_ble_gq.h"
 #include "helper.h"
 #include "ble_bas_c.h"
 #include "ble_nus_c.h"
@@ -87,6 +88,9 @@ NRF_BLE_SCAN_DEF(m_scan);
 BLE_NUS_C_DEF(m_ble_nus_c);
 NRF_BLE_GATT_DEF(m_gatt);                                           /**< GATT module instance. */
 BLE_DB_DISCOVERY_DEF(m_db_disc);                                    /**< DB discovery module instance. */
+NRF_BLE_GQ_DEF(m_ble_gatt_queue,                                /**< BLE GATT Queue instance. */
+        NRF_SDH_BLE_CENTRAL_LINK_COUNT,
+        NRF_BLE_GQ_QUEUE_SIZE);
 
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
@@ -108,7 +112,6 @@ typedef struct {
 
 NRF_QUEUE_DEF(sNusXfer, m_tx_queue, 10, NRF_QUEUE_MODE_NO_OVERFLOW);
 
-static sNusXfer m_nus_xfer_tx_array;
 static sNusXfer m_nus_xfer_rx_array;
 
 static void scan_start(void);
@@ -127,6 +130,22 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
 	ble_nus_c_on_db_disc_evt(&m_ble_nus_c, p_evt);
 }
+
+/**@brief Function for handling the LED Button Service client errors.
+ *
+ * @param[in]   nrf_error   Error code containing information about what went wrong.
+ */
+static void _service_c_error_handler(uint32_t nrf_error)
+{
+	if (nrf_error == NRF_ERROR_RESOURCES) {
+
+		LOG_DEBUG("NUS RESSSS %u", m_nus_packet_nb);
+		m_nus_cts = false;
+		return;
+	}
+	APP_ERROR_HANDLER(nrf_error);
+}
+
 
 /**@brief Function for handling the Application's BLE Stack events.
  *
@@ -283,10 +302,6 @@ static void ble_stack_init(void)
 	// Register handlers for BLE and SoC events.
 	NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 
-	// radio callback to write to the neopixels right ;-)
-	//err_code = ble_radio_notification_init(2, NRF_RADIO_NOTIFICATION_DISTANCE_800US, ble_radio_callback_handler);
-	//APP_ERROR_CHECK(err_code);
-
 	// set name
 	ble_gap_conn_sec_mode_t sec_mode; // Struct to store security parameters
 	BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
@@ -348,6 +363,8 @@ static void nus_c_init(void)
 	ble_nus_c_init_t nus_c_init_obj;
 
 	nus_c_init_obj.evt_handler = nus_c_evt_handler;
+	nus_c_init_obj.p_gatt_queue  = &m_ble_gatt_queue;
+	nus_c_init_obj.error_handler = _service_c_error_handler;
 
 	uint32_t err_code = ble_nus_c_init(&m_ble_nus_c, &nus_c_init_obj);
 	APP_ERROR_CHECK(err_code);
@@ -359,7 +376,14 @@ static void nus_c_init(void)
  */
 static void db_discovery_init(void)
 {
-	ret_code_t err_code = ble_db_discovery_init(db_disc_handler);
+	ble_db_discovery_init_t db_init;
+
+	memset(&db_init, 0, sizeof(db_init));
+
+	db_init.evt_handler  = db_disc_handler;
+	db_init.p_gatt_queue = &m_ble_gatt_queue;
+
+	ret_code_t err_code = ble_db_discovery_init(&db_init);
 	APP_ERROR_CHECK(err_code);
 }
 
@@ -616,6 +640,7 @@ void ble_nus_log(const char* format, ...)
  */
 void ble_nus_tasks(void) {
 
+	static sNusXfer m_nus_xfer_tx_array;
 	m_periph_id = w_task_id_get();
 
 	if (m_nus_xfer_rx_array.length) {
@@ -658,6 +683,7 @@ void ble_nus_tasks(void) {
 	}
 
 	while (m_connected &&
+			m_ble_nus_c.conn_handle != BLE_CONN_HANDLE_INVALID &&
 			m_nus_xfer_tx_array.length &&
 			m_nus_cts) {
 
@@ -713,9 +739,8 @@ void ble_nus_tasks(void) {
 
 		case NRF_SUCCESS:
 		{
-			LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
-
-			if (!m_nus_xfer_tx_array.p_xfer_idx) {
+			if (m_nus_cts && !m_nus_xfer_tx_array.p_xfer_idx) {
+				LOG_DEBUG("Packet %u sent size %u", m_nus_packet_nb, m_nus_xfer_tx_array.length);
 
 				m_nus_packet_nb++;
 				m_nus_xfer_tx_array.length = 0;
