@@ -4,7 +4,18 @@
 These files can easily be flash onto a nRF52 dongle using the Nordic nRF-Connect tool.  
 Flash the softdevice first and then proceed with the main program file.  
 
-## Climber
+At the end, the flash should look like this in nRF Connect:  
+
+- orange is the official Nordic MBR
+- blue is the softdevice
+- green is the application
+- pink is the official Nordic dongle bootloader
+
+<p align="center">
+<img src="flash_placement.png" alt="Placement" width="300"/>
+</p>
+
+## Actuator
 
 ### Softdevice
 

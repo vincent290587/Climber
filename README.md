@@ -69,32 +69,41 @@ If you choose to use the ANT+ mode you'll have to install the ANT+ keys in that 
 
 ### To use the BLE mode
 
+#### Preparing the nrf52 PC dongle (AP dongle)
+
+See folder /hex, you can use nRF-Connect to upload the correct softdevice / firmware to the AP dongle.
+
+The AP dongle basically acts as a USB-BLE NUS bridge, scripts in the /zpm folder send the target incline through a COM port,
+and the AP dongle forwards the data to the actuator dongle.  
+
+The LED color codes for the AP dongle are the following:
+- blinking green: waiting for USB COM port connection (terminal)
+- solid green: data is received from the javascript scripts,
+- red led: toggled each BLE packet received from the actuator dongle !
+
+#### Preparing the nrf52 actuator dongle
+
+See folder /hex, you can use nRF-Connect to upload the correct softdevice / firmware to the dongle.  
+
+- The red LED indicates the actuator is not being commanded
+- The blue LED indicates the actuator is going up
+- The green LED indicates the actuator is going down
+
+#### Testing the setup
+
+Test scripts are in the /zpm folder. They use Node.js to run javascript scripts.  
+Go to the zpm folder and type `npm install`. The node modules should get installed.  
+Open Tester.js and place the correct COM port name.  
+
+You can now run the Tester.js script (`node Tester.js`), which will make your device go up an down every 30 seconds.  
+You can use your device with Zwift by typing `node Climber.js` and then starting Zwift as usual.  
+
 #### Getting the slope from Zwift
 
 - First, you will need a working Node.js install. So go to https://nodejs.org/en/download/ and install it,
 - Then you need Win10Pcap (if you are under windows), go to http://www.win10pcap.org/download/,
 - Finally, go to the `zpm` folder, and open a terminal. Type `npm install` and press enter. The node modules should start getting installed,
 - You can now connect your additional dongle. Check which COM port it occupies and fill it in the Climber.js and Tester.js files.
-
-The node modules should be downloaded and installed automatically.  
-You can test your device by using the Tester.js script (`node Tester.js`), which will make your device go up an down every 30 seconds for a few minutes.  
-You can use your device with Zwift by typing `node Climber.js` and then starting Zwift as usual.
-
-#### Preparing the nrf52 PC dongle (AP dongle)
-
-You will find the software for this dongle in the following repo:
-https://github.com/vincent290587/stravaV10/tree/develop/AP
-
-You can use nRF-Connect to upload the correct softdevice / firmware to the device, or just use the makefile with the following commands:  
-`make dfu_softdevice`  
-`make dfu_send`
-
-This dongle basically acts as a USB-BLE NUS bridge.  
-The softdevice used is specified at the beginning of the makefile.
-
-The LED color codes for the AP dongle are the following:
-- blinking green: waiting for USB COM port connection (terminal)
-- toggling red: BLE packet received !
 
 ## Building the software
 

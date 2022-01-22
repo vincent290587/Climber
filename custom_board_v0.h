@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define LEDS_NUMBER    1
+#define LEDS_NUMBER    4
 
 #define LED_1            NRF_GPIO_PIN_MAP(0, 17)
 #define LED_2            NRF_GPIO_PIN_MAP(0, 18)
@@ -24,7 +24,7 @@ extern "C" {
 
 #define LEDS_INV_MASK  LEDS_MASK
 
-#define LEDS_LIST { LED_1 }
+#define LEDS_LIST { LED_1, LED_2, LED_3, LED_4 }
 
 #define LEDS_INV_MASK  LEDS_MASK
 

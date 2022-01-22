@@ -313,7 +313,7 @@ static void nus_c_evt_handler(ble_nus_c_t * p_ble_nus_c, ble_nus_c_evt_t const *
 
 		err_code = ble_nus_c_tx_notif_enable(p_ble_nus_c);
 		APP_ERROR_CHECK(err_code);
-		LOG_INFO("Connected to stravaAP");
+		LOG_INFO("Connected to AP");
 		m_connected = true;
 		m_nus_cts = true;
 		break;
