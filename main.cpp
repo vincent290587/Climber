@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <inttypes.h>
+
 #include "hardfault.h"
 #include "i2c.h"
 #include "helper.h"
@@ -76,7 +78,6 @@ void timer_event_handler(void* p_context)
 	W_SYSVIEW_RecordExitISR();
 }
 
-
 /**@brief Callback function for asserts in the SoftDevice.
  *
  * @details This function will be called in case of an assert in the SoftDevice.
@@ -97,16 +98,9 @@ extern "C" void assert_nrf_callback(uint16_t line_num, const uint8_t * file_name
 	};
 	app_error_fault_handler(NRF_FAULT_ID_SDK_ASSERT, 0, (uint32_t)(&assert_info));
 
-#ifndef DEBUG_NRF_USER
 	LOG_WARNING("System reset");
 	LOG_FLUSH();
 	NVIC_SystemReset();
-#else
-	NRF_BREAKPOINT_COND;
-
-	bool loop = true;
-	while (loop) ;
-#endif // DEBUG
 
 	UNUSED_VARIABLE(assert_info);
 }
@@ -127,19 +121,17 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 	switch (id)
 	{
-#if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
 	case NRF_FAULT_ID_SD_ASSERT:
 		NRF_LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
 		break;
 	case NRF_FAULT_ID_APP_MEMACC:
 		NRF_LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
 		break;
-#endif
 	case NRF_FAULT_ID_SDK_ASSERT:
 	{
 		assert_info_t * p_info = (assert_info_t *)info;
 		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
-				"ASSERTION FAILED at %s:%u",
+				"ASSERTION FAILED at %s : l.%u",
 				p_info->p_file_name,
 				p_info->line_num);
 #if USE_SVIEW
@@ -154,15 +146,15 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 	{
 		error_info_t * p_info = (error_info_t *)info;
 		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
-				"ERROR 0x%X [%s] at %s:%u",
+				"ERROR 0x%X [%s] at %s : l.%" PRIu32 "",
 				(unsigned int)p_info->err_code,
 				nrf_strerror_get(p_info->err_code),
 				p_info->p_file_name,
-				(uint16_t)p_info->line_num);
+				p_info->line_num);
 #if USE_SVIEW
 		SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
 #else
-		LOG_ERROR(m_app_error.err_desc._buffer);
+		NRF_LOG_ERROR("%s", m_app_error.err_desc._buffer);
 #endif
 		break;
 	}
@@ -175,27 +167,71 @@ extern "C" void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info)
 
 	NRF_LOG_FLUSH();
 
-#ifdef DEBUG_NRF
-	NRF_BREAKPOINT_COND;
-	// On assert, the system can only recover with a reset.
+}
+
+extern "C" void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p_file_name)
+{
+    NRF_LOG_ERROR("%s : l.%" PRIu32 " code 0x%" PRIX32 "", p_file_name, line_num, error_code);
+
+	NRF_LOG_FLUSH();
+
+	m_app_error.err_desc.id = error_code;
+	m_app_error.err_desc.pc = 0;
+	m_app_error.err_desc.crc = SYSTEM_DESCR_POS_CRC;
+
+	switch (error_code)
+	{
+	case NRF_FAULT_ID_SD_ASSERT:
+		NRF_LOG_ERROR("SOFTDEVICE: ASSERTION FAILED");
+		break;
+	case NRF_FAULT_ID_APP_MEMACC:
+		NRF_LOG_ERROR("SOFTDEVICE: INVALID MEMORY ACCESS");
+		break;
+	case NRF_FAULT_ID_SDK_ASSERT:
+	{
+		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
+				"ASSERTION FAILED at %s : l.%" PRIu32 "",
+				(const char*)p_file_name,
+				line_num);
+#if USE_SVIEW
+		SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
+#else
+		NRF_LOG_ERROR(m_app_error.err_desc._buffer);
+		LOG_ERROR(m_app_error.err_desc._buffer);
 #endif
+		break;
+	}
+	case NRF_FAULT_ID_SDK_ERROR:
+	{
+		snprintf(m_app_error.err_desc._buffer, sizeof(m_app_error.err_desc._buffer),
+				"ERROR 0x%X [%s] at %s : l.%" PRIu32 "",
+				(unsigned int)error_code,
+				nrf_strerror_get(error_code),
+				p_file_name,
+				line_num);
+#if USE_SVIEW
+		SEGGER_SYSVIEW_Error(m_app_error.err_desc._buffer);
+#else
+		NRF_LOG_ERROR("%s", m_app_error.err_desc._buffer);
+#endif
+		break;
+	}
+	default:
+		break;
+	}
+
+	NRF_LOG_FLUSH();
 
 }
 
 extern "C" void HardFault_process(HardFault_stack_t * p_stack)
 {
-	LOG_ERROR("HardFault: pc=%u", p_stack->pc);
+	NRF_LOG_ERROR("HardFault: pc= %" PRIu32 "", p_stack->pc);
+	NRF_LOG_FLUSH();
 
 	m_app_error.hf_desc.crc = SYSTEM_DESCR_POS_CRC;
 	memcpy(&m_app_error.hf_desc.stck, p_stack, sizeof(HardFault_stack_t));
 
-#ifdef DEBUG_NRF
-	NRF_BREAKPOINT_COND;
-	// On hardfault, the system can only recover with a reset.
-
-	bool loop = true;
-	while (loop) ;
-#endif
 	// Restart the system by default
 	NVIC_SystemReset();
 }
@@ -419,7 +455,7 @@ int main(void)
 	if (m_app_error.hf_desc.crc == SYSTEM_DESCR_POS_CRC) {
 		LOG_ERROR("Hard Fault found");
 		String message = "Hardfault happened: pc = 0x";
-		message += String(m_app_error.hf_desc.stck.pc);
+		message += String(m_app_error.hf_desc.stck.pc, 16);
 		message += " in void ";
 		message += m_app_error.void_id;
 		LOG_ERROR(message.c_str());
@@ -463,29 +499,5 @@ int main(void)
 	// does not return
 	task_manager_start(idle_task, NULL);
 
-//	lsm6ds33_wrapper__init();
-//	(void)vl53l1_wrapper__init();
-//
-//	for (;;) {
-//
-//#if APP_SCHEDULER_ENABLED
-//		app_sched_execute();
-//#endif
-//
-//		nrf_gpio_pin_toggle(LED_1);
-//
-//		nrf_delay_ms(100);
-//
-//		if (digitalRead(LSM6_INT1)) {
-//			LOG_ERROR("LSM6 force");
-//			_lsm6_read_sensor();
-//		}
-//
-//		//vl53l1_wrapper__measure();
-//
-//		//nrf_pwr_mgmt_run();
-//
-//		//wdt_reload();
-//	}
 }
 
