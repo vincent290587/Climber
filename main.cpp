@@ -405,6 +405,22 @@ static void sdh_init(void)
 }
 #endif
 
+/**
+ * @brief Function for configuration of REGOUT0 register.
+ */
+static void vddInit(void)
+{
+  if (NRF_UICR->REGOUT0 != UICR_REGOUT0_VOUT_3V3)
+  {
+	NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos;    //write enable
+	while (NRF_NVMC->READY == NVMC_READY_READY_Busy){}
+	NRF_UICR->REGOUT0 = UICR_REGOUT0_VOUT_3V3;                        //configurate REGOUT0
+	NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos;
+	while (NRF_NVMC->READY == NVMC_READY_READY_Busy){}
+        NVIC_SystemReset();                                               // Reset device
+  }
+}
+
 
 /**
  *
@@ -429,6 +445,8 @@ int main(void)
 	err_code = nrfx_wdt_channel_alloc(&m_channel_id);
 	APP_ERROR_CHECK(err_code);
 	nrfx_wdt_enable();
+
+	vddInit();
 
 	log_init();
 
